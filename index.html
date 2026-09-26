@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PowerAI 6/55 – Phân tích Vietlott Power 6/55</title>
+<meta name="description" content="PowerAI 6/55 là công cụ phân tích, mô phỏng và đối chiếu Vietlott Power 6/55 với các bộ A/B/C/L, dữ liệu lịch sử và thống kê kết quả. Điểm số chỉ mang tính nghiên cứu, không phải xác suất trúng thưởng.">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://powerai655.vercel.app/">
+<meta name="theme-color" content="#0b1220">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:site_name" content="PowerAI 6/55">
+<meta property="og:title" content="PowerAI 6/55 – Phân tích Vietlott Power 6/55">
+<meta property="og:description" content="Công cụ phân tích, mô phỏng và đối chiếu Vietlott Power 6/55 với các bộ A/B/C/L và dữ liệu lịch sử.">
+<meta property="og:url" content="https://powerai655.vercel.app/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PowerAI 6/55 – Phân tích Vietlott Power 6/55">
+<meta name="twitter:description" content="Công cụ phân tích, mô phỏng và đối chiếu Vietlott Power 6/55.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/site.webmanifest">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "PowerAI 6/55",
+  "url": "https://powerai655.vercel.app/",
+  "description": "Công cụ phân tích, mô phỏng và đối chiếu Vietlott Power 6/55 với các bộ A/B/C/L và dữ liệu lịch sử.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Any",
+  "inLanguage": "vi-VN",
+  "isAccessibleForFree": true
+}
+</script>
+<link rel="stylesheet" href="style.css?v=8.6">
+</head>
+<body class="guestMode">
+<header class="topbar">
+  <div class="brandWrap">
+    <div class="logoMark">⚡</div>
+    <div>
+      <div class="brand">PowerAI <b>6/55</b></div>
+      <div class="brandSub">RC8.6 • Admin Dashboard + Cloud Accounts</div>
+    </div>
+  </div>
+  <div class="topbarRight">
+    <div id="authMini" class="authMini">
+      <span id="authUserLabel">Khách</span>
+      <button id="authOpenBtn" type="button" class="ghostBtn tinyBtn" onclick="document.getElementById('authModal').hidden=false">Đăng nhập</button>
+      <button id="accountBtn" type="button" class="ghostBtn tinyBtn" hidden>Tài khoản</button>
+      <button id="adminPanelBtn" type="button" class="adminTinyBtn" hidden>Quản trị</button>
+      <button id="authLogoutBtn" class="ghostBtn tinyBtn" hidden onclick="window.PowerAIAuth&&PowerAIAuth.logout()">Đăng xuất</button>
+    </div>
+    <span class="versionPill">A SIMULATION OPTIMIZER</span>
+    <div id="status" class="badge statusBadge"><i class="statusDot"></i>Đang tải dữ liệu...</div>
+  </div>
+</header>
+
+<div id="authModal" class="authModal" hidden>
+  <div class="authCard">
+    <button id="authCloseBtn" type="button" class="authClose" aria-label="Đóng" onclick="document.getElementById('authModal').hidden=true">×</button>
+    <div class="sectionKicker">TÀI KHOẢN POWERAI</div>
+
+    <div class="authTabs" role="tablist" aria-label="Chọn đăng nhập hoặc đăng ký">
+      <button id="authModeLogin" type="button" class="authTab active" role="tab" aria-selected="true">Đăng nhập</button>
+      <button id="authModeSignup" type="button" class="authTab" role="tab" aria-selected="false">Tạo tài khoản</button>
+    </div>
+
+    <section id="authLoginPanel" class="authPanel">
+      <div class="authPanelBadge loginBadge">ĐĂNG NHẬP</div>
+      <h2>Chào mừng quay lại</h2>
+      <p>Đăng nhập để mở khóa thao tác và khôi phục dữ liệu PowerAI của riêng bạn.</p>
+      <label>Email
+        <input id="authLoginEmail" type="email" autocomplete="email" placeholder="you@example.com">
+      </label>
+      <label>Mật khẩu
+        <input id="authLoginPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Nhập mật khẩu">
+      </label>
+      <div class="authActions authActionsSingle">
+        <button id="authLoginBtn" type="button" class="primary">Đăng nhập</button>
+      </div>
+      <div class="adminLoginBox">
+        <div class="adminLoginLabel">QUẢN TRỊ VIÊN</div>
+        <p>Email quản trị đã được whitelist sẵn. Admin đăng nhập bằng email + mật khẩu như bình thường; hệ thống sẽ tự nhận quyền ADMIN, không gửi Magic Link.</p>
+      </div>
+      <div class="authSwitchHint">Chưa có tài khoản? <button id="authGoSignup" type="button" class="textBtn">Tạo tài khoản mới</button></div>
+    </section>
+
+    <section id="authSignupPanel" class="authPanel" hidden>
+      <div class="authPanelBadge signupBadge">ĐĂNG KÝ</div>
+      <h2>Tạo tài khoản PowerAI</h2>
+      <p>Mỗi tài khoản có dữ liệu khóa, lịch sử và Learning riêng trên cloud.</p>
+      <label>Email
+        <input id="authSignupEmail" type="email" autocomplete="email" placeholder="you@example.com">
+      </label>
+      <label>Mật khẩu
+        <input id="authSignupPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Tối thiểu 6 ký tự">
+      </label>
+      <label>Nhập lại mật khẩu
+        <input id="authSignupConfirm" type="password" autocomplete="new-password" minlength="6" placeholder="Nhập lại mật khẩu">
+      </label>
+      <div id="authPasswordMatch" class="authFieldHint">Mật khẩu nhập lại phải trùng khớp.</div>
+      <div class="authActions authActionsSingle">
+        <button id="authSignupBtn" type="button" class="signupPrimary">Tạo tài khoản</button>
+      </div>
+      <div class="authSwitchHint">Đã có tài khoản? <button id="authGoLogin" type="button" class="textBtn">Quay lại đăng nhập</button></div>
+    </section>
+
+    <div id="authMessage" class="notice">Đăng nhập bằng email + mật khẩu. Tài khoản quản trị được nhận diện tự động theo quyền trên server.</div>
+  </div>
+</div>
+
+<div id="accountModal" class="authModal" hidden>
+  <div class="authCard accountCard">
+    <button id="accountCloseBtn" type="button" class="authClose" aria-label="Đóng">×</button>
+    <div class="sectionKicker">TÀI KHOẢN CỦA BẠN</div>
+    <h2>Cloud PowerAI</h2>
+    <div class="accountInfoGrid">
+      <div><span>Email</span><b id="accountEmail">—</b></div>
+      <div><span>Quyền</span><b id="accountRole">USER</b></div>
+      <div><span>Dữ liệu</span><b>Riêng theo tài khoản</b></div>
+      <div><span>Khóa cloud</span><b>Đồng bộ tự động</b></div>
+    </div>
+    <div class="dangerZone">
+      <div><b>Hủy tài khoản</b><p>Xóa tài khoản đăng nhập và toàn bộ dữ liệu cloud của tài khoản này. Thao tác không thể hoàn tác.</p></div>
+      <button id="deleteAccountBtn" type="button" class="dangerBtn">Hủy tài khoản</button>
+    </div>
+    <div id="accountMessage" class="notice">Dữ liệu cá nhân được tách riêng bằng Row Level Security.</div>
+  </div>
+</div>
+
+<div id="adminModal" class="authModal" hidden>
+  <div class="adminCard">
+    <button id="adminCloseBtn" type="button" class="authClose" aria-label="Đóng">×</button>
+    <div class="sectionKicker">POWERAI ADMIN</div>
+    <div class="adminTitleRow"><div><h2>Bảng quản trị</h2><p>Chỉ xem dữ liệu vận hành và trạng thái tài khoản; không hiển thị bộ số riêng của user.</p></div><button id="adminRefreshBtn" class="ghostBtn">↻ Làm mới</button></div>
+    <div id="adminSummary" class="adminSummaryGrid"><div class="adminStat"><span>Đang tải</span><b>…</b></div></div>
+    <div class="adminSectionHead"><div><b>Tài khoản</b><small>Khóa/mở truy cập và cấp quyền USER/ADMIN.</small></div></div>
+    <div id="adminUsers" class="adminUsersTable"><div class="muted">Đang tải danh sách tài khoản…</div></div>
+    <div id="adminMessage" class="notice">Quyền quản trị được kiểm tra ở Supabase RPC, không chỉ dựa vào giao diện.</div>
+  </div>
+</div>
+<div id="guestReadOnlyBar" class="guestReadOnlyBar">🔒 Chế độ khách • Chỉ xem. Đăng nhập để khóa bộ số, nhập kết quả, chạy Learning và lưu dữ liệu riêng trên cloud.</div>
+<main inert aria-disabled="true">
+<section class="hero">
+  <div class="heroMain">
+    <div class="eyebrow">RC7.0 • A = TỐI ƯU CẤU TRÚC BẰNG MÔ PHỎNG</div>
+    <h1>PowerAI <span>6/55</span></h1>
+    <p>Ba cách chọn số chạy song song trên cùng một kỳ để dễ đối chiếu: A dùng cấu trúc toán học, B dùng dữ liệu lịch sử, C kết hợp lịch sử nhưng vẫn giữ khung toán học của A.</p>
+
+    
+  </div>
+  <div class="heroActions">
+    <button id="refreshBtn" class="ghostBtn">↻ Cập nhật dữ liệu</button>
+    <button id="lockBothBtn" class="primary lockBtn" disabled>🔒 Khóa A + B + C cho kỳ này</button>
+    <small>A, B, C và L đều phải được tạo cho đúng kỳ đang chọn. Khóa trước khi có kết quả nếu muốn tính prospective.</small>
+  </div>
+</section>
+
+<section class="grid4 kpiGrid">
+  <div class="card kpiCard"><div class="kpiIcon">◷</div><div><span>Kỳ mới nhất</span><b id="latestId">—</b><small id="latestDate">—</small></div></div>
+  <div class="card kpiCard focus"><div class="kpiIcon">◎</div><div><span>Kỳ đang chọn</span><b id="targetId">—</b><small>A, B và C cùng chạy kỳ này</small></div></div>
+  <div class="card kpiCard"><div class="kpiIcon">⌁</div><div><span>B dùng dữ liệu đến</span><b id="cutoffId">—</b><small>không dùng dữ liệu của kỳ đang chọn</small></div></div>
+  <div class="card kpiCard lockCard"><div class="kpiIcon">⌾</div><div><span>Trạng thái khóa</span><b id="lockState">CHƯA KHÓA</b><small id="lockTime">Phải khóa trước giờ quay</small></div></div>
+</section>
+
+<section class="panel comparePanel sectionGlow">
+  <div class="head">
+    <div><div class="sectionKicker">ĐỐI CHIẾU KẾT QUẢ</div><h2>⚔️ So sánh A / B / C</h2><p>Khi có kết quả, hệ thống tự tính vé trúng nhiều số nhất và số vé đạt từ 2, 3, 4 số trở lên.</p></div>
+    <div class="actions">
+      <div class="resultInputWrap"><span>Kết quả</span><input id="manualResult" placeholder="01 13 23 25 26 28" inputmode="numeric" disabled></div>
+      <button id="manualBtn" disabled>Nhập kết quả</button>
+      <button id="prevBtn" disabled>← Xem kỳ trước</button>
+      <button id="nextBtn" disabled>→ Kỳ sau</button>
+    </div>
+  </div>
+  <div id="compareBox" class="compareBox"><span class="muted">Chưa có kết quả kỳ mục tiêu.</span></div>
+  <div id="scoreboard" class="scoreboard"></div>
+
+  <div id="insightsPanel" class="insightsPanel">
+    <div class="insightsHead">
+      <div><div class="sectionKicker">THEO DÕI NHIỀU KỲ</div><h3>Kết quả A / B / C theo thời gian</h3></div>
+      <div class="chartLegend">
+        <span class="legendA"><i></i>A Geometry</span>
+        <span class="legendB"><i></i>B Legacy</span>
+        <span class="legendC"><i></i>C RC6</span>
+      </div>
+    </div>
+    <div id="trendChart" class="trendChart emptyChart"><span>Chưa đủ log prospective để vẽ trend.</span></div>
+    <div id="historyInsights" class="historyInsights"></div>
+  </div>
+</section>
+
+<nav class="tabs trackTabs">
+  <button class="tab tabA active" data-tab="geometryTab"><b>A</b><span>Mô phỏng</span><small id="tabSubA">Tối ưu 20 vé cho kỳ đang chọn</small></button>
+  <button class="tab tabB" data-tab="legacyTab"><b>B</b><span>Lịch sử</span><small id="tabSubB">Dùng dữ liệu trước kỳ đang chọn</small></button>
+  <button class="tab tabC" data-tab="hybridTab"><b>C</b><span>Kết hợp</span><small id="tabSubC">20 vé cho kỳ đang chọn</small></button>
+  <button class="tab tabL" data-tab="learningTab"><b>L</b><span>Learning</span><small id="tabSubL">Học quá khứ → tạo vé cho kỳ đang chọn</small></button>
+</nav>
+
+<div id="geometryTab" class="tabPane active">
+<section class="panel">
+  <div class="head">
+    <div>
+      <div class="sectionKicker trackAText">A • SIMULATION OPTIMIZER</div><h2>🧪 Bộ A — Tối ưu cấu trúc bằng mô phỏng</h2>
+      <p>Không dùng lịch sử xổ số. A sinh nhiều dàn 20 vé hợp lệ, thử trên các kết quả ngẫu nhiên đồng nhất rồi chọn cấu trúc ổn định hơn cho Best ≥3 và Best-hit trung bình.</p>
+    </div>
+    <div class="actions"><button id="copyGeoBtn" disabled>Sao chép 20 vé A</button></div>
+  </div>
+  <div id="trackContextA" class="trackContext"></div>
+  <div id="geoState" class="notice">Đang tối ưu cấu trúc A...</div>
+  <div id="geoAudit" class="metrics"></div>
+  <div class="rankInfo">
+    <b>Điểm A — đóng góp mô phỏng:</b> xếp hạng vé theo mức đóng góp của từng vé vào kết quả tốt nhất của cả dàn trên mẫu kết quả ngẫu nhiên độc lập.
+    <span>Điểm này đo vai trò trong portfolio, không phải xác suất vé sẽ trúng ở kỳ tới.</span>
+  </div>
+  <div id="geoTickets" class="ticketGrid"></div>
+</section>
+</div>
+
+<div id="legacyTab" class="tabPane">
+<section class="panel">
+  <div class="head">
+    <div>
+      <div class="sectionKicker trackBText">B • PHÂN TÍCH LỊCH SỬ</div><h2>📊 Bộ B — Phân tích lịch sử</h2>
+      <p>Dùng tần suất, số lâu chưa ra, các cặp số thường đi cùng và một số bộ lọc cấu trúc. Công thức đã được khóa để đối chiếu công bằng.</p>
+    </div>
+    <div class="actions"><button id="regenLegacyBtn" disabled>Tạo lại bộ B</button><button id="copyLegacyBtn" disabled>Sao chép 20 vé B</button></div>
+  </div>
+
+  <div id="trackContextB" class="trackContext"></div>
+  <div id="legacyProgress" class="notice">Đang chờ dữ liệu.</div>
+
+  <div class="analyticsGrid">
+    <div class="analyticsCard"><h3>🔥 Số nổi bật</h3><div id="hotList" class="chips"></div></div>
+    <div class="analyticsCard"><h3>❄️ Số ít nổi bật</h3><div id="coldList" class="chips"></div></div>
+    <div class="analyticsCard"><h3>⏳ Số lâu chưa ra</h3><div id="overList" class="chips"></div></div>
+    <div class="analyticsCard"><h3>🔗 Cặp số liên kết mạnh</h3><div id="pairList" class="chips pairs"></div></div>
+  </div>
+
+  <h3 class="subhead">Bản đồ mức độ nổi bật 1–55</h3>
+  <div id="heatmap" class="heatmap"></div>
+
+  <div id="legacyMetrics" class="metrics"></div>
+  <div class="rankInfo">
+    <b>Điểm B — Lịch sử:</b> dùng đúng điểm của engine B (tần suất, số lâu chưa ra, cặp số và bộ lọc cấu trúc) để xếp hạng 20 vé.
+    <span>Điểm càng cao = càng phù hợp với công thức B, không phải xác suất trúng.</span>
+  </div>
+  <div id="legacyTickets" class="ticketGrid"></div>
+</section>
+</div>
+
+
+<div id="hybridTab" class="tabPane">
+
+<section class="panel rc6Arch compactInfo">
+  <div class="head">
+    <div>
+      <div class="sectionKicker trackCText">C • KẾT HỢP</div>
+      <h2>🧠 Bộ C — Toán học + dữ liệu lịch sử</h2>
+      <p>C giữ nguyên khung dàn vé đã được A tối ưu bằng mô phỏng. Dữ liệu lịch sử chỉ quyết định số nào được ưu tiên xuất hiện 3 lần và cách gán số vào 20 vé.</p>
+    </div>
+    <div class="badge good">GIỮ KHUNG A</div>
+  </div>
+  <div class="notice"><b>Điểm chính:</b> C không được phá khung A đã tối ưu: phủ đủ 55 số, mỗi số xuất hiện 2–3 lần, không lặp cặp số và hai vé không trùng quá 1 số.</div>
+</section>
+
+
+
+<section class="panel">
+  <div class="head">
+    <div>
+      <div class="sectionKicker trackCText">20 VÉ C</div><h2>🎯 Bộ số C</h2>
+      <p>Dữ liệu lịch sử hỗ trợ chọn và sắp số, còn cấu trúc 20 vé vẫn theo khung toán học.</p>
+    </div>
+    <div class="actions"><button id="rebuildHybridBtn" disabled>Tạo lại bộ C</button><button id="copyHybridBtn" disabled>Sao chép 20 vé C</button></div>
+  </div>
+
+  <div id="trackContextC" class="trackContext"></div>
+  <div class="consensusHero">
+    <div>
+      <small>Vé C01 • vé nổi bật nhất trong bộ C</small>
+      <div id="consensusBalls" class="balls bigBalls"></div>
+    </div>
+    <div>
+      <small>Trạng thái</small>
+      <b id="consensusNote">Đang chờ A + B...</b>
+    </div>
+  </div>
+
+  <div class="analyticsGrid">
+    <div class="analyticsCard"><h3>🚀 10 số được ưu tiên ×3</h3><div id="geoSupportList" class="chips"></div></div>
+    <div class="analyticsCard"><h3>🤝 Xếp hạng tổng hợp</h3><div id="consensusList" class="chips"></div></div>
+    <div class="analyticsCard"><h3>📊 Mức hỗ trợ từ bộ B</h3><div id="legacySupportList" class="chips"></div></div>
+    <div class="analyticsCard"><h3>🔥 Mức độ nổi bật</h3><div id="hybridHeatList" class="chips"></div></div>
+  </div>
+
+  <div class="analyticsGrid">
+    <div class="analyticsCard"><h3>🧮 Độ liên kết của từng số</h3><div id="matrixCentralityList" class="chips"></div></div>
+    <div class="analyticsCard"><h3>🔗 Các cặp liên kết mạnh</h3><div id="matrixPairList" class="chips pairs"></div></div>
+    <div class="analyticsCard"><h3>📈 Tần suất xuất hiện</h3><div id="freqSupportList" class="chips"></div></div>
+    <div class="analyticsCard"><h3>⏳ Số lâu chưa ra</h3><div id="gapSupportList" class="chips"></div></div>
+  </div>
+
+  <div id="hybridMetrics" class="metrics"></div>
+  <div class="rankInfo">
+    <b>Điểm C — Kết hợp:</b> lấy trung bình ngang nhau giữa mức liên kết cặp số và mức đồng thuận của các tín hiệu lịch sử trong C.
+    <span>Chỉ dùng để xếp hạng 20 vé C; không thay đổi cách C tạo vé.</span>
+  </div>
+  <div id="hybridTickets" class="ticketGrid"></div>
+</section>
+</div>
+
+
+<div id="learningTab" class="tabPane">
+<section class="panel learningHero">
+  <div class="head">
+    <div>
+      <div class="sectionKicker learningText">LEARNING ENGINE V2</div>
+      <h2>🧠 Học → tạo 20 vé thử nghiệm</h2>
+      <p>Learning đọc các kỳ đã khóa, điều chỉnh rất nhẹ theo lượng dữ liệu đang có rồi tạo riêng 20 vé L01–L20. Bộ L không thay A/B/C.</p>
+    </div>
+    <div class="actions">
+      <button id="runLearningBtn" class="primary">Chạy Learning</button>
+      <button id="buildLearningPortfolioBtn">Tạo 20 vé L</button>
+      <button id="resetLearningBtn" class="ghostBtn">Xóa báo cáo học</button>
+    </div>
+  </div>
+
+  <div id="trackContextL" class="trackContext"></div>
+  <div class="learningStatusGrid">
+    <div class="learnStat"><span>Kỳ đã có kết quả</span><b id="learnTotalLogs">0</b><small>toàn bộ log A/B/C</small></div>
+    <div class="learnStat"><span>Kỳ đã xác nhận chính thức</span><b id="learnConfirmedLogs">0</b><small>ưu tiên dùng để học</small></div>
+    <div class="learnStat"><span>Độ trưởng thành dữ liệu</span><b id="learnMaturity">0%</b><small id="learnMaturityNote">cần thêm dữ liệu</small></div>
+    <div class="learnStat"><span>Trạng thái</span><b id="learnState">CHƯA CHẠY</b><small>không tự đổi model</small></div>
+  </div>
+
+  <div class="notice"><b>Ngưỡng học:</b> dưới 5 kỳ = chỉ quan sát • 5–9 kỳ = học sơ bộ • 10–19 kỳ = có thể tạo challenger • từ 20 kỳ = mới đủ để đưa challenger sang validation riêng.</div>
+</section>
+
+<section class="panel">
+  <div class="head"><div><div class="sectionKicker">A / B / C LEARNING</div><h2>📈 Track nào đang hoạt động tốt?</h2><p>So theo nhiều kỳ, không kết luận chỉ từ một kỳ riêng lẻ.</p></div></div>
+  <div id="learningTrackCards" class="learningTrackCards"></div>
+  <div id="learningTrendNote" class="notice">Chưa có báo cáo Learning.</div>
+</section>
+
+<section class="panel">
+  <div class="head"><div><div class="sectionKicker">B SIGNAL LAB</div><h2>🔬 B đang mạnh nhờ tín hiệu nào?</h2><p>Đo xem tín hiệu nào thường xếp những vé trúng nhiều số lên cao hơn trong 20 vé B.</p></div></div>
+  <div id="signalLearningTable" class="learningTable emptyLearning">Chưa chạy Learning.</div>
+  <div class="notice"><b>Cách hiểu:</b> “Ổn định” chỉ có nghĩa tín hiệu cho kết quả tốt hơn trong các kỳ đã quan sát. Nó không phải xác suất trúng ở kỳ tiếp theo.</div>
+</section>
+
+<section class="panel">
+  <div class="head"><div><div class="sectionKicker">RANKING CALIBRATION</div><h2>🏁 Vé xếp hạng cao có thực sự tốt hơn?</h2><p>So Top 5, nhóm giữa và nhóm cuối của A/B/C sau nhiều kỳ.</p></div></div>
+  <div id="rankingCalibration" class="calibrationGrid"></div>
+</section>
+
+
+<section class="panel learningPortfolioPanel">
+  <div class="head">
+    <div>
+      <div class="sectionKicker learningText">LEARNING PORTFOLIO</div>
+      <h2>🎯 20 vé Learning cho <span id="learningTargetInline">kỳ đang chọn</span></h2>
+      <p>Điểm L dùng trọng số đã học nhưng mức thay đổi bị giới hạn theo số kỳ dữ liệu. Càng ít kỳ, L càng gần B gốc để tránh học quá tay.</p>
+    </div>
+    <div class="actions">
+      <button id="copyLearningBtn" disabled>Sao chép 20 vé L</button>
+      <button id="lockLearningBtn" class="primary" disabled>🔒 Khóa bộ L</button>
+    </div>
+  </div>
+
+  <div class="learningPortfolioHero">
+    <div>
+      <small>L01 • vé Learning xếp hạng #1</small>
+      <div id="learningTopBalls" class="balls bigBalls"></div>
+    </div>
+    <div class="learningModeBox">
+      <small>Chế độ</small>
+      <b id="learningPortfolioMode">CHƯA TẠO</b>
+      <span id="learningPortfolioNote">Chạy Learning rồi tạo bộ L.</span>
+    </div>
+  </div>
+
+  <div id="learningWeights" class="challengerWeights"></div>
+  <div id="learningPortfolioMetrics" class="metrics"></div>
+  <div id="learningLockNote" class="notice">Bộ L là thử nghiệm riêng. Muốn tính kết quả prospective của L thì phải khóa L trước kỳ quay.</div>
+  <div id="learningTickets" class="ticketGrid"></div>
+</section>
+
+<section class="panel">
+  <div class="head"><div><div class="sectionKicker">CHALLENGER BUILDER</div><h2>🧪 Đề xuất model thử nghiệm</h2><p>Learning chỉ đề xuất; B hiện tại vẫn giữ nguyên cho đến khi challenger vượt validation riêng.</p></div></div>
+  <div id="challengerBox" class="challengerBox emptyLearning">Chưa đủ dữ liệu để tạo challenger.</div>
+</section>
+</div>
+
+<section class="panel">
+  <div class="head"><div><div class="sectionKicker">LỊCH SỬ ĐỐI CHIẾU</div><h2>🧾 Lịch sử A / B / C</h2><p>Chỉ lưu các kỳ đã khóa đủ A, B và C trước khi biết kết quả.</p></div><button id="exportBtn" class="ghostBtn" disabled>⇩ Xuất dữ liệu</button></div>
+  <div id="recentStrip" class="recentStrip"></div>
+  <div id="historyBox" class="muted">Chưa có kỳ A/B/C nào hoàn tất.</div>
+</section>
+
+<section class="footerNote"><b>PowerAI RC8.6</b> • A/B/C prospective evaluation • Một vài kỳ riêng lẻ không đủ chứng minh predictor nào tốt hơn.</section>
+<footer class="seoFooter" aria-label="Giới thiệu PowerAI 6/55">
+  <b>PowerAI 6/55</b> là công cụ nghiên cứu và phân tích Vietlott Power 6/55, gồm mô phỏng cấu trúc vé, thống kê dữ liệu lịch sử, đối chiếu A/B/C/L và theo dõi kết quả. Điểm số trong ứng dụng là điểm nội bộ phục vụ so sánh, không phải xác suất trúng thưởng.
+</footer>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="auth.js?v=8.6"></script>
+<script src="app.js?v=8.6"></script>
+</body>
+</html>
