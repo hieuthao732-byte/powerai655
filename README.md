@@ -78,3 +78,5 @@ Historical signal values and pair affinities are empirical summaries, not calibr
 RC8.3: xem README_RC8_3_AUTH_GUEST.md
 
 RC8.4: xem README_RC8_4_AUTH_UI.md
+
+Deployment source is now GitHub main branch. RC8.6 production sync trigger: 2026-09-27.
