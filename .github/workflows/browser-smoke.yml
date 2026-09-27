@@ -14,7 +14,7 @@ permissions:
 jobs:
   browser-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -30,7 +30,7 @@ jobs:
           npm install --no-save --package-lock=false playwright@1.55.0
           npx playwright install --with-deps chromium
 
-      - name: Run local app and smoke test desktop + mobile
+      - name: Run local app and browser regression tests
         shell: bash
         run: |
           set -euo pipefail
@@ -43,4 +43,6 @@ jobs:
             sleep 1
           done
           curl -fsS http://127.0.0.1:4173/ >/dev/null
+
           BASE_URL=http://127.0.0.1:4173 node tests/browser-smoke.mjs
+          BASE_URL=http://127.0.0.1:4173 node tests/state-regression.mjs
