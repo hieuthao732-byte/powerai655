@@ -8,7 +8,7 @@ const cssPath = join('dist', 'style.css');
 let app = readFileSync(appPath, 'utf8');
 
 function replaceOnce(from, to, label) {
-  if (!app.includes(from)) throw new Error(`RC8.9 patch failed: ${label}`);
+  if (!app.includes(from)) throw new Error(`RC8.9.1 patch failed: ${label}`);
   app = app.replace(from, to);
 }
 
@@ -37,23 +37,16 @@ function prizeBadge(ticket,actual,special){
   const p=prizeInfo(ticket,actual,special);
   return '<div class="ticketPrize '+p.key+'"><b>'+p.label+'</b><span>'+p.detail+'</span></div>';
 }
-function prizeBalls(a,actual=[],special=null){
-  const s=new Set(actual||[]),sp=validSpecial(special);
-  return a.map(n=>{
-    const main=s.has(n),spec=!main&&sp!==null&&n===sp,cls=main?'hit':spec?'specialHit':'';
-    const title=spec?'Số đặc biệt':'Số '+String(n).padStart(2,'0');
-    return '<span title="'+title+'" class="ball '+cls+'">'+String(n).padStart(2,'0')+'</span>';
-  }).join('');
-}
 function seeded(seed){`,
     'prize helpers'
   );
 }
 
+// IMPORTANT: keep the original balls() renderer so the old green .ball.hit highlight is preserved exactly.
 const oldTicketBalls = '<div class="balls">${balls(p.a,actual)}</div>';
-const newTicketBalls = '<div class="balls">${prizeBalls(p.a,actual,currentSpecialForTarget())}</div>\n    ${prizeBadge(p.a,actual,currentSpecialForTarget())}';
+const newTicketBalls = '<div class="balls">${balls(p.a,actual)}</div>\n    ${prizeBadge(p.a,actual,currentSpecialForTarget())}';
 const count = app.split(oldTicketBalls).length - 1;
-if (count < 4) throw new Error(`RC8.9 expected at least 4 ticket renderers, found ${count}`);
+if (count < 4) throw new Error(`RC8.9.1 expected at least 4 ticket renderers, found ${count}`);
 app = app.split(oldTicketBalls).join(newTicketBalls);
 
 const compareBase = `...(sp!==null?[["Jackpot 2 • 5 chính + số đặc biệt",log.A.jp2??0,log.B.jp2??0,log.C.jp2??0],["Giải Nhất • 5 số chính",log.A.first??0,log.B.first??0,log.C.first??0]]:[])`;
@@ -71,16 +64,16 @@ replaceOnce(replayBase, replayFull, 'replay full prize rows');
 writeFileSync(appPath, app);
 
 let html = readFileSync(htmlPath, 'utf8');
-html = html.replaceAll('RC8.8', 'RC8.9').replaceAll('v=8.8', 'v=8.9');
+html = html.replaceAll('RC8.8', 'RC8.9.1').replaceAll('v=8.8', 'v=8.9.1');
 html = html.replace(
   'Khi có kết quả, hệ thống chấm 6 số chính, số đặc biệt, Jackpot 1, Jackpot 2 và các mức trùng của A/B/C.',
-  'Khi có kết quả, hệ thống hiển thị số hit và phân loại Jackpot 1, Jackpot 2, Giải Nhất, Giải Nhì, Giải Ba cho từng bộ vé.'
+  'Khi có kết quả, hệ thống giữ màu số hit và phân loại Jackpot 1, Jackpot 2, Giải Nhất, Giải Nhì, Giải Ba cho từng bộ vé.'
 );
 writeFileSync(htmlPath, html);
 
 let css = readFileSync(cssPath, 'utf8');
 css += `
-/* RC8.9 FULL PRIZE BOARD */
+/* RC8.9.1 FULL PRIZE BOARD — original hit colors preserved */
 .ticketPrize{margin-top:9px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 9px;border:1px solid var(--line);border-radius:10px;background:rgba(6,19,31,.7)}
 .ticketPrize b{font-size:10px;letter-spacing:.045em}.ticketPrize span{font-size:9px;color:var(--muted)}
 .ticketPrize.jp1{border-color:rgba(255,201,107,.68);box-shadow:inset 0 0 24px rgba(255,201,107,.08)}
@@ -92,8 +85,7 @@ css += `
 .ticketPrize.third b{color:var(--blue)}
 .ticketPrize.pending5 b{color:var(--amber)}
 .ticketPrize.none{opacity:.72}
-.ball.specialHit{color:#261b02;background:linear-gradient(180deg,#ffe7a6,#ffc96b);border-color:#ffeab6;box-shadow:0 0 0 2px rgba(255,201,107,.28),0 5px 12px rgba(185,128,28,.18)}
 `;
 writeFileSync(cssPath, css);
 
-console.log('RC8.9 Full Prize Board applied');
+console.log('RC8.9.1 Full Prize Board applied — original hit coloring preserved');
