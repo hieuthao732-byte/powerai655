@@ -1,15 +1,9 @@
 # Track D — Adaptive Research Engine
 
 ## Mục tiêu
-Track D là một engine nghiên cứu thích nghi riêng, không thay A/B/C/L. Nó theo dõi kết quả **prospective đã khóa + feed chính thức**; khi hiệu suất nhiều kỳ liên tiếp yếu thì không tự ý “đuổi theo chuỗi thua”, mà mở challenger dùng ma trận/feature family khác, chạy shadow rồi mới cho phép thay engine đang dùng.
+Track D là một engine nghiên cứu thích nghi riêng, không thay A/B/C/L. Nó theo dõi kết quả **prospective đã khóa + feed chính thức**; khi hiệu suất nhiều kỳ liên tiếp yếu thì mở challenger dùng ma trận/feature family khác, chạy shadow rồi mới cho phép thay engine đang dùng.
 
 > Xổ số vẫn là ngẫu nhiên. Track D là cơ chế nghiên cứu thích nghi và kiểm chứng out-of-sample, không phải cam kết tăng xác suất trúng.
-
-## Tuyên ngôn của D
-**D không phải một Track B/C khác màu. D là một engine nghiên cứu thích nghi có trí nhớ: tự phát hiện điểm yếu, đặt giả thuyết mới, tạo challenger, kiểm chứng ngoài mẫu, tự bác bỏ phương pháp không hiệu quả, lưu cả kiến thức tốt lẫn thất bại và chỉ thay đổi khi có đủ bằng chứng.**
-
-Vòng đời chuẩn:
-`Quan sát → Chẩn đoán → Đặt giả thuyết → Tạo challenger → Shadow test → Stress test → Promote/Reject → Ghi nhớ`.
 
 ## Nguyên tắc an toàn thống kê
 - Chỉ học/cập nhật sau khi kỳ đã có `source === "feed"`.
@@ -107,7 +101,7 @@ Nếu D1–D4 bất đồng mạnh, D vào `LOW CONFIDENCE`; hệ thống không
 Expert suy giảm kéo dài có thể bị giảm weight, `QUARANTINED`, rồi `RETIRED`. Muốn quay lại phải qua shadow retest với giả thuyết mới.
 
 ## Engine memory bank / negative knowledge
-Lưu toàn bộ version đã chạy, lý do thay đổi, shadow result, promote/reject/retire. Engine từng fail không được tự động “phát minh lại” nếu không có bằng chứng hoặc feature mới.
+Lưu toàn bộ version đã chạy, lý do thay đổi, shadow result, promote/reject/retire. Engine từng fail không được tự động dùng lại nếu không có bằng chứng hoặc feature mới.
 
 ## Hypothesis registry
 Mỗi challenger trước khi chạy phải khóa trước:
