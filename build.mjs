@@ -4,6 +4,7 @@ import { join } from 'node:path';
 const files = [
   'index.html',
   'app.js',
+  'adaptive-d.js',
   'auth.js',
   'style.css',
   'favicon.svg',
