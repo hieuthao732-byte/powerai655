@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#0b1220">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css?v=9.7">
-<link rel="stylesheet" href="/mega.css?v=1.0">
+<link rel="stylesheet" href="/mega.css?v=1.1">
 </head>
 <body class="megaBody">
 <header class="topbar megaTopbar">
@@ -49,8 +49,15 @@
 </section>
 
 <section id="megaResultDock" class="panel megaResultDock">
-  <div class="head">
+  <div class="head megaResultHead">
     <div><div class="sectionKicker">KẾT QUẢ / REPLAY</div><h2 id="megaResultTitle">Kỳ chưa có kết quả</h2><p id="megaResultNote">Khi xem kỳ lịch sử, MegaAI dùng đúng dữ liệu trước kỳ đó rồi mới đối chiếu kết quả.</p></div>
+    <div class="actions megaResultActions">
+      <div class="resultInputWrap"><span>Kết quả</span><input id="megaManualResult" placeholder="01 13 23 25 26 28" inputmode="numeric" autocomplete="off"></div>
+      <button id="megaManualBtn">Nhập kết quả</button>
+      <button id="megaClearManualBtn" class="ghostBtn" hidden>Xóa nhập tay</button>
+      <button id="megaPrevBtn" class="ghostBtn">← Xem kỳ trước</button>
+      <button id="megaNextBtn" class="ghostBtn">→ Kỳ sau</button>
+    </div>
   </div>
   <div id="megaOfficialResult" class="megaOfficialResult"></div>
   <div id="megaPrizeSummary" class="megaPrizeSummary"></div>
@@ -113,6 +120,6 @@
 <footer class="megaFooter">MegaAI 6/45 v1 preview • Dữ liệu lịch sử chỉ phục vụ nghiên cứu • Không có mô hình nào bảo đảm dự đoán kết quả ngẫu nhiên.</footer>
 </main>
 
-<script src="/mega.js?v=1.0"></script>
+<script src="/mega.js?v=1.1"></script>
 </body>
 </html>
