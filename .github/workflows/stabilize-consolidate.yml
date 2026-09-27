@@ -82,7 +82,7 @@ jobs:
           fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
           NODE
 
-          rm -f rc89.mjs rc90.mjs rc91.mjs rc92.mjs rc93.mjs rc94.mjs rc96.mjs rc97.mjs
+          rm -f rc*.mjs
 
       - name: Rebuild from consolidated source and verify parity markers
         shell: bash
@@ -99,7 +99,7 @@ jobs:
           grep -q 'NAVIGATION RESTRUCTURE' app.js
           grep -q 'RESULT DOCK' app.js
           grep -q 'BÓNG VÀNG HIGHLIGHT' app.js
-          if ls rc*.mjs >/dev/null 2>&1; then
+          if compgen -G 'rc*.mjs' >/dev/null; then
             echo 'Unexpected RC patch files remain:'
             ls rc*.mjs
             exit 1
@@ -124,7 +124,7 @@ jobs:
           `build.mjs` performs a deterministic copy of static source files into `dist/`; it no longer patches application code.
 
           ## Removed post-build files
-          `rc89.mjs`, `rc90.mjs`, `rc91.mjs`, `rc92.mjs`, `rc93.mjs`, `rc94.mjs`, `rc96.mjs`, `rc97.mjs`.
+          All `rc*.mjs` migration/patch scripts are removed from the stabilization branch after their behavior is materialized.
 
           ## Compatibility constraints preserved
           - existing localStorage key names
@@ -148,7 +148,7 @@ jobs:
           git config user.name 'hieuthao732-byte'
           git config user.email 'hieuthao732@gmail.com'
           git add app.js index.html style.css build.mjs package.json SOURCE_CONSOLIDATION.md
-          git add -u rc89.mjs rc90.mjs rc91.mjs rc92.mjs rc93.mjs rc94.mjs rc96.mjs rc97.mjs
+          git add -u -- 'rc*.mjs'
           if git diff --cached --quiet; then
             echo 'No consolidation changes to commit.'
           else
