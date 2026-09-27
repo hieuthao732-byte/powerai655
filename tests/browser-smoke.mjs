@@ -106,6 +106,18 @@ async function runViewport(browser, name, viewport) {
   }
   const perfSources = await page.evaluate(() => rc97Logs().map(x => x?.source));
   assert.ok(perfSources.every(x => x === 'feed'), `${name}: Performance Center included non-feed logs`);
+  assert.equal(await page.locator('.rc97HighPrizeBoard').count(), 1, `${name}: high-prize multi-draw summary missing`);
+  const highPrizeCheck = await page.evaluate(() => {
+    const score=(best,{jp1=0,jp2=0,first=0,second=0,third=0}={})=>({best,total:best,jp1,jp2,first,second,third,g3:0,g4:second,g5:first+jp2+jp1});
+    const logs=[
+      {source:'feed',targetId:1,A:score(4,{second:1}),B:score(3,{third:1}),C:score(5,{first:1}),L:score(4,{second:1})},
+      {source:'feed',targetId:2,A:score(5,{jp2:1}),B:score(3,{third:1}),C:score(3,{third:1}),L:score(2)},
+      {source:'feed',targetId:3,A:score(3,{third:1}),B:score(2),C:score(3,{third:1})}
+    ];
+    const r=rc97HighPrizeStats(logs);
+    return {counts:Object.fromEntries(r.stats.map(s=>[s.key,s.highDraws])),leaders:r.leaders,max:r.max};
+  });
+  assert.deepEqual(highPrizeCheck,{counts:{A:2,B:0,C:1,L:1},leaders:['A'],max:2},`${name}: high-prize draw counting regression`);
 
   // Prize classification regression tests, independent of any live draw.
   const prizeCheck = await page.evaluate(() => {
