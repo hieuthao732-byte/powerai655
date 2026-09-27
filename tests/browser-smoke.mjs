@@ -17,6 +17,27 @@ async function runViewport(browser, name, viewport) {
   await waitVisible(page, '.rc94ResultDock');
   await waitVisible(page, '.rc93MainNav');
 
+  // Guest mode is intentionally read-only: auth.js makes <main> inert.
+  // Verify that guard first, then temporarily lift only the DOM inert flag so
+  // this smoke test can exercise the already-rendered UI without fabricating
+  // a Supabase session or weakening production auth behavior.
+  const guestGuard = await page.evaluate(() => ({
+    guest: document.body.classList.contains('guestMode'),
+    inert: !!document.querySelector('main')?.inert,
+    guestBarVisible: (() => {
+      const el = document.getElementById('guestReadOnlyBar');
+      return !!el && !el.hidden;
+    })()
+  }));
+  assert.equal(guestGuard.guest, true, `${name}: expected unsigned browser to start in guest mode`);
+  assert.equal(guestGuard.inert, true, `${name}: guest mode must keep <main> read-only`);
+  assert.equal(guestGuard.guestBarVisible, true, `${name}: guest read-only notice should be visible`);
+
+  await page.evaluate(() => {
+    const main = document.querySelector('main');
+    if (main) main.inert = false;
+  });
+
   // Result is deliberately outside the main navigation after RC9.4.
   assert.equal(await page.locator('.rc94ResultDock').count(), 1, `${name}: Result Dock missing`);
   assert.equal(await page.locator('.rc93MainNav [data-main-view]').count(), 3, `${name}: main nav should have 3 sections`);
