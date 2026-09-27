@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - stabilization/v1
+      - feature/mega645-v1
   pull_request:
     branches:
       - main
@@ -14,7 +15,7 @@ permissions:
 jobs:
   browser-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -46,3 +47,4 @@ jobs:
 
           BASE_URL=http://127.0.0.1:4173 node tests/browser-smoke.mjs
           BASE_URL=http://127.0.0.1:4173 node tests/state-regression.mjs
+          BASE_URL=http://127.0.0.1:4173 node tests/mega-smoke.mjs
