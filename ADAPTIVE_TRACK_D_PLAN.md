@@ -1,9 +1,15 @@
-# Track D — Adaptive Challenger Engine
+# Track D — Adaptive Research Engine
 
 ## Mục tiêu
-Track D là một engine thử nghiệm riêng, không thay A/B/C/L. Nó theo dõi kết quả **prospective đã khóa + feed chính thức**; khi hiệu suất nhiều kỳ liên tiếp yếu thì không tự ý “đuổi theo chuỗi thua”, mà mở một challenger dùng ma trận/feature family khác, chạy shadow rồi mới cho phép thay engine đang dùng.
+Track D là một engine nghiên cứu thích nghi riêng, không thay A/B/C/L. Nó theo dõi kết quả **prospective đã khóa + feed chính thức**; khi hiệu suất nhiều kỳ liên tiếp yếu thì không tự ý “đuổi theo chuỗi thua”, mà mở challenger dùng ma trận/feature family khác, chạy shadow rồi mới cho phép thay engine đang dùng.
 
 > Xổ số vẫn là ngẫu nhiên. Track D là cơ chế nghiên cứu thích nghi và kiểm chứng out-of-sample, không phải cam kết tăng xác suất trúng.
+
+## Tuyên ngôn của D
+**D không phải một Track B/C khác màu. D là một engine nghiên cứu thích nghi có trí nhớ: tự phát hiện điểm yếu, đặt giả thuyết mới, tạo challenger, kiểm chứng ngoài mẫu, tự bác bỏ phương pháp không hiệu quả, lưu cả kiến thức tốt lẫn thất bại và chỉ thay đổi khi có đủ bằng chứng.**
+
+Vòng đời chuẩn:
+`Quan sát → Chẩn đoán → Đặt giả thuyết → Tạo challenger → Shadow test → Stress test → Promote/Reject → Ghi nhớ`.
 
 ## Nguyên tắc an toàn thống kê
 - Chỉ học/cập nhật sau khi kỳ đã có `source === "feed"`.
@@ -13,6 +19,7 @@ Track D là một engine thử nghiệm riêng, không thay A/B/C/L. Nó theo d�
 - Cooldown tối thiểu 8 kỳ sau mỗi lần đổi engine để tránh đổi vì nhiễu ngắn hạn.
 - Challenger phải chạy shadow ít nhất 6 kỳ trước khi có quyền được promote.
 - Luôn giữ snapshot engine cũ để rollback và audit.
+- Nếu không vượt matched-random baseline thì hiển thị `NO EDGE DETECTED`, không tô đẹp score.
 
 ## Champion / Challenger
 ### Champion
@@ -25,8 +32,10 @@ Engine thay thế được tạo khi drift trigger bật. Challenger chạy song
 Chỉ promote challenger nếu sau cửa sổ shadow:
 1. Có đủ >= 6 kỳ official;
 2. Metric tổng hợp challenger cao hơn champion với biên tối thiểu;
-3. Không vi phạm geometry/diversity guard;
-4. Không có leakage.
+3. Không vi phạm geometry/diversity/entropy guard;
+4. Không có leakage;
+5. Vượt stress test và matched-random benchmark;
+6. Không chỉ thắng do một kỳ outlier.
 
 Nếu không đạt, challenger bị reject và champion tiếp tục.
 
@@ -37,112 +46,191 @@ Nếu không đạt, challenger bị reject và champion tiếp tục.
 - số kỳ `Best >= 4`
 - tổng số vé >= 3
 - prize count (JP1/JP2/Nhất/Nhì/Ba)
+- matched-null delta
+- expert disagreement
 
 Trigger mặc định khi đồng thời:
 - đủ >= 12 kỳ;
 - 8 kỳ cooldown đã qua;
-- `avgBest` thấp hơn baseline trung tính hoặc không cải thiện qua 2 cửa sổ;
+- `avgBest` không vượt matched-random baseline hoặc không cải thiện qua 2 cửa sổ;
 - không có tín hiệu giải cao đủ mạnh để giữ nguyên cấu hình.
 
 Drift trigger chỉ mở challenger, không tự khẳng định phân phối xổ số đã “đổi chế độ”.
 
-## Bộ expert / ma trận mới
-Track D dùng 3 expert khác B/C để giảm tương quan mô hình.
-
+## Bộ expert / ma trận
 ### D1 — Residual Pair Matrix
 Thay vì dùng pair count thô, dùng residual so với kỳ vọng độc lập:
-`R(i,j) = observed_pair(i,j) - expected_pair(i,j)`
-Sau đó shrink về 0 với cặp có ít dữ liệu.
-
-Mục tiêu: tránh việc số xuất hiện nhiều kéo pair score lên giả tạo.
+`R(i,j) = observed_pair(i,j) - expected_pair(i,j)`.
+Residual được shrink về 0 khi sample yếu.
 
 ### D2 — Gap Transition Matrix
-Theo dõi trạng thái gap của từng số theo bucket:
-- short
-- normal
-- long
-- extreme
-
-Học ma trận chuyển trạng thái giữa các kỳ và score theo trạng thái hiện tại. Đây là mô tả chuỗi gap, không giả định có “đến lượt phải ra”.
+Theo dõi trạng thái gap theo bucket `short / normal / long / extreme`, học xác suất chuyển và mức hit sau từng trạng thái. Không dùng logic “đến lượt phải ra”.
 
 ### D3 — Shape-Conditional Matrix
-Mỗi draw được mô tả bằng shape:
-- sum bucket
-- odd/even
-- low/high
-- spread/range
-- consecutive count
+Mô tả draw bằng sum, odd/even, low/high, spread, consecutive. Dùng shape của draw đã biết trước target làm context để học phản ứng của draw kế tiếp, không dùng shape tương lai.
 
-Tìm các draw lịch sử có shape gần vùng hiện tại rồi xây pair/frequency matrix có shrinkage. Nếu sample quá ít thì fallback về unconditional matrix.
+### D4 — Spectral Residual Graph
+Biến residual pair matrix thành graph. Dùng low-rank / spectral centrality trên phần residual dương để tìm cấu trúc cụm yếu nhưng ổn định mà pair count đơn lẻ khó thấy.
+
+## Multi-horizon consensus
+Mỗi expert chạy trên các cửa sổ mặc định `30 / 60 / 120 / 250` kỳ. Tín hiệu chỉ được cộng mạnh nếu rank tương đối ổn định qua nhiều horizon.
+
+## Stability Selection
+- So rank của số/cặp qua nhiều horizon.
+- Sau này mở rộng bootstrap/jackknife.
+- Feature/number/pair có rank biến động mạnh bị stability penalty.
 
 ## Ensemble weight
-Ba expert tạo score số/cặp riêng. Weight khởi tạo đều:
-- D1: 1/3
-- D2: 1/3
-- D3: 1/3
+D1–D4 khởi tạo ngang nhau. Sau mỗi official draw, weight cập nhật chậm theo multiplicative weights và có cap để không expert nào chiếm toàn bộ.
 
-Sau mỗi official draw, update kiểu multiplicative-weights nhưng có cap:
-- min mỗi expert: 0.15
-- max mỗi expert: 0.60
-
-Mục tiêu là thích nghi vừa phải, tránh một expert thắng vài kỳ rồi chiếm 100%.
+Hai tốc độ thích nghi:
+- `fast/slow weights`: thay đổi nhỏ sau mỗi feed official;
+- `architecture`: chỉ thay khi drift trigger bật + challenger thắng shadow/stress test.
 
 ## Sinh 20 vé D
 - 20 x 6 số.
 - Diversity penalty giữa các vé.
 - Number exposure có giới hạn cứng.
 - Pair reuse penalty.
+- Dynamic entropy guard.
 - Không copy trực tiếp geometry A/C.
-- Portfolio score = ensemble node score + residual pair score + diversity reward - concentration penalty.
+- Orthogonality guard sẽ phạt nếu D quá giống A/B/C/L.
+- Portfolio score = ensemble node score + residual pair support + diversity reward - concentration/shape penalty.
+
+## Matched-random null benchmark
+Không so D với random tùy ý. Null portfolio được tạo bằng cách **relabel toàn bộ số của cùng một incidence portfolio**, nhờ đó giữ nguyên geometry, exposure, pair reuse và overlap. Sau kết quả official, D so best-hit/total-hit với nhiều relabel ngẫu nhiên để biết kết quả có vượt baseline cấu trúc hay không.
+
+## Confidence gate
+Nếu D1–D4 bất đồng mạnh, D vào `LOW CONFIDENCE`; hệ thống không ép promote/rebuild chỉ vì một tín hiệu mạnh đơn lẻ.
+
+## Feature quarantine / auto retirement
+Expert suy giảm kéo dài có thể bị giảm weight, `QUARANTINED`, rồi `RETIRED`. Muốn quay lại phải qua shadow retest với giả thuyết mới.
+
+## Engine memory bank / negative knowledge
+Lưu toàn bộ version đã chạy, lý do thay đổi, shadow result, promote/reject/retire. Engine từng fail không được tự động “phát minh lại” nếu không có bằng chứng hoặc feature mới.
+
+## Hypothesis registry
+Mỗi challenger trước khi chạy phải khóa trước:
+- vấn đề cần sửa;
+- thay đổi cụ thể;
+- success metric;
+- số kỳ official tối thiểu;
+- điều kiện reject.
+
+Không được đổi metric giữa chừng sau khi nhìn thấy kết quả.
+
+## Candidate tournament
+Tối đa 2 challenger song song để tránh multiple-testing quá mức. Challenger mới phải khác nhau có chủ đích, không sinh hàng trăm biến thể rồi chọn cái may mắn nhất.
+
+## Stress test trước promote
+- đổi horizon hợp lý;
+- bỏ một phần draw lịch sử;
+- perturb weight nhỏ;
+- kiểm tra exposure/entropy;
+- kiểm tra performance không phụ thuộc 1 outlier.
+
+Challenger chỉ promote nếu ưu thế vẫn giữ qua các perturbation.
+
+## Failure Diagnosis
+Khi D yếu, phải phân loại nguyên nhân trước khi sinh challenger:
+- ranking số yếu;
+- pair residual không đóng góp;
+- shape context không ổn định;
+- spectral graph nhiễu;
+- portfolio quá tập trung;
+- expert disagreement cao;
+- không khác matched random.
+
+Chẩn đoán quyết định loại mutation/challenger sẽ được thử.
+
+## D5+ roadmap nghiên cứu
+- **D5 Counterfactual Lab:** mutation có kiểm soát để biết thay đổi nào thực sự tạo khác biệt.
+- **D6 Change-point Detector:** detector chỉ trên residual performance so với null, kèm shuffled-control.
+- **D7 Marginal Coverage Optimizer:** ưu tiên phần coverage mà A/B/C/L chưa phủ.
+- **D8 Bayesian Promotion Gate:** shrink về giả thuyết không khác biệt, cần đủ bằng chứng mới promote.
+- **D9 Failure Diagnosis:** chọn đúng challenger cho đúng lỗi.
+- **D10 Negative Knowledge:** nhớ cả phương pháp thất bại.
+- **D11 Hypothesis Registry:** preregister test trước khi chạy.
+- **D12 Engine Lineage:** lưu cây phiên bản và mutation.
+- **D13 Auto Retirement:** loại expert lâu dài không có đóng góp.
+- **D14 Reproducibility Guard:** dựng lại đúng model/vé bằng target + cutoff + version + seed + hash.
 
 ## Shadow evaluation
 Mỗi prospective target lưu:
-- champion engine id + weights
-- challenger engine id + weights nếu có
-- 20 vé champion
-- 20 vé challenger shadow
-- cutoff id
-- model hash
+- champion engine id + weights;
+- challenger engine id + weights nếu có;
+- 20 vé champion;
+- 20 vé challenger shadow;
+- cutoff id;
+- seed + model hash + portfolio hash;
+- confidence state;
+- hypothesis id.
 
-Sau feed chính thức, score cả hai bằng cùng hàm prize/hit.
+Sau feed chính thức, score cả hai bằng cùng hàm prize/hit và matched-null benchmark.
 
 ## Promotion metric
-Không dùng một kỳ đơn lẻ. Dùng composite 6+ kỳ:
-- 45% avg best-hit
-- 25% rate Best >= 3
-- 20% rate Best >= 4
-- 10% portfolio total-hit normalized
+Không dùng một kỳ đơn lẻ. Composite 6+ kỳ ban đầu:
+- 45% avg best-hit;
+- 25% rate Best >= 3;
+- 20% rate Best >= 4;
+- 10% portfolio total-hit normalized.
 
 Giải thưởng thật được hiển thị riêng, không biến Jackpot hiếm thành weight quá lớn khiến model overfit.
 
 ## UI dự kiến
 Trong tab D:
-- trạng thái: `STABLE`, `CHALLENGER TEST`, `REBUILD COOLDOWN`
-- engine hiện tại
-- weights D1/D2/D3
-- số kỳ từ lần rebuild gần nhất
-- rolling 12 kỳ
-- lý do trigger
-- challenger progress `x/6 kỳ`
-- lịch sử promote/reject
+- `STABLE`, `CHALLENGER TEST`, `LOW CONFIDENCE`, `REBUILD COOLDOWN`, `NO EDGE DETECTED`;
+- engine hiện tại + lineage;
+- weights D1/D2/D3/D4;
+- rolling 12 kỳ;
+- matched-null delta;
+- lý do trigger;
+- challenger progress `x/6 kỳ`;
+- hypothesis;
+- lịch sử promote/reject/retire.
 
 Trong Hiệu suất:
-- thêm D vào bảng A/B/C/L/D
-- thêm cột `Engine D version`
-- riêng mục “Adaptive history” cho biết lúc nào D đổi engine và kết quả trước/sau.
+- thêm D vào A/B/C/L/D;
+- `Engine D version`;
+- Adaptive history trước/sau mỗi mutation;
+- số lần D vượt/null không vượt matched random.
 
-## V1 triển khai
-1. Tách core matrix/feature builders thuần hàm.
-2. Thêm D1/D2/D3 + ensemble score.
-3. Sinh portfolio D 20 vé và lock snapshot.
-4. Score prospective official logs.
-5. Drift detector 12 kỳ + cooldown.
-6. Challenger shadow 6 kỳ.
-7. Promotion/reject logic.
-8. Performance Center + browser/state tests.
+## Trạng thái triển khai
+### Phase 1 — Core research engine
+- [x] D1 Residual Pair Matrix
+- [x] D2 Gap Transition
+- [x] D3 Shape-Conditional
+- [x] D4 Spectral Residual Graph
+- [x] Multi-horizon consensus 30/60/120/250
+- [x] Stability penalty
+- [x] Deterministic 20-ticket portfolio core
+- [x] Matched-random relabel benchmark
+- [x] Drift detector core
+- [x] Promotion composite core
+- [x] Confidence gate
+- [x] Research state / hypothesis / retirement primitives
+- [x] Deterministic unit tests
 
-## Không làm trong V1
+### Phase 2 — App integration
+- [ ] Tab D UI
+- [ ] D lock/snapshot prospective
+- [ ] D official score/log
+- [ ] D cloud state
+- [ ] Performance Center A/B/C/L/D
+- [ ] Shadow challenger storage
+
+### Phase 3 — Adaptive automation
+- [ ] Weight reward update from official outcomes
+- [ ] Feature quarantine
+- [ ] Challenger tournament
+- [ ] Stress-test promote gate
+- [ ] Failure diagnosis
+- [ ] Engine lineage/memory UI
+- [ ] Orthogonality vs A/B/C/L
+
+## Không làm
 - Không tự tối ưu hàng trăm hyperparameter sau mỗi draw.
 - Không backfit toàn bộ lịch sử để chọn engine thắng nhất rồi gọi đó là “dự đoán”.
 - Không dùng manual result để train.
 - Không thay A/B/C/L khi D hoạt động kém.
+- Không biến score nội bộ thành xác suất trúng.
