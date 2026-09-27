@@ -17,16 +17,18 @@ assert.match(await page.locator('#dModelHash').innerText(),/model [A-F0-9]{8}/,'
 assert.match(await page.locator('#dContext').innerText(),/Cutoff/i,'D cutoff context missing');
 assert.equal(await page.locator('#dCopyBtn').isDisabled(),false,'D copy should be enabled after build');
 
-// Historical targets must stay replay-only and cannot be prospectively locked.
+// A draw that is already in the official feed must stay replay-only.
 const targetSelect=page.locator('#targetSelect');
 await page.waitForFunction(()=>document.querySelector('#targetSelect')?.options?.length>1,null,{timeout:90000});
 const initial=Number((await page.locator('#targetId').innerText()).replace(/\D/g,''));
-const hist=await targetSelect.locator('option').evaluateAll((opts,initial)=>opts.map(o=>Number(o.value)).filter(v=>v<initial).sort((a,b)=>b-a)[0],initial);
+const latestOfficial=Number((await page.locator('#latestId').innerText()).replace(/\D/g,''));
+const hist=await targetSelect.locator('option').evaluateAll((opts,latestOfficial)=>opts.map(o=>Number(o.value)).filter(v=>Number.isFinite(v)&&v<=latestOfficial).sort((a,b)=>b-a)[0],latestOfficial);
 if(Number.isFinite(hist)){
   await targetSelect.selectOption(String(hist));
   await page.waitForFunction(v=>Number((document.querySelector('#targetId')?.textContent||'').replace(/\D/g,''))===v,hist,{timeout:90000});
   await page.waitForFunction(()=>document.querySelectorAll('#dTickets .dTicket').length===20,null,{timeout:90000});
-  assert.equal(await page.locator('#dLockBtn').isDisabled(),true,'Replay target must not allow D lock');
+  await page.waitForFunction(()=>document.querySelector('#dLockBtn')?.disabled===true,null,{timeout:30000});
+  assert.equal(await page.locator('#dLockBtn').isDisabled(),true,'Official replay target must not allow D lock');
   await targetSelect.selectOption(String(initial));
 }
 
