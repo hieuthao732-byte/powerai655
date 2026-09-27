@@ -1,0 +1,28 @@
+name: Adaptive Track D Checks
+
+on:
+  push:
+    branches:
+      - feature/adaptive-track-d
+
+permissions:
+  contents: read
+
+jobs:
+  verify-d:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build and verify Track D core
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check adaptive-d.js
+          npm run build
+          test -s dist/adaptive-d.js
+          cmp -s adaptive-d.js dist/adaptive-d.js
+          node tests/adaptive-d-unit.mjs
+          git diff --check
