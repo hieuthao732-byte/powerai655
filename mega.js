@@ -13,6 +13,7 @@ function hashText(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charC
 function pad(n){return String(n).padStart(2,'0')}
 function drawLabel(id){return '#'+String(id).padStart(5,'0')}
 function validNums(a){const v=(a||[]).map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=45);return v.length===6&&new Set(v).size===6?v.sort((a,b)=>a-b):[]}
+function parseManualNums(text){const raw=(String(text||'').match(/\d+/g)||[]).map(Number);if(raw.length!==6||raw.some(n=>!Number.isInteger(n)||n<1||n>45)||new Set(raw).size!==6)return[];return raw.sort((a,b)=>a-b)}
 function overlap(a,b){const s=new Set(a);let n=0;for(const x of b)if(s.has(x))n++;return n}
 function hits(a,b){return overlap(a,b)}
 function pairKey(a,b){return a<b?`${a}-${b}`:`${b}-${a}`}
@@ -20,7 +21,7 @@ function choose2Pairs(a){const out=[];for(let i=0;i<a.length;i++)for(let j=i+1;j
 function mean(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
 function fmtMoney(v){const n=Number(v)||0;if(Math.abs(n)>=1e9)return(n/1e9).toLocaleString('vi-VN',{maximumFractionDigits:3})+' tỷ';if(Math.abs(n)>=1e6)return(n/1e6).toLocaleString('vi-VN',{maximumFractionDigits:2})+' triệu';return Math.round(n).toLocaleString('vi-VN')+' đ'}
 function fmtDate(s){if(!s)return'—';const p=String(s).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:s}
-function status(text,bad=false){const el=$('megaStatus');if(!el)return;el.innerHTML=`<i class="statusDot"></i>${text}`;if(bad)el.style.borderColor='rgba(255,120,140,.45)'}
+function status(text,bad=false){const el=$('megaStatus');if(!el)return;el.innerHTML=`<i class="statusDot"></i>${text}`;el.style.borderColor=bad?'rgba(255,120,140,.45)':''}
 
 async function loadData(){
   status('Đang tải dữ liệu...');
@@ -29,7 +30,7 @@ async function loadData(){
   const rows=[];
   for(const line of text.split(/\r?\n/)){
     if(!line.trim())continue;
-    try{const d=JSON.parse(line);const a=validNums(d.result);const id=Number(d.id);if(a.length===6&&Number.isFinite(id))rows.push({...d,id,result:a})}catch{}
+    try{const d=JSON.parse(line);const a=validNums(d.result);const id=Number(d.id);if(a.length===6&&Number.isFinite(id))rows.push({...d,id,result:a,source:'feed'})}catch{}
   }
   rows.sort((a,b)=>a.id-b.id);if(!rows.length)throw new Error('Feed Mega không có dữ liệu hợp lệ');
   draws=rows;latest=rows.at(-1);
@@ -39,13 +40,23 @@ async function loadData(){
 }
 
 function historyBefore(id){return draws.filter(d=>d.id<Number(id))}
-function resultFor(id){return draws.find(d=>d.id===Number(id))||null}
+function officialResultFor(id){return draws.find(d=>d.id===Number(id))||null}
+function manualResultKey(id){return NS+'manual_result_'+Number(id)}
+function manualResultFor(id){
+  try{
+    const raw=JSON.parse(localStorage.getItem(manualResultKey(id))||'null');
+    const a=validNums(raw?.result||raw);
+    return a.length===6?{id:Number(id),date:null,result:a,source:'manual',createdAt:raw?.createdAt||null}:null;
+  }catch{return null}
+}
+function resultFor(id){return officialResultFor(id)||manualResultFor(id)}
 function isReplay(){return !!resultFor(targetId)}
 
 function renderTargetSelect(){
-  const sel=$('megaTargetSelect');if(!sel)return;
+  const sel=$('megaTargetSelect');if(!sel||!latest)return;
   const recent=draws.slice(-36).reverse();
-  const options=[`<option value="${latest.id+1}">${drawLabel(latest.id+1)} • kỳ tiếp theo</option>`];
+  const manual=manualResultFor(latest.id+1);
+  const options=[`<option value="${latest.id+1}">${drawLabel(latest.id+1)} • ${manual?'nhập tay • chờ feed':'kỳ tiếp theo'}</option>`];
   for(const d of recent)options.push(`<option value="${d.id}">${drawLabel(d.id)} • ${fmtDate(d.date)} • Replay</option>`);
   sel.innerHTML=options.join('');sel.value=String(targetId);
 }
@@ -160,18 +171,33 @@ function renderTickets(id,rows){
 }
 function trackPrizeStats(rows,actual){const s={jackpot:0,first:0,second:0,third:0,best:0,total:0};for(const r of rows){const p=prize(r.a,actual);s.best=Math.max(s.best,p.hits);s.total+=p.hits;for(const k of ['jackpot','first','second','third'])if(p[k])s[k]++}return s}
 
+function navTargets(){if(!latest)return[];return[...draws.slice(-36).map(d=>d.id),latest.id+1].sort((a,b)=>a-b)}
+function renderManualControls(){
+  const input=$('megaManualResult'),save=$('megaManualBtn'),clear=$('megaClearManualBtn'),prev=$('megaPrevBtn'),next=$('megaNextBtn');
+  if(!input||!save||!clear)return;
+  const official=officialResultFor(targetId),manual=manualResultFor(targetId),r=official||manual;
+  input.disabled=!!official;save.disabled=!!official;clear.hidden=!manual||!!official;
+  input.value=r?.result?.map(pad).join(' ')||'';
+  input.placeholder=official?'Kết quả đã có trên feed':'01 13 23 25 26 28';
+  const ids=navTargets(),idx=ids.indexOf(Number(targetId));
+  if(prev)prev.disabled=idx<=0;if(next)next.disabled=idx<0||idx>=ids.length-1;
+}
+
 function renderCore(){
   $('megaLatestId').textContent=drawLabel(latest.id);$('megaLatestDate').textContent=fmtDate(latest.date);$('megaTargetId').textContent=drawLabel(targetId);
-  const replay=resultFor(targetId);$('megaTargetMode').textContent=replay?'Replay • kết quả đã biết':'Prospective • chưa có kết quả';$('megaCutoffId').textContent=model.cutoff?drawLabel(model.cutoff):'—';
+  const replay=resultFor(targetId);$('megaTargetMode').textContent=replay?(replay.source==='manual'?'Tạm tính • nhập tay':'Replay • kết quả đã biết'):'Prospective • chưa có kết quả';$('megaCutoffId').textContent=model.cutoff?drawLabel(model.cutoff):'—';
   const a=trackA.audit;$('megaAAudit').innerHTML=[['Coverage','45/45'],['Exposure','2–3'],['Pair lặp',a.repeatedPairs],['Max overlap',a.maxOv]].map(([x,y])=>`<div class="metric"><span>${x}</span><b>${y}</b></div>`).join('');
   $('megaBMeta').innerHTML=`<div class="megaMetaChips"><span>${model.n.toLocaleString('vi-VN')} kỳ trước target</span><span>Freq 30/120</span><span>Gap</span><span>Pair 120</span><span>Anti-leak id &lt; target</span></div>`;
   $('megaCMeta').innerHTML=`<div class="megaMetaChips"><span>30 số signal cao ×3</span><span>15 số còn lại ×2</span><span>Exposure tổng = 120</span><span>Không có bóng đặc biệt</span></div>`;
-  renderTickets('megaATickets',trackA);renderTickets('megaBTickets',trackB);renderTickets('megaCTickets',trackC);renderResult();renderIntel();
+  renderTickets('megaATickets',trackA);renderTickets('megaBTickets',trackB);renderTickets('megaCTickets',trackC);renderResult();renderIntel();renderManualControls();
 }
 function renderResult(){
   const d=resultFor(targetId),box=$('megaOfficialResult'),sum=$('megaPrizeSummary');
-  if(!d){$('megaResultTitle').textContent=`${drawLabel(targetId)} • chưa có kết quả`;box.innerHTML='<span class="megaResultLabel">Prospective</span><span class="muted">Các bộ số đang được tạo chỉ từ dữ liệu trước kỳ mục tiêu.</span>';sum.innerHTML='';return}
-  $('megaResultTitle').textContent=`${drawLabel(targetId)} • ${fmtDate(d.date)}`;box.innerHTML=`<span class="megaResultLabel">KẾT QUẢ</span><div class="balls bigBalls">${balls(d.result,[])}</div>`;
+  if(!d){$('megaResultTitle').textContent=`${drawLabel(targetId)} • chưa có kết quả`;$('megaResultNote').textContent='Có thể nhập tay 6 số để đối chiếu tạm thời. Dữ liệu nhập tay không được đưa vào lịch sử/engine và feed chính thức luôn được ưu tiên.';box.innerHTML='<span class="megaResultLabel">Prospective</span><span class="muted">Các bộ số đang được tạo chỉ từ dữ liệu trước kỳ mục tiêu.</span>';sum.innerHTML='';return}
+  const manual=d.source==='manual';
+  $('megaResultTitle').textContent=manual?`${drawLabel(targetId)} • kết quả nhập tay`: `${drawLabel(targetId)} • ${fmtDate(d.date)}`;
+  $('megaResultNote').textContent=manual?'Kết quả nhập tay chỉ dùng để đối chiếu tạm thời, không đi vào lịch sử B/C. Khi feed có kết quả chính thức, feed sẽ tự ghi đè phần hiển thị này.':'Replay dùng đúng dữ liệu trước kỳ mục tiêu rồi mới đối chiếu kết quả chính thức.';
+  box.innerHTML=`<span class="megaResultLabel ${manual?'manual':''}">${manual?'NHẬP TAY • CHỜ FEED':'KẾT QUẢ CHÍNH THỨC'}</span><div class="balls bigBalls">${balls(d.result,[])}</div>`;
   const defs=[['A','Cấu trúc',trackA],['B','Lịch sử',trackB],['C','Kết hợp',trackC]];
   sum.innerHTML=defs.map(([k,name,rows])=>{const s=trackPrizeStats(rows,d.result);return`<div class="megaPrizeCard"><strong>${k} • ${name}</strong><span>Best hit: <b>${s.best}/6</b> • Tổng hit: <b>${s.total}</b></span><span>Jackpot ${s.jackpot} • Nhất ${s.first} • Nhì ${s.second} • Ba ${s.third}</span></div>`}).join('');
 }
@@ -195,10 +221,26 @@ async function rebuild(){
   localStorage.setItem(NS+'target',String(targetId));
   buildTracks();renderCore();renderEconomics();
 }
+async function setTarget(id){targetId=Number(id);renderTargetSelect();await rebuild()}
+async function previousTarget(){const ids=navTargets(),idx=ids.indexOf(Number(targetId));if(idx>0)await setTarget(ids[idx-1])}
+async function nextTarget(){const ids=navTargets(),idx=ids.indexOf(Number(targetId));if(idx>=0&&idx<ids.length-1)await setTarget(ids[idx+1])}
+function saveManualResult(){
+  if(officialResultFor(targetId))return;
+  const a=parseManualNums($('megaManualResult').value);
+  if(a.length!==6){$('megaResultNote').textContent='Nhập đúng 6 số khác nhau từ 01 đến 45. Ví dụ: 01 13 23 25 26 28.';$('megaManualResult').focus();return}
+  localStorage.setItem(manualResultKey(targetId),JSON.stringify({targetId:Number(targetId),result:a,source:'manual',createdAt:new Date().toISOString()}));
+  renderTargetSelect();renderCore();
+}
+function clearManualResult(){localStorage.removeItem(manualResultKey(targetId));renderTargetSelect();renderCore()}
 
 function wire(){
-  $('megaTargetSelect').onchange=async e=>{targetId=Number(e.target.value);await rebuild()};
+  $('megaTargetSelect').onchange=async e=>setTarget(Number(e.target.value));
   $('megaReloadBtn').onclick=()=>loadData().catch(e=>{console.error(e);status('Lỗi dữ liệu',true)});
+  $('megaManualBtn').onclick=saveManualResult;
+  $('megaClearManualBtn').onclick=clearManualResult;
+  $('megaPrevBtn').onclick=previousTarget;
+  $('megaNextBtn').onclick=nextTarget;
+  $('megaManualResult').addEventListener('keydown',e=>{if(e.key==='Enter')saveManualResult()});
   document.querySelectorAll('.megaNavBtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.megaNavBtn').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.megaView').forEach(x=>x.classList.toggle('active',x.dataset.pane===b.dataset.view))});
   document.querySelectorAll('.megaTrackBtn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.megaTrackBtn').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.megaTrackPane').forEach(x=>x.classList.toggle('active',x.dataset.trackPane===b.dataset.track))});
   for(const id of ['megaJackpotInput','megaTicketPrice','megaOtherWinners'])$(id).addEventListener('input',renderEconomics);
