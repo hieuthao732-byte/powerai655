@@ -22,6 +22,29 @@ async function run(viewport,name){
     const cutoff=Number((await page.locator('#megaCutoffId').innerText()).replace(/\D/g,''));
     assert.ok(cutoff<target,`${name}: history cutoff leaked target/future draw`);
 
+    // Manual verification mirrors Power: temporary only, never fed back into history.
+    const manualInput=page.locator('#megaManualResult');
+    assert.equal(await manualInput.isEnabled(),true,`${name}: prospective manual result input disabled`);
+    await manualInput.fill('01 02 03 04 05 06');
+    await page.locator('#megaManualBtn').click();
+    await page.locator('.megaResultLabel.manual').waitFor({state:'visible'});
+    assert.equal(await page.locator('#megaOfficialResult .ball').count(),6,`${name}: manual result must render 6 numbers`);
+    const manualCutoff=Number((await page.locator('#megaCutoffId').innerText()).replace(/\D/g,''));
+    assert.equal(manualCutoff,cutoff,`${name}: manual result changed historical cutoff`);
+    assert.ok(await page.locator('#megaATickets .ball.hit').count()>0,`${name}: manual result did not repaint ticket hits`);
+    await page.locator('#megaClearManualBtn').click();
+    assert.equal(await page.locator('#megaOfficialResult .ball').count(),0,`${name}: clearing manual result did not restore prospective state`);
+
+    // Previous/next controls should move between latest official draw and prospective target.
+    await page.locator('#megaPrevBtn').click();
+    await page.waitForFunction(()=>document.querySelectorAll('#megaOfficialResult .ball').length===6,null,{timeout:90000});
+    const prevTarget=Number((await page.locator('#megaTargetId').innerText()).replace(/\D/g,''));
+    assert.equal(prevTarget,target-1,`${name}: previous draw navigation mismatch`);
+    await page.locator('#megaNextBtn').click();
+    await page.waitForFunction(()=>document.querySelectorAll('#megaOfficialResult .ball').length===0,null,{timeout:90000});
+    const nextTarget=Number((await page.locator('#megaTargetId').innerText()).replace(/\D/g,''));
+    assert.equal(nextTarget,target,`${name}: next draw navigation did not return prospective target`);
+
     await page.locator('[data-view="analysis"]').click();
     await page.locator('[data-pane="analysis"]').waitFor({state:'visible'});
     await page.locator('#megaNumberGrid [data-num="1"]').click();
@@ -41,6 +64,7 @@ async function run(viewport,name){
     await sel.selectOption(values[1]);
     await page.waitForFunction(()=>document.querySelectorAll('#megaOfficialResult .ball').length===6,null,{timeout:90000});
     assert.equal(await page.locator('#megaOfficialResult .ball').count(),6,`${name}: replay result must have 6 numbers`);
+    assert.equal(await page.locator('#megaManualResult').isDisabled(),true,`${name}: official replay should disable manual override`);
     const replayTarget=Number((await page.locator('#megaTargetId').innerText()).replace(/\D/g,''));
     const replayCutoff=Number((await page.locator('#megaCutoffId').innerText()).replace(/\D/g,''));
     assert.ok(replayCutoff<replayTarget,`${name}: replay leaked target draw into history`);
