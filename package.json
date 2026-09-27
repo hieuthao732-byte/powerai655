@@ -4,6 +4,6 @@
   "version": "9.7.0",
   "type": "module",
   "scripts": {
-    "build": "node build.mjs && node rc89.mjs && node rc90.mjs && node rc91.mjs && node rc92.mjs && node rc93.mjs && node rc94.mjs && node rc96.mjs && node rc97.mjs"
+    "build": "node build.mjs"
   }
 }

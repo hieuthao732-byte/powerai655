@@ -58,6 +58,75 @@ const $=id=>document.getElementById(id);
 let draws=[],latest=null,targetId=null,geo=null,legacy=null,legacyModel=null,legacyBuilding=false,legacyRanked=null,hybrid=null,hybridBuilding=false,consensusNums=null,matrixModel=null,learningPortfolio=null,learningPortfolioBuilding=false,learningPortfolioMeta=null;
 
 function nums(d){return (d?.result||[]).map(Number).filter(n=>n>=1&&n<=55).slice(0,6).sort((a,b)=>a-b)}
+function specialNum(d){
+  const a=(d?.result||[]).map(Number).filter(n=>n>=1&&n<=55);
+  return a.length>=7?a[6]:null;
+}
+function validSpecial(s){const n=Number(s);return Number.isInteger(n)&&n>=1&&n<=55?n:null}
+function scorePrizeTicket(ticket,actual,special){
+  const mainHits=hits(ticket,actual),sp=validSpecial(special),specialHit=sp!==null&&ticket.includes(sp);
+  return{mainHits,specialHit,jp1:mainHits===6,jp2:sp!==null&&mainHits===5&&specialHit,first:sp!==null&&mainHits===5&&!specialHit,second:mainHits===4,third:mainHits===3};
+}
+function currentSpecialForTarget(){
+  const log=typeof getLog==='function'?getLog(targetId):null;
+  const fromLog=validSpecial(log?.special);
+  if(fromLog!==null)return fromLog;
+  const d=(draws||[]).find(x=>Number(x.id)===Number(targetId));
+  return d?specialNum(d):null;
+}
+function prizeInfo(ticket,actual,special){
+  const r=scorePrizeTicket(ticket,actual,special);
+  if(r.jp1)return{key:'jp1',label:'JACKPOT 1',detail:'Hit 6/6 số chính'};
+  if(r.jp2)return{key:'jp2',label:'JACKPOT 2',detail:'Hit 5/6 chính + số đặc biệt'};
+  if(r.first)return{key:'first',label:'GIẢI NHẤT',detail:'Hit 5/6 số chính'};
+  if(r.second)return{key:'second',label:'GIẢI NHÌ',detail:'Hit 4/6 số chính'};
+  if(r.third)return{key:'third',label:'GIẢI BA',detail:'Hit 3/6 số chính'};
+  if(r.mainHits===5&&validSpecial(special)===null)return{key:'pending5',label:'5/6 SỐ CHÍNH',detail:'Chờ số đặc biệt để phân loại'};
+  return{key:'none',label:'CHƯA TRÚNG GIẢI',detail:'Hit '+r.mainHits+'/6 số chính'};
+}
+function ballsPrize(a,actual=[],special=null){
+  const main=new Set(actual),sp=validSpecial(special);
+  return a.map(n=>{
+    const mainHit=main.has(n),specialHit=sp!==null&&n===sp;
+    const cls=specialHit?'specialHit':(mainHit?'hit':'');
+    const title=specialHit?' title="Số đặc biệt • bóng vàng"':'';
+    return '<span class="ball '+cls+'"'+title+'>'+String(n).padStart(2,"0")+'</span>';
+  }).join('');
+}
+function prizeBadge(ticket,actual,special){
+  if(!actual||!actual.length)return '';
+  const p=prizeInfo(ticket,actual,special),r=scorePrizeTicket(ticket,actual,special);
+  let detail=p.detail;
+  if(r.specialHit&&p.key==='jp2')detail='Hit 5/6 số chính + bóng vàng';
+  else if(r.specialHit)detail+=' • Trúng bóng vàng';
+  return '<div class="ticketPrize '+p.key+(r.specialHit?' hasSpecial':'')+'"><b>'+p.label+'</b><span>'+detail+'</span></div>';
+}
+function prizeSummaryScore(log,key,score){
+  if(score&&Number.isFinite(score.third)&&Number.isFinite(score.second))return score;
+  const actual=Array.isArray(log?.actual)?log.actual:[],sp=validSpecial(log?.special);
+  if(actual.length!==6)return score||{};
+  if(key==='L'){
+    const LL=typeof getLearningLock==='function'?getLearningLock(log.targetId):null;
+    const T=LL?.tickets?.map(x=>x.a||x)||[];
+    return T.length?scoreTrack(T,actual,sp):(score||{});
+  }
+  const L=typeof getLock==='function'?getLock(log.targetId):null;
+  const T=key==='A'?L?.A?.tickets:key==='B'?L?.B?.tickets:L?.C?.tickets;
+  return T?.length?scoreTrack(T,actual,sp):(score||{});
+}
+function renderPrizeSummary(log){
+  const box=$("scoreboard");if(!box)return;
+  if(!log||!Array.isArray(log.actual)||log.actual.length!==6){box.innerHTML='';return}
+  const defs=[['A','Mô phỏng',log.A],['B','Lịch sử',log.B],['C','Kết hợp',log.C]];
+  if(log.L)defs.push(['L','Learning',log.L]);
+  const rows=defs.map(([key,name,raw])=>[key,name,prizeSummaryScore(log,key,raw)]);
+  const chip=(cls,label,n)=>Number(n)>0?'<span class="prizeSumChip '+cls+'"><b>'+n+'</b> '+label+'</span>':'';
+  box.innerHTML='<section class="prizeSummary"><div class="prizeSummaryHead"><div><span>TỔNG KẾT GIẢI THƯỞNG</span><b>'+drawLabel(log.targetId)+'</b></div><small>Mỗi ô là số vé đạt đúng hạng giải trong bộ 20 vé.</small></div><div class="prizeSummaryGrid">'+rows.map(([key,name,s])=>{
+    const chips=[chip('jp1','Jackpot 1',s.jp1),chip('jp2','Jackpot 2',s.jp2),chip('first','Giải Nhất',s.first),chip('second','Giải Nhì',s.second),chip('third','Giải Ba',s.third)].filter(Boolean);
+    const total=['jp1','jp2','first','second','third'].reduce((a,k)=>a+(Number(s[k])||0),0);
+    return '<article class="prizeSummaryCard track'+key+'"><div class="prizeSummaryTitle"><b>'+key+'</b><span>'+name+'</span><strong>'+total+' vé có giải</strong></div><div class="prizeSummaryChips">'+(chips.length?chips.join(''):'<span class="prizeSumNone">Chưa có vé đạt giải</span>')+'</div><div class="prizeSummaryBest">Best hit <b>'+(s.best??0)+'/6</b> • Tổng hit <b>'+(s.total??0)+'</b></div></article>';
+  }).join('')+'</div></section>';
+}
 function seeded(seed){let x=seed>>>0;return()=>{x=(1664525*x+1013904223)>>>0;return x/4294967296}}
 function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function edgeKey(a,b){return a<b?`${a}-${b}`:`${b}-${a}`}
@@ -346,7 +415,8 @@ function renderLegacyTickets(actual=[]){
   ].map(x=>`<div class="metric"><span>${x[0]}</span><b>${x[1]}</b></div>`).join("");
   $("legacyTickets").innerHTML=rows.map(p=>`<div class="ticket">
     <div class="ticketTop"><b>VÉ B${String(p.rank).padStart(2,"0")}</b><span>gốc #${String(p.originalIndex+1).padStart(2,"0")}</span></div>
-    <div class="balls">${balls(p.a,actual)}</div>
+    <div class="balls">${ballsPrize(p.a,actual,currentSpecialForTarget())}</div>
+    ${prizeBadge(p.a,actual,currentSpecialForTarget())}
     <div class="ticketRankRow">
       <span class="rankBadge ${rankClass(p.rank)}">Hạng #${p.rank}</span>
       <span class="ticketScore">Điểm <b>${p.displayScore.toFixed(1)}</b>/100</span>
@@ -379,7 +449,8 @@ function renderGeo(actual=[]){
   ].map(x=>`<div class="metric"><span>${x[0]}</span><b>${x[1]}</b></div>`).join("");
   $("geoTickets").innerHTML=rows.map(p=>`<div class="ticket">
     <div class="ticketTop"><b>VÉ A${String(p.rank).padStart(2,"0")}</b><span>gốc #${String(p.originalIndex+1).padStart(2,"0")}</span></div>
-    <div class="balls">${balls(p.a,actual)}</div>
+    <div class="balls">${ballsPrize(p.a,actual,currentSpecialForTarget())}</div>
+    ${prizeBadge(p.a,actual,currentSpecialForTarget())}
     <div class="ticketRankRow">
       <span class="rankBadge ${rankClass(p.rank)}">Hạng #${p.rank}</span>
       <span class="ticketScore">Đóng góp <b>${p.displayScore.toFixed(1)}</b>/100</span>
@@ -629,7 +700,8 @@ function renderHybrid(actual=[]){
 
   $("hybridTickets").innerHTML=rows.map(p=>`<div class="ticket">
     <div class="ticketTop"><b>VÉ C${String(p.rank).padStart(2,"0")}</b><span>gốc #${String(p.originalIndex+1).padStart(2,"0")}</span></div>
-    <div class="balls">${balls(p.a,actual)}</div>
+    <div class="balls">${ballsPrize(p.a,actual,currentSpecialForTarget())}</div>
+    ${prizeBadge(p.a,actual,currentSpecialForTarget())}
     <div class="ticketRankRow">
       <span class="rankBadge ${rankClass(p.rank)}">Hạng #${p.rank}</span>
       <span class="ticketScore">Điểm <b>${p.displayScore.toFixed(1)}</b>/100</span>
@@ -942,7 +1014,8 @@ function renderLearningPortfolio(actual=[]){
 
   $("learningTickets").innerHTML=rows.map(p=>`<div class="ticket">
     <div class="ticketTop"><b>VÉ L${String(p.rank).padStart(2,"0")}</b><span>gốc #${String(p.originalIndex+1).padStart(2,"0")}</span></div>
-    <div class="balls">${balls(p.a,actual)}</div>
+    <div class="balls">${ballsPrize(p.a,actual,currentSpecialForTarget())}</div>
+    ${prizeBadge(p.a,actual,currentSpecialForTarget())}
     <div class="ticketRankRow">
       <span class="rankBadge ${rankClass(p.rank)}">Hạng #${p.rank}</span>
       <span class="ticketScore">Điểm L <b>${p.displayScore.toFixed(1)}</b>/100</span>
@@ -1149,15 +1222,20 @@ function lockBoth(){
     C:{name:"Geometry-Constrained Matrix Hybrid",tickets:hybrid.map(p=>p.a),hash:simpleHash(hybrid.map(p=>p.a)),formula:"A geometry skeleton locked; robust rank consensus selects 10 triple-exposure numbers; robust pair matrix optimizes label assignment within triple/double groups"}};
   localStorage.setItem(lockKey(targetId),JSON.stringify(obj));cloudSyncSoon();renderState();showToast(`Đã khóa A, B và C cho kỳ #${targetId}.`,"good");checkOfficial();
 }
-function scoreTrack(P,actual){
-  const hs=P.map(t=>hits(t,actual)),best=Math.max(...hs),bestIdx=hs.indexOf(best);
-  return{best,bestIdx,total:hs.reduce((a,b)=>a+b,0),g2:hs.filter(x=>x>=2).length,g3:hs.filter(x=>x>=3).length,g4:hs.filter(x=>x>=4).length,hs};
+function scoreTrack(P,actual,special=null){
+  const hs=P.map(t=>hits(t,actual)),best=Math.max(...hs),bestIdx=hs.indexOf(best),sp=validSpecial(special),prize=P.map(t=>scorePrizeTicket(t,actual,sp));
+  return{
+    best,bestIdx,total:hs.reduce((a,b)=>a+b,0),g2:hs.filter(x=>x>=2).length,g3:hs.filter(x=>x>=3).length,g4:hs.filter(x=>x>=4).length,hs,
+    special:sp,jp1:prize.filter(x=>x.jp1).length,jp2:sp===null?null:prize.filter(x=>x.jp2).length,first:sp===null?null:prize.filter(x=>x.first).length,
+    second:prize.filter(x=>x.second).length,third:prize.filter(x=>x.third).length,
+    jp1Idxs:prize.map((x,i)=>x.jp1?i:-1).filter(i=>i>=0),jp2Idxs:prize.map((x,i)=>x.jp2?i:-1).filter(i=>i>=0),prize
+  };
 }
-function saveResult(actual,source){
+function saveResult(actual,source,special=null){
   const L=getLock(targetId);if(!L){alert("Phải khóa CẢ 3 track trước khi chấm kết quả.");return}
-  const A=scoreTrack(L.A.tickets,actual),B=scoreTrack(L.B.tickets,actual),C=scoreTrack(L.C.tickets,actual),
-    LL=getLearningLock(targetId),LS=LL?.tickets?.length===20?scoreTrack(LL.tickets.map(x=>x.a||x),actual):null,
-    obj={targetId:Number(targetId),source,actual,checkedAt:new Date().toISOString(),lockedAt:L.lockedAt,A,B,C,hashA:L.A.hash,hashB:L.B.hash,hashC:L.C.hash};
+  const sp=validSpecial(special),A=scoreTrack(L.A.tickets,actual,sp),B=scoreTrack(L.B.tickets,actual,sp),C=scoreTrack(L.C.tickets,actual,sp),
+    LL=getLearningLock(targetId),LS=LL?.tickets?.length===20?scoreTrack(LL.tickets.map(x=>x.a||x),actual,sp):null,
+    obj={targetId:Number(targetId),source,actual,special:sp,checkedAt:new Date().toISOString(),lockedAt:L.lockedAt,A,B,C,hashA:L.A.hash,hashB:L.B.hash,hashC:L.C.hash};
   if(LS){obj.L=LS;obj.learningLockedAt=LL.lockedAt;obj.hashL=LL.hash}
   localStorage.setItem(logKey(targetId),JSON.stringify(obj));cloudSyncSoon();renderCompare(obj);renderHistory();renderState();
   renderGeo(actual);
@@ -1166,8 +1244,14 @@ function saveResult(actual,source){
   const LLock=getLearningLock(targetId);if(LLock){learningPortfolio=LLock.tickets.map(x=>({...x}));learningPortfolioMeta=LLock.meta||null;renderLearningPortfolio(actual)}
 }
 function parseManual(s){
-  const a=(s.match(/\d+/g)||[]).map(Number);if(a.length!==6||new Set(a).size!==6||a.some(n=>n<1||n>55))throw new Error("Nhập đúng 6 số khác nhau từ 1–55.");return a.sort((x,y)=>x-y);
+  const a=(s.match(/\d+/g)||[]).map(Number);
+  if(a.length!==6&&a.length!==7)throw new Error("Nhập 6 số chính; có thể thêm số đặc biệt thứ 7.");
+  const main=a.slice(0,6),sp=a.length===7?a[6]:null;
+  if(new Set(main).size!==6||main.some(n=>n<1||n>55))throw new Error("6 số chính phải khác nhau và nằm trong 1–55.");
+  if(sp!==null&&(sp<1||sp>55||main.includes(sp)))throw new Error("Số đặc biệt phải nằm trong 1–55 và khác 6 số chính.");
+  return main.sort((x,y)=>x-y);
 }
+function parseManualSpecial(s){const a=(s.match(/\d+/g)||[]).map(Number);return a.length===7?validSpecial(a[6]):null}
 function manualResult(){
   try{
     if(hasOfficialResult(targetId)){
@@ -1175,21 +1259,21 @@ function manualResult(){
       showToast("Kỳ này đã có kết quả trên feed; feed được giữ làm chuẩn.","warn");
       return;
     }
-    saveResult(parseManual($("manualResult").value),"manual");
-    showToast("Đã lưu TẠM kết quả nhập tay. Kết quả này không được Learning dùng và chưa được coi là chính thức.","warn");
+    const raw=$("manualResult").value,sp=parseManualSpecial(raw);saveResult(parseManual(raw),"manual",sp);
+    showToast(sp!==null?`Đã lưu TẠM 6 số chính + số đặc biệt ${String(sp).padStart(2,"0")}. Chưa dùng cho Learning cho tới khi feed xác nhận.`:"Đã lưu TẠM 6 số chính. Chưa có số đặc biệt nên chưa thể chấm Jackpot 2.","warn");
   }catch(e){showToast(e.message,"bad")}
 }
 function checkOfficial(){
   const d=draws.find(x=>Number(x.id)===Number(targetId));if(!d)return;
   const L=getLock(targetId);if(!L)return;
-  const actual=nums(d),prev=getLog(targetId);
+  const actual=nums(d),special=specialNum(d),prev=getLog(targetId);
 
-  if(prev?.source==="feed"&&prev.actual.join(",")===actual.join(","))return;
+  if(prev?.source==="feed"&&prev.actual.join(",")===actual.join(",")&&Number(prev.special||0)===Number(special||0))return;
 
   if(prev?.source==="manual"){
     const same=prev.actual.join(",")===actual.join(",");
     if(!same)console.warn("Kết quả nhập thủ công khác dữ liệu chính thức; dữ liệu chính thức được dùng làm chuẩn.");
-    saveResult(actual,"feed");
+    saveResult(actual,"feed",special);
     showToast(
       same ? "Kết quả thủ công đã được xác nhận từ dữ liệu chính thức."
            : "Dữ liệu chính thức khác kết quả nhập tay; hệ thống đã tự cập nhật.",
@@ -1197,7 +1281,7 @@ function checkOfficial(){
     );
     return;
   }
-  saveResult(actual,"feed");
+  saveResult(actual,"feed",special);
 }
 
 /* comparison/history */
@@ -1229,9 +1313,15 @@ function metricLeadCounts(M){
 }
 
 function renderCompare(log){
-  if(!log){$("compareBox").innerHTML='<span class="muted">Chưa có kết quả kỳ đang chọn.</span>';return}
+  if(!log){$("compareBox").innerHTML='<span class="muted">Chưa có kết quả kỳ đang chọn.</span>';if($("scoreboard"))$("scoreboard").innerHTML='';return}
 
-  const L=getLock(log.targetId),M=[
+  const L=getLock(log.targetId),sp=validSpecial(log.special),prizeRows=[
+    ["Jackpot 1 • 6 số chính",log.A.jp1??0,log.B.jp1??0,log.C.jp1??0],
+    ...(sp!==null?[["Jackpot 2 • 5 chính + số đặc biệt",log.A.jp2??0,log.B.jp2??0,log.C.jp2??0],["Giải Nhất • 5 số chính",log.A.first??0,log.B.first??0,log.C.first??0]]:[]),
+    ["Giải Nhì • 4 số chính",log.A.second??0,log.B.second??0,log.C.second??0],
+    ["Giải Ba • 3 số chính",log.A.third??0,log.B.third??0,log.C.third??0]
+  ],M=[
+    ...prizeRows,
     ["Vé trúng nhiều số nhất",log.A.best,log.B.best,log.C.best],
     ["Tổng số trùng trên 20 vé",log.A.total,log.B.total,log.C.total],
     ["Số vé trúng ≥2 số",log.A.g2,log.B.g2,log.C.g2],
@@ -1248,7 +1338,7 @@ function renderCompare(log){
 
   $("compareBox").innerHTML=`
   <div class="notice">
-    Kết quả #${log.targetId}: <b>${log.actual.map(n=>String(n).padStart(2,"0")).join(" ")}</b>
+    Kết quả #${log.targetId}: <b>${log.actual.map(n=>String(n).padStart(2,"0")).join(" ")}</b> ${sp!==null?`<span class="jp2Special"><span>Số đặc biệt</span><b>${String(sp).padStart(2,"0")}</b></span>`:`<span class="jp2Pending">• Chưa có số đặc biệt</span>`}
     ${resultSourceLabel(log.source)}
     <span class="muted">• khóa ${new Date(log.lockedAt).toLocaleString("vi-VN")}</span>
   </div>
@@ -1277,6 +1367,7 @@ function renderCompare(log){
     </div>
   </div>`;
 
+  renderPrizeSummary(log);
   const cb=$("compareBox");
   if(cb){cb.classList.remove("resultFlash");void cb.offsetWidth;cb.classList.add("resultFlash")}
 }
@@ -1287,7 +1378,11 @@ function renderReplayCompare(){
     $("compareBox").innerHTML=`<div class="notice"><b>Xem lại ${drawLabel(targetId)}</b> • đang dựng lại A/B/C bằng dữ liệu trước kỳ này...</div>`;
     return;
   }
-  const actual=nums(d),AT=geo.tickets,BT=legacy.map(x=>x.a),CT=hybrid.map(x=>x.a),A=scoreTrack(AT,actual),B=scoreTrack(BT,actual),C=scoreTrack(CT,actual),M=[
+  const actual=nums(d),special=specialNum(d),AT=geo.tickets,BT=legacy.map(x=>x.a),CT=hybrid.map(x=>x.a),A=scoreTrack(AT,actual,special),B=scoreTrack(BT,actual,special),C=scoreTrack(CT,actual,special),M=[
+    ["Jackpot 1 • 6 số chính",A.jp1??0,B.jp1??0,C.jp1??0],
+    ...(validSpecial(special)!==null?[["Jackpot 2 • 5 chính + số đặc biệt",A.jp2??0,B.jp2??0,C.jp2??0],["Giải Nhất • 5 số chính",A.first??0,B.first??0,C.first??0]]:[]),
+    ["Giải Nhì • 4 số chính",A.second??0,B.second??0,C.second??0],
+    ["Giải Ba • 3 số chính",A.third??0,B.third??0,C.third??0],
     ["Vé trúng nhiều số nhất",A.best,B.best,C.best],
     ["Tổng số trùng trên 20 vé",A.total,B.total,C.total],
     ["Số vé trúng ≥2 số",A.g2,B.g2,C.g2],
@@ -1298,7 +1393,7 @@ function renderReplayCompare(){
   const metricRow=(x,idx)=>{const mx=Math.max(x[1],x[2],x[3]),lead=x[idx]===mx;return`<div class="compareMetric ${lead?'metricLead':''}"><span>${x[0]}</span><b class="${lead?'lead':''}">${x[idx]}</b></div>`};
   $("compareBox").innerHTML=`
     <div class="notice replayNotice">
-      <b>XEM LẠI ${drawLabel(targetId)}</b> • Kết quả chính thức: <b>${actual.map(n=>String(n).padStart(2,"0")).join(" ")}</b>
+      <b>XEM LẠI ${drawLabel(targetId)}</b> • Kết quả chính thức: <b>${actual.map(n=>String(n).padStart(2,"0")).join(" ")}</b> ${validSpecial(special)!==null?`<span class="jp2Special"><span>Số đặc biệt</span><b>${String(special).padStart(2,"0")}</b></span>`:""}
       <span class="resultSource manual"><i class="sourceDot"></i>REPLAY • dựng lại sau kết quả • KHÔNG tính prospective / Learning</span>
       <span class="muted">• chỉ dùng dữ liệu trước ${drawLabel(targetId)} cho B/C</span>
     </div>
@@ -1308,6 +1403,7 @@ function renderReplayCompare(){
       <div class="compareCol ${winnerClass("B")}"><h3>B • Lịch sử</h3><div class="balls">${balls(BT[B.bestIdx],actual)}</div>${M.map(x=>metricRow(x,2)).join("")}</div>
       <div class="compareCol ${winnerClass("C")}"><h3>C • Kết hợp</h3><div class="balls">${balls(CT[C.bestIdx],actual)}</div>${M.map(x=>metricRow(x,3)).join("")}</div>
     </div>`;
+  renderPrizeSummary({targetId:Number(targetId),actual,special,A,B,C});
   renderGeo(actual);renderLegacyTickets(actual);renderHybrid(actual);
 }
 function allLogs(){
@@ -1539,7 +1635,14 @@ async function setTarget(id){
   renderGeo();
   renderState();
   const lg=getLog(targetId);
-  if(lg)renderCompare(lg);else if(isReplayTarget(targetId))renderReplayCompare();else renderCompare(null);
+  if(lg){
+    renderCompare(lg);
+    const actual=Array.isArray(lg.actual)?lg.actual:[];
+    renderGeo(actual);
+    renderLegacyTickets(actual);
+    renderHybrid(actual);
+    if(lg.L||getLearningLock(targetId))renderLearningPortfolio(actual);
+  }else if(isReplayTarget(targetId))renderReplayCompare();else renderCompare(null);
   checkOfficial();
 }
 async function previousDraw(){
@@ -1604,6 +1707,91 @@ $("manualResult").addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("manualB
 $("runLearningBtn").onclick=runLearning;$("buildLearningPortfolioBtn").onclick=prepareAndBuildLearningPortfolio;$("copyLearningBtn").onclick=()=>copySet(rankLearningRows().map(p=>p.a),"L");$("lockLearningBtn").onclick=lockLearningPortfolio;$("resetLearningBtn").onclick=resetLearning;
 $("refreshBtn").onclick=load;$("lockBothBtn").onclick=lockBoth;$("manualBtn").onclick=manualResult;if($("prevBtn"))$("prevBtn").onclick=previousDraw;$("nextBtn").onclick=nextDraw;$("regenLegacyBtn").onclick=buildLegacyPortfolio;$("rebuildHybridBtn").onclick=buildHybridPortfolio;
 $("copyGeoBtn").onclick=()=>copySet(rankGeoRows().map(p=>p.a),"A");$("copyLegacyBtn").onclick=()=>copySet(rankLegacyRows().map(p=>p.a),"B");$("copyHybridBtn").onclick=()=>copySet(rankHybridRows().map(p=>p.a),"C");$("exportBtn").onclick=exportLogs;
+
+/* =========================
+   RC9.0 — TRACK A HISTORICAL VALIDATION
+   A generation remains history-blind. Historical data is descriptive only.
+   ========================= */
+const rc90AHistCache=new Map();
+function rc90HistoryBeforeTarget(){
+  return (draws||[])
+    .filter(d=>Number(d?.id)<Number(targetId)&&nums(d).length===6)
+    .sort((a,b)=>Number(b.id)-Number(a.id));
+}
+function rc90EvalWindow(hist,limit){
+  const ds=hist.slice(0,Math.min(limit,hist.length));
+  if(!geo?.tickets?.length||!ds.length)return{n:0,avgBest:0,p3:0,p4:0,p5:0,jp1:0,jp2:0,first:0,second:0,third:0,prizeTickets:0};
+  let bestSum=0,g3=0,g4=0,g5=0,jp1=0,jp2=0,first=0,second=0,third=0;
+  for(const d of ds){
+    const s=scoreTrack(geo.tickets,nums(d),specialNum(d));
+    bestSum+=s.best||0;if((s.best||0)>=3)g3++;if((s.best||0)>=4)g4++;if((s.best||0)>=5)g5++;
+    jp1+=Number(s.jp1)||0;jp2+=Number(s.jp2)||0;first+=Number(s.first)||0;second+=Number(s.second)||0;third+=Number(s.third)||0;
+  }
+  const n=ds.length;
+  return{n,avgBest:bestSum/n,p3:g3/n*100,p4:g4/n*100,p5:g5/n*100,jp1,jp2,first,second,third,prizeTickets:jp1+jp2+first+second+third};
+}
+function rc90TicketStats(ticket,hist){
+  const ds=hist.slice(0,Math.min(120,hist.length));
+  if(!ds.length)return{n:0,avg:0,ge3:0,max:0,gap:0,pairs:0};
+  let total=0,ge3=0,max=0,pairs=0;
+  for(const d of ds){const h=hits(ticket,nums(d));total+=h;if(h>=3)ge3++;if(h>max)max=h;pairs+=h*(h-1)/2}
+  let gapTotal=0;
+  for(const n of ticket){
+    const idx=ds.findIndex(d=>nums(d).includes(n));
+    gapTotal+=idx<0?ds.length:idx;
+  }
+  return{n:ds.length,avg:total/ds.length,ge3,max,gap:gapTotal/ticket.length,pairs};
+}
+function rc90HistoricalData(){
+  if(!geo?.tickets?.length)return null;
+  const key=String(targetId)+'-'+simpleHash(geo.tickets)+'-'+String((draws||[]).length);
+  if(rc90AHistCache.has(key))return rc90AHistCache.get(key);
+  const hist=rc90HistoryBeforeTarget();
+  const out={hist,windows:{}};
+  for(const w of [30,60,120,250])out.windows[w]=rc90EvalWindow(hist,w);
+  rc90AHistCache.set(key,out);return out;
+}
+function rc90FmtPct(v){return Number.isFinite(v)?v.toFixed(1)+'%':'—'}
+function renderAHistoricalValidation(){
+  const box=$("aHistWindows"),vs=$("aHistVsSim"),pr=$("aHistPrizes");
+  if(!box||!vs||!pr||!geo?.tickets?.length)return;
+  const data=rc90HistoricalData();
+  if(!data||!data.hist.length){box.innerHTML='<div class="muted">Chưa có đủ lịch sử trước kỳ đang chọn.</div>';vs.innerHTML='';pr.innerHTML='';return}
+  box.innerHTML=[30,60,120,250].map(w=>{
+    const s=data.windows[w];
+    return '<article class="aHistWindow"><div class="aHistWindowTop"><span>'+w+' kỳ</span><b>'+s.n+' kỳ dùng được</b></div><div class="aHistMetric"><span>Best-hit TB</span><strong>'+s.avgBest.toFixed(3)+'</strong></div><div class="aHistMini"><span>Best ≥3 <b>'+rc90FmtPct(s.p3)+'</b></span><span>Best ≥4 <b>'+rc90FmtPct(s.p4)+'</b></span><span>Best ≥5 <b>'+rc90FmtPct(s.p5)+'</b></span></div><small>'+s.prizeTickets+' lượt vé đạt từ Giải Ba trở lên</small></article>';
+  }).join('');
+  const base=data.windows[120].n?data.windows[120]:data.windows[60].n?data.windows[60]:data.windows[30];
+  const an=typeof ensureGeoAnalysis==='function'?ensureGeoAnalysis():null,sim=an?.display||null;
+  if(sim){
+    const d3=base.p3-(Number(sim.p3)||0),d4=base.p4-(Number(sim.p4)||0),da=base.avgBest-(Number(sim.avgBest)||0);
+    const sign=v=>v>0?'+':'';
+    vs.innerHTML='<div class="aHistVsTitle"><b>Lịch sử thực tế vs mô phỏng ngẫu nhiên</b><span>cửa sổ '+base.n+' kỳ gần nhất trước kỳ mục tiêu</span></div><div class="aHistCompareGrid"><div><span>Best-hit TB</span><b>'+base.avgBest.toFixed(3)+'</b><small>Mô phỏng '+Number(sim.avgBest||0).toFixed(3)+' • Δ '+sign(da)+da.toFixed(3)+'</small></div><div><span>Best ≥3</span><b>'+rc90FmtPct(base.p3)+'</b><small>Mô phỏng '+rc90FmtPct(Number(sim.p3)||0)+' • Δ '+sign(d3)+d3.toFixed(1)+' điểm %</small></div><div><span>Best ≥4</span><b>'+rc90FmtPct(base.p4)+'</b><small>Mô phỏng '+rc90FmtPct(Number(sim.p4)||0)+' • Δ '+sign(d4)+d4.toFixed(1)+' điểm %</small></div></div>';
+  }else vs.innerHTML='';
+  const s=data.windows[120].n?data.windows[120]:base;
+  const chip=(cls,label,n)=>Number(n)>0?'<span class="aHistPrizeChip '+cls+'"><b>'+n+'</b> '+label+'</span>':'';
+  const chips=[chip('jp1','Jackpot 1',s.jp1),chip('jp2','Jackpot 2',s.jp2),chip('first','Giải Nhất',s.first),chip('second','Giải Nhì',s.second),chip('third','Giải Ba',s.third)].filter(Boolean);
+  pr.innerHTML='<div class="aHistPrizeTitle"><b>Phân bố giải trong '+s.n+' kỳ</b><span>Tổng trên 20 vé A của mỗi kỳ lịch sử</span></div><div class="aHistPrizeChips">'+(chips.length?chips.join(''):'<span class="muted">Không có lượt vé đạt giải trong cửa sổ này.</span>')+'</div>';
+}
+function enhanceATicketHistory(){
+  const grid=$("geoTickets");if(!grid||!geo?.tickets?.length)return;
+  const data=rc90HistoricalData();if(!data?.hist?.length)return;
+  const rows=typeof rankGeoRows==='function'?rankGeoRows():[];
+  [...grid.children].forEach((card,i)=>{
+    const p=rows[i];if(!p?.a)return;
+    card.querySelectorAll('.aTicketHistory').forEach(x=>x.remove());
+    const s=rc90TicketStats(p.a,data.hist),div=document.createElement('div');
+    div.className='aTicketHistory';
+    div.innerHTML='<span>120 kỳ: hit TB <b>'+s.avg.toFixed(2)+'</b></span><span>≥3: <b>'+s.ge3+'</b></span><span>Max: <b>'+s.max+'/6</b></span><span>Gap TB: <b>'+s.gap.toFixed(1)+'</b></span><small>Lịch sử chỉ để kiểm chứng • không ảnh hưởng hạng #'+p.rank+'</small>';
+    card.appendChild(div);
+  });
+}
+const rc90RenderGeoBase=renderGeo;
+renderGeo=function(actual=[]){
+  rc90RenderGeoBase(actual);
+  try{renderAHistoricalValidation();enhanceATicketHistory()}catch(e){console.error('RC9 A validation render failed',e)}
+};
+
 initCloudAuth().catch(e=>console.error("Auth bootstrap failed",e));
 load();
 
@@ -1620,4 +1808,395 @@ load();
   try{saved=localStorage.getItem("powerai_rc6_ui_tab")||"geometryTab"}catch{}
   if(!activateTrack(saved))activateTrack("geometryTab");
 })();
+
+
+
+/* RC9.1 — semantic interaction hints */
+function rc91RefreshInteractionHints(){
+  document.querySelectorAll('button,input,select,textarea,.tab,summary,a[href]').forEach(el=>{
+    const disabled=('disabled' in el&&el.disabled)||el.getAttribute('aria-disabled')==='true';
+    el.classList.toggle('uxInteractive',!disabled);
+    el.classList.toggle('uxUnavailable',!!disabled);
+  });
+}
+const rc91Observer=new MutationObserver(rc91RefreshInteractionHints);
+rc91Observer.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['disabled','aria-disabled','class']});
+window.addEventListener('load',rc91RefreshInteractionHints,{once:true});
+queueMicrotask(rc91RefreshInteractionHints);
+
+
+
+/* =========================
+   RC9.2 — NUMBER INTELLIGENCE 01–55
+   All statistics use draws strictly before targetId.
+   Descriptive only; no probability claim.
+   ========================= */
+let rc92SelectedNumber=1;
+const rc92Cache=new Map();
+function rc92History(){
+  return (draws||[])
+    .filter(d=>Number(d?.id)<Number(targetId)&&nums(d).length===6)
+    .sort((a,b)=>Number(b.id)-Number(a.id));
+}
+function rc92WindowCount(n,hist,limit){
+  const ds=hist.slice(0,Math.min(limit,hist.length));
+  let count=0;for(const d of ds)if(nums(d).includes(n))count++;
+  return{n:ds.length,count,rate:ds.length?count/ds.length:0};
+}
+function rc92GapStats(n,hist){
+  const pos=[];for(let i=0;i<hist.length;i++)if(nums(hist[i]).includes(n))pos.push(i);
+  const current=pos.length?pos[0]:hist.length;
+  let avg=0;
+  if(pos.length>=2){let total=0;for(let i=1;i<pos.length;i++)total+=pos[i]-pos[i-1];avg=total/(pos.length-1)}
+  else avg=hist.length?55/6:0;
+  return{current,avg,ratio:avg>0?current/avg:0,lastPos:pos[0]??null,appearances:pos.length};
+}
+function rc92Status(n,hist){
+  const w30=rc92WindowCount(n,hist,30),gap=rc92GapStats(n,hist);
+  const p=6/55,expected=w30.n*p,sd=Math.sqrt(Math.max(.0001,w30.n*p*(1-p)));
+  const z=sd?(w30.count-expected)/sd:0;
+  if(gap.avg>0&&gap.current>=Math.max(12,gap.avg*1.65))return{key:'overdue',label:'GAP CAO',z};
+  if(z>=1.05)return{key:'hot',label:'NÓNG GẦN ĐÂY',z};
+  if(z<=-1.05)return{key:'cold',label:'LẠNH GẦN ĐÂY',z};
+  return{key:'neutral',label:'TRUNG TÍNH',z};
+}
+function rc92Pairs(n,hist,limit=250){
+  const ds=hist.slice(0,Math.min(limit,hist.length)),cnt=Array(56).fill(0);let selectedDraws=0;
+  for(const d of ds){const a=nums(d);if(!a.includes(n))continue;selectedDraws++;for(const x of a)if(x!==n)cnt[x]++}
+  return [...Array(55)].map((_,i)=>i+1).filter(x=>x!==n).map(x=>({n:x,count:cnt[x],pct:selectedDraws?cnt[x]/selectedDraws*100:0})).sort((a,b)=>b.count-a.count||a.n-b.n).slice(0,8);
+}
+function rc92PortfolioTickets(raw){
+  if(!Array.isArray(raw))return[];
+  return raw.map(t=>Array.isArray(t)?t:(Array.isArray(t?.a)?t.a:null)).filter(t=>Array.isArray(t)&&t.length===6);
+}
+function rc92Exposure(n){
+  const A=rc92PortfolioTickets(geo?.tickets||[]),B=rc92PortfolioTickets(legacy||[]),C=rc92PortfolioTickets(hybrid||[]),L=rc92PortfolioTickets(learningPortfolio||[]);
+  const one=(T)=>({count:T.filter(t=>t.includes(n)).length,total:T.length});
+  return{A:one(A),B:one(B),C:one(C),L:one(L)};
+}
+function rc92NumData(n){
+  const hist=rc92History(),key=String(targetId)+'|'+String((draws||[]).length)+'|'+String(n)+'|'+String(geo?.tickets?.length||0)+'|'+String(legacy?.length||0)+'|'+String(hybrid?.length||0)+'|'+String(learningPortfolio?.length||0);
+  if(rc92Cache.has(key))return rc92Cache.get(key);
+  const windows={};for(const w of [30,60,120,250])windows[w]=rc92WindowCount(n,hist,w);
+  const gap=rc92GapStats(n,hist),status=rc92Status(n,hist),pairs=rc92Pairs(n,hist,250),exposure=rc92Exposure(n);
+  const recent=hist.slice(0,30).map(d=>({id:Number(d.id),hit:nums(d).includes(n)}));
+  const appearances=hist.filter(d=>nums(d).includes(n)).slice(0,8).map(d=>Number(d.id));
+  const out={n,histN:hist.length,windows,gap,status,pairs,exposure,recent,appearances};rc92Cache.set(key,out);return out;
+}
+function rc92Pad(n){return String(n).padStart(2,'0')}
+function rc92RenderGrid(){
+  const grid=$("numberIntelGrid");if(!grid)return;
+  const hist=rc92History();
+  if(!hist.length){grid.innerHTML='<div class="muted">Chưa có lịch sử trước kỳ đang chọn.</div>';return}
+  grid.innerHTML=[...Array(55)].map((_,i)=>i+1).map(n=>{
+    const s=rc92Status(n,hist),w30=rc92WindowCount(n,hist,30),active=n===rc92SelectedNumber?' active':'';
+    return '<button type="button" class="numberIntelBall '+s.key+active+'" data-num="'+n+'" aria-pressed="'+(n===rc92SelectedNumber?'true':'false')+'" aria-label="Xem hồ sơ số '+rc92Pad(n)+'"><b>'+rc92Pad(n)+'</b><span>'+w30.count+'/30</span></button>';
+  }).join('');
+  grid.querySelectorAll('[data-num]').forEach(btn=>btn.addEventListener('click',()=>{rc92SelectedNumber=Number(btn.dataset.num);rc92RenderGrid();rc92RenderDetail()}));
+}
+function rc92TrendText(d){
+  const a=d.windows[30],b=d.windows[120];if(!a.n||!b.n)return'Chưa đủ dữ liệu';
+  const delta=(a.rate-b.rate)*100;
+  if(delta>=4)return'Tần suất 30 kỳ đang cao hơn nền 120 kỳ';
+  if(delta<=-4)return'Tần suất 30 kỳ đang thấp hơn nền 120 kỳ';
+  return'Tần suất gần đây khá gần nền 120 kỳ';
+}
+function rc92RenderDetail(){
+  const box=$("numberIntelDetail");if(!box)return;
+  const d=rc92NumData(rc92SelectedNumber),n=d.n;
+  if(!d.histN){box.innerHTML='<div class="muted">Chưa có dữ liệu lịch sử.</div>';return}
+  const wCards=[30,60,120,250].map(w=>{const x=d.windows[w],expected=x.n*6/55;return '<div class="numberWindowCard"><span>'+w+' kỳ</span><b>'+x.count+' lần</b><small>'+((x.rate||0)*100).toFixed(1)+'% số kỳ • kỳ vọng ngẫu nhiên '+expected.toFixed(1)+'</small></div>'}).join('');
+  const pairHtml=d.pairs.map(p=>'<button type="button" class="numberPairChip" data-pair="'+p.n+'"><b>'+rc92Pad(p.n)+'</b><span>'+p.count+' lần • '+p.pct.toFixed(1)+'%</span></button>').join('')||'<span class="muted">Chưa đủ dữ liệu cặp.</span>';
+  const expOne=(key,x)=>'<div class="numberExposure '+key+'"><b>'+key+'</b><span>'+(x.total?x.count+'/'+x.total:'—')+'</span><small>vé có số '+rc92Pad(n)+'</small></div>';
+  const timeline=d.recent.map(x=>'<i class="'+(x.hit?'hit':'')+'" title="'+drawLabel(x.id)+(x.hit?' • có '+rc92Pad(n):'')+'"></i>').join('');
+  const last=d.appearances.length?d.appearances.map(id=>'<span>'+drawLabel(id)+'</span>').join(''):'<span>Chưa ghi nhận</span>';
+  box.innerHTML='<section class="numberProfile '+d.status.key+'"><div class="numberProfileHero"><div class="numberProfileBall">'+rc92Pad(n)+'</div><div><span>HỒ SƠ SỐ</span><h3>'+d.status.label+'</h3><p>'+rc92TrendText(d)+'</p></div><div class="numberGapHero"><span>Gap hiện tại</span><b>'+d.gap.current+' kỳ</b><small>Gap TB '+d.gap.avg.toFixed(1)+' • '+(d.gap.ratio||0).toFixed(2)+'× trung bình</small></div></div><div class="numberWindowGrid">'+wCards+'</div><div class="numberIntelTwoCol"><article><div class="numberSubHead"><b>Cặp đồng xuất hiện</b><span>Top 8 trong tối đa 250 kỳ</span></div><div class="numberPairGrid">'+pairHtml+'</div></article><article><div class="numberSubHead"><b>Exposure kỳ đang chọn</b><span>Số lần xuất hiện trong portfolio</span></div><div class="numberExposureGrid">'+expOne('A',d.exposure.A)+expOne('B',d.exposure.B)+expOne('C',d.exposure.C)+expOne('L',d.exposure.L)+'</div></article></div><div class="numberRecentBlock"><div class="numberSubHead"><b>30 kỳ gần nhất trước kỳ mục tiêu</b><span>Ô sáng = số '+rc92Pad(n)+' xuất hiện</span></div><div class="numberTimeline">'+timeline+'</div><div class="numberLastDraws"><small>Các lần gần nhất:</small>'+last+'</div></div><div class="numberIntelFoot">Dữ liệu chỉ lấy từ các kỳ có ID nhỏ hơn '+drawLabel(targetId)+'. Không dùng kết quả của kỳ mục tiêu để mô tả số.</div></section>';
+  box.querySelectorAll('[data-pair]').forEach(btn=>btn.addEventListener('click',()=>{rc92SelectedNumber=Number(btn.dataset.pair);rc92RenderGrid();rc92RenderDetail();box.scrollIntoView({behavior:'smooth',block:'start'})}));
+}
+function renderNumberIntelligence(){
+  try{rc92RenderGrid();rc92RenderDetail()}catch(e){console.error('RC9.2 Number Intelligence render failed',e)}
+}
+const rc92SetTargetBase=setTarget;
+setTarget=async function(id){const r=await rc92SetTargetBase(id);renderNumberIntelligence();return r};
+const rc92NumberTab=document.querySelector('[data-tab="numberIntelTab"]');
+if(rc92NumberTab)rc92NumberTab.addEventListener('click',()=>queueMicrotask(renderNumberIntelligence));
+window.addEventListener('load',renderNumberIntelligence,{once:true});
+
+
+
+/* =========================
+   RC9.3 — NAVIGATION RESTRUCTURE
+   Main: Chọn vé / Phân tích / Kết quả / Hiệu suất
+   Chọn vé: A / B / C / L
+   Algorithms and stored data are unchanged.
+   ========================= */
+let rc93MainView='choose';
+
+function rc93Intro(kicker,title,desc){
+  const el=document.createElement('div');
+  el.className='rc93ViewIntro';
+  el.innerHTML='<div><span>'+kicker+'</span><h2>'+title+'</h2><p>'+desc+'</p></div>';
+  return el;
+}
+function rc93RefreshNavMeta(){
+  const resultState=document.querySelector('[data-main-view="result"] .rc93MainState');
+  if(resultState){
+    let has=false;
+    try{has=!!getLog(targetId)}catch(e){}
+    resultState.textContent=has?'CÓ KẾT QUẢ':'KẾT QUẢ';
+    resultState.classList.toggle('ready',has);
+  }
+  const perfState=document.querySelector('[data-main-view="performance"] .rc93MainState');
+  if(perfState){
+    let n=0;
+    try{if(typeof rc90HistoryBeforeTarget==='function')n=rc90HistoryBeforeTarget().length}catch(e){}
+    perfState.textContent=n?Math.min(n,250)+' KỲ':'LỊCH SỬ';
+  }
+}
+function rc93ActivateMain(view,opts={}){
+  const valid=['choose','analysis','result','performance'];
+  if(!valid.includes(view))view='choose';
+  rc93MainView=view;
+  document.querySelectorAll('.rc93View').forEach(el=>{el.hidden=el.dataset.mainPane!==view});
+  document.querySelectorAll('.rc93MainBtn').forEach(btn=>{
+    const on=btn.dataset.mainView===view;
+    btn.classList.toggle('active',on);
+    btn.setAttribute('aria-selected',on?'true':'false');
+  });
+  try{localStorage.setItem('powerai_rc93_main_view',view)}catch(e){}
+  if(view==='analysis'&&typeof renderNumberIntelligence==='function')queueMicrotask(renderNumberIntelligence);
+  if(view==='performance'){
+    if(typeof renderAHistoricalValidation==='function')queueMicrotask(renderAHistoricalValidation);
+    if(typeof renderInsights==='function')queueMicrotask(renderInsights);
+  }
+  rc93RefreshNavMeta();
+  if(opts.scroll){const nav=document.querySelector('.rc93MainNav');if(nav)nav.scrollIntoView({behavior:'smooth',block:'start'})}
+}
+function rc93BuildNavigation(){
+  if(document.querySelector('.rc93MainNav'))return;
+  const main=document.querySelector('main');
+  const compare=document.querySelector('.comparePanel');
+  const trackTabs=document.querySelector('.trackTabs');
+  const A=document.getElementById('geometryTab');
+  const B=document.getElementById('legacyTab');
+  const C=document.getElementById('hybridTab');
+  const L=document.getElementById('learningTab');
+  const N=document.getElementById('numberIntelTab');
+  const insights=document.getElementById('insightsPanel');
+  const aHistory=document.getElementById('aHistoryValidation');
+  if(!main||!compare||!trackTabs||!A||!B||!C||!L||!N)return;
+
+  const nav=document.createElement('nav');
+  nav.className='rc93MainNav';
+  nav.setAttribute('aria-label','Khu vực chính PowerAI');
+  nav.innerHTML=
+    '<button type="button" class="rc93MainBtn active" data-main-view="choose" aria-selected="true"><i>🎟</i><span><b>Chọn vé</b><small>A / B / C / Learning</small></span><em class="rc93MainState">4 BỘ</em></button>'+ 
+    '<button type="button" class="rc93MainBtn" data-main-view="analysis" aria-selected="false"><i>🔎</i><span><b>Phân tích</b><small>Number Intelligence 01–55</small></span><em class="rc93MainState">55 SỐ</em></button>'+ 
+    '<button type="button" class="rc93MainBtn" data-main-view="result" aria-selected="false"><i>🏆</i><span><b>Kết quả</b><small>Hit • giải thưởng • kỳ quay</small></span><em class="rc93MainState">KẾT QUẢ</em></button>'+ 
+    '<button type="button" class="rc93MainBtn" data-main-view="performance" aria-selected="false"><i>📈</i><span><b>Hiệu suất</b><small>Validation • trend • backtest</small></span><em class="rc93MainState">LỊCH SỬ</em></button>';
+
+  const host=document.createElement('div');
+  host.className='rc93ViewHost';
+  host.innerHTML='<section class="rc93View" data-main-pane="choose"></section><section class="rc93View" data-main-pane="analysis" hidden></section><section class="rc93View" data-main-pane="result" hidden></section><section class="rc93View" data-main-pane="performance" hidden></section>';
+
+  compare.parentNode.insertBefore(nav,compare);
+  compare.parentNode.insertBefore(host,compare);
+  const choose=host.querySelector('[data-main-pane="choose"]');
+  const analysis=host.querySelector('[data-main-pane="analysis"]');
+  const result=host.querySelector('[data-main-pane="result"]');
+  const performance=host.querySelector('[data-main-pane="performance"]');
+
+  choose.appendChild(rc93Intro('CHỌN VÉ','🎟 Chọn bộ vé','A / B / C / Learning nằm riêng ở đây để tạo, xem, sao chép và khóa bộ vé mà không lẫn với phần phân tích.'));
+  choose.appendChild(trackTabs);
+  const nTab=trackTabs.querySelector('[data-tab="numberIntelTab"]');
+  if(nTab)nTab.remove();
+  [A,B,C,L].forEach(p=>choose.appendChild(p));
+
+  analysis.appendChild(rc93Intro('PHÂN TÍCH','🔎 Phân tích dữ liệu','Number Intelligence 01–55 và các tín hiệu lịch sử được tách riêng khỏi khu vực chọn vé.'));
+  N.classList.add('rc93StandalonePane');
+  N.classList.remove('active');
+  analysis.appendChild(N);
+
+  result.appendChild(rc93Intro('KẾT QUẢ','🏆 Kết quả & chấm giải','Xem hit, Jackpot 1/2, Giải Nhất/Nhì/Ba và tổng kết A/B/C/L tại một nơi.'));
+  result.appendChild(compare);
+
+  performance.appendChild(rc93Intro('HIỆU SUẤT','📈 Hiệu suất & kiểm chứng','Theo dõi lịch sử nhiều kỳ, trend và Historical Validation mà không làm dài màn hình chọn vé.'));
+  const perfPanel=document.createElement('section');
+  perfPanel.className='panel rc93PerformancePanel';
+  performance.appendChild(perfPanel);
+  if(aHistory)perfPanel.appendChild(aHistory);
+  if(insights)perfPanel.appendChild(insights);
+
+  if(aHistory){
+    const shortcut=document.createElement('div');
+    shortcut.className='rc93AHistoryShortcut';
+    shortcut.innerHTML='<div><span>KIỂM CHỨNG LỊCH SỬ</span><b>Historical Validation nằm trong mục Hiệu suất</b><small>Lịch sử chỉ kiểm chứng A, không thay đổi cách A tạo vé.</small></div><button type="button">Xem chi tiết →</button>';
+    const audit=document.getElementById('geoAudit');
+    if(audit)audit.insertAdjacentElement('afterend',shortcut);
+    const btn=shortcut.querySelector('button');if(btn)btn.addEventListener('click',()=>rc93ActivateMain('performance',{scroll:true}));
+  }
+
+  nav.querySelectorAll('[data-main-view]').forEach(btn=>btn.addEventListener('click',()=>rc93ActivateMain(btn.dataset.mainView)));
+
+  let savedTrack='geometryTab';
+  try{savedTrack=localStorage.getItem('powerai_rc6_ui_tab')||'geometryTab'}catch(e){}
+  if(!['geometryTab','legacyTab','hybridTab','learningTab'].includes(savedTrack))savedTrack='geometryTab';
+  try{activateTrack(savedTrack)}catch(e){try{activateTrack('geometryTab')}catch(e2){}}
+
+  let savedMain='choose';
+  try{savedMain=localStorage.getItem('powerai_rc93_main_view')||'choose'}catch(e){}
+  rc93ActivateMain(savedMain);
+}
+
+try{
+  const rc93OpenTrackBase=openTrack;
+  openTrack=function(tabId){rc93ActivateMain('choose');return rc93OpenTrackBase(tabId)};
+}catch(e){}
+try{
+  const rc93SetTargetBase=setTarget;
+  setTarget=async function(id){const r=await rc93SetTargetBase(id);rc93RefreshNavMeta();return r};
+}catch(e){}
+
+rc93BuildNavigation();
+window.addEventListener('load',()=>{rc93BuildNavigation();rc93RefreshNavMeta()},{once:true});
+
+
+
+/* =========================
+   RC9.4 — RESULT DOCK
+   Kết quả is always visible outside the main navigation.
+   Main nav is now: Chọn vé / Phân tích / Hiệu suất.
+   ========================= */
+function rc94DockResults(){
+  if(document.querySelector('.rc94ResultDock'))return;
+  const nav=document.querySelector('.rc93MainNav');
+  const compare=document.querySelector('.comparePanel');
+  const resultBtn=document.querySelector('[data-main-view="result"]');
+  const resultPane=document.querySelector('[data-main-pane="result"]');
+  if(!nav||!compare)return;
+
+  const dock=document.createElement('section');
+  dock.className='rc94ResultDock';
+  dock.innerHTML='<div class="rc94ResultDockHead"><div><span>KẾT QUẢ KỲ ĐANG CHỌN</span><h2>🏆 Kết quả & chấm giải</h2><p>Luôn hiển thị bên ngoài các tab để xem nhanh hit, Jackpot 1/2, Giải Nhất/Nhì/Ba và tổng kết A/B/C/L.</p></div><em class="rc94ResultState">KẾT QUẢ</em></div>';
+  nav.parentNode.insertBefore(dock,nav);
+  dock.appendChild(compare);
+
+  if(resultBtn)resultBtn.remove();
+  if(resultPane)resultPane.remove();
+
+  const oldActivate=typeof rc93ActivateMain==='function'?rc93ActivateMain:null;
+  if(oldActivate){
+    rc93ActivateMain=function(view,opts={}){
+      if(view==='result')view='choose';
+      return oldActivate(view,opts);
+    };
+  }
+
+  try{
+    if(rc93MainView==='result')rc93ActivateMain('choose');
+  }catch(e){}
+
+  function refreshState(){
+    const el=dock.querySelector('.rc94ResultState');if(!el)return;
+    let has=false;
+    try{has=!!getLog(targetId)}catch(e){}
+    el.textContent=has?'CÓ KẾT QUẢ':'CHƯA CÓ KQ';
+    el.classList.toggle('ready',has);
+  }
+  refreshState();
+
+  try{
+    const baseSetTarget=setTarget;
+    setTarget=async function(id){const r=await baseSetTarget(id);refreshState();return r};
+  }catch(e){}
+}
+
+rc94DockResults();
+window.addEventListener('load',rc94DockResults,{once:true});
+
+
+
+/* =========================
+   RC9.6 — SPECIAL NUMBER / BÓNG VÀNG HIGHLIGHT
+   Green = hit 6 main numbers. Gold = hit special number.
+   ========================= */
+function rc96AddResultLegend(){
+  const head=document.querySelector('.rc94ResultDockHead');
+  if(!head||head.querySelector('.rc96HitLegend'))return;
+  const legend=document.createElement('div');
+  legend.className='rc96HitLegend';
+  legend.innerHTML='<span><i class="main"></i>Số chính trùng</span><span><i class="special"></i>Số đặc biệt / bóng vàng</span>';
+  const state=head.querySelector('.rc94ResultState');
+  if(state)state.insertAdjacentElement('beforebegin',legend);else head.appendChild(legend);
+}
+rc96AddResultLegend();
+window.addEventListener('load',rc96AddResultLegend,{once:true});
+
+
+
+/* =========================
+   RC9.7 — PERFORMANCE CENTER A/B/C/L
+   Uses official feed logs only. Manual/replay are excluded.
+   ========================= */
+let rc97PerfTrack='overview';
+function rc97Logs(){
+  try{return (typeof allLogs==='function'?allLogs():[]).filter(x=>x&&x.source==='feed').sort((a,b)=>Number(a.targetId)-Number(b.targetId))}catch(e){return[]}
+}
+function rc97Stat(key,logs){
+  const rows=logs.map(l=>({id:Number(l.targetId),s:l?.[key]})).filter(x=>x.s&&Number.isFinite(Number(x.s.best)));
+  const n=rows.length,sum=f=>rows.reduce((a,x)=>a+(Number(f(x.s))||0),0);
+  const prizes={jp1:sum(s=>s.jp1),jp2:sum(s=>s.jp2),first:sum(s=>s.first),second:sum(s=>s.second),third:sum(s=>s.third)};
+  return{key,n,rows,avgBest:n?sum(s=>s.best)/n:0,avgTotal:n?sum(s=>s.total)/n:0,ge3:rows.filter(x=>Number(x.s.best)>=3).length,ge4:rows.filter(x=>Number(x.s.best)>=4).length,ge5:rows.filter(x=>Number(x.s.best)>=5).length,maxBest:n?Math.max(...rows.map(x=>Number(x.s.best)||0)):0,prizes};
+}
+function rc97Pct(a,n){return n?(a/n*100).toFixed(1)+'%':'—'}
+function rc97PrizeChips(p){
+  const defs=[['jp1','JP1'],['jp2','JP2'],['first','Nhất'],['second','Nhì'],['third','Ba']];
+  const a=defs.filter(([k])=>Number(p[k])>0).map(([k,l])=>'<span class="rc97Prize '+k+'"><b>'+p[k]+'</b> '+l+'</span>');
+  return a.length?a.join(''):'<span class="rc97None">Chưa ghi nhận giải</span>';
+}
+function rc97TrackName(k){return({A:'A • Toán + kiểm chứng',B:'B • Lịch sử',C:'C • Kết hợp',L:'L • Learning'})[k]||k}
+function rc97Overview(logs){
+  const stats=['A','B','C','L'].map(k=>rc97Stat(k,logs));
+  const cards=stats.map(s=>'<article class="rc97TrackCard track'+s.key+'"><div class="rc97TrackHead"><b>'+s.key+'</b><span>'+rc97TrackName(s.key).split('•')[1].trim()+'</span><em>'+s.n+' kỳ</em></div><div class="rc97Kpis"><div><span>Best-hit TB</span><b>'+s.avgBest.toFixed(2)+'</b></div><div><span>Best ≥3</span><b>'+rc97Pct(s.ge3,s.n)+'</b></div><div><span>Best ≥4</span><b>'+rc97Pct(s.ge4,s.n)+'</b></div><div><span>Best ≥5</span><b>'+rc97Pct(s.ge5,s.n)+'</b></div></div><div class="rc97PrizeRow">'+rc97PrizeChips(s.prizes)+'</div></article>').join('');
+  const recent=logs.slice(-12).reverse();
+  const table=recent.length?'<div class="rc97Recent"><div class="rc97RecentHead"><b>12 kỳ official gần nhất đã lưu</b><span>Best hit của từng track</span></div><div class="rc97Table"><div class="rc97TR head"><span>Kỳ</span><b>A</b><b>B</b><b>C</b><b>L</b></div>'+recent.map(l=>'<div class="rc97TR"><span>'+drawLabel(l.targetId)+'</span>'+['A','B','C','L'].map(k=>'<b class="t'+k+'">'+(l[k]?String(l[k].best)+'/6':'—')+'</b>').join('')+'</div>').join('')+'</div></div>':'<div class="notice">Chưa có log kết quả chính thức đã khóa để tổng hợp.</div>';
+  return '<div class="rc97SummaryNote">Chỉ dùng log <b>feed chính thức</b> đã lưu. Kết quả nhập tay và replay không được tính vào Performance Center.</div><div class="rc97TrackGrid">'+cards+'</div>'+table;
+}
+function rc97TrackDetail(key,logs){
+  const s=rc97Stat(key,logs),recent=s.rows.slice(-20).reverse();
+  const desc={A:'A được tạo bằng mô phỏng/toán học; Historical Validation bên dưới dùng lịch sử để kiểm chứng, không đổi hạng A.',B:'B dùng dữ liệu lịch sử trước kỳ mục tiêu. Bảng này chỉ tổng hợp kết quả official của các bộ B đã khóa.',C:'C kết hợp tín hiệu lịch sử với khung cấu trúc. Bảng này tổng hợp các kỳ C đã khóa và có feed chính thức.',L:'L chỉ xuất hiện ở những kỳ Learning đã được tạo và khóa. Kỳ không có L hợp lệ sẽ không được tính.'}[key];
+  const prizeTotal=Object.values(s.prizes).reduce((a,b)=>a+(Number(b)||0),0);
+  const rows=recent.length?recent.map(x=>'<div class="rc97TrackRow"><span>'+drawLabel(x.id)+'</span><b>Best '+x.s.best+'/6</b><small>Tổng hit '+(x.s.total??0)+'</small><small>≥3: '+(x.s.g3??0)+' vé</small><div>'+rc97PrizeChips(x.s)+'</div></div>').join(''):'<div class="notice">Chưa có log official cho track '+key+'.</div>';
+  return '<div class="rc97TrackIntro"><div><span>'+key+' • PERFORMANCE</span><h3>'+rc97TrackName(key)+'</h3><p>'+desc+'</p></div><em>'+s.n+' KỲ OFFICIAL</em></div><div class="rc97MetricGrid"><div><span>Best-hit trung bình</span><b>'+s.avgBest.toFixed(3)+'</b></div><div><span>Best cao nhất đã ghi nhận</span><b>'+s.maxBest+'/6</b></div><div><span>Kỳ Best ≥3</span><b>'+s.ge3+' <small>('+rc97Pct(s.ge3,s.n)+')</small></b></div><div><span>Kỳ Best ≥4</span><b>'+s.ge4+' <small>('+rc97Pct(s.ge4,s.n)+')</small></b></div><div><span>Kỳ Best ≥5</span><b>'+s.ge5+' <small>('+rc97Pct(s.ge5,s.n)+')</small></b></div><div><span>Lượt vé có giải</span><b>'+prizeTotal+'</b></div></div><div class="rc97PrizeBox"><b>Phân bố giải đã ghi nhận</b><div>'+rc97PrizeChips(s.prizes)+'</div></div><div class="rc97TrackRows"><div class="rc97RecentHead"><b>Tối đa 20 kỳ gần nhất</b><span>official feed • đã lưu</span></div>'+rows+'</div>';
+}
+function rc97SetTab(tab){
+  if(!['overview','A','B','C','L'].includes(tab))tab='overview';rc97PerfTrack=tab;
+  document.querySelectorAll('.rc97PerfTab').forEach(b=>{const on=b.dataset.perfTab===tab;b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false')});
+  document.querySelectorAll('.rc97PerfPane').forEach(p=>p.hidden=p.dataset.perfPane!==tab);
+  const logs=rc97Logs();
+  const ov=document.querySelector('[data-perf-pane="overview"] .rc97Dynamic');if(ov&&tab==='overview')ov.innerHTML=rc97Overview(logs);
+  if(tab!=='overview'){
+    const d=document.querySelector('[data-perf-pane="'+tab+'"] .rc97Dynamic');if(d)d.innerHTML=rc97TrackDetail(tab,logs);
+    if(tab==='A'&&typeof renderAHistoricalValidation==='function')queueMicrotask(renderAHistoricalValidation);
+  }
+  try{localStorage.setItem('powerai_rc97_perf_tab',tab)}catch(e){}
+}
+function rc97BuildPerformance(){
+  const perf=document.querySelector('[data-main-pane="performance"]');if(!perf||perf.querySelector('.rc97PerformanceCenter'))return;
+  const oldPanel=perf.querySelector('.rc93PerformancePanel');
+  const aHistory=document.getElementById('aHistoryValidation');
+  const insights=document.getElementById('insightsPanel');
+  const center=document.createElement('section');center.className='rc97PerformanceCenter';
+  center.innerHTML='<div class="rc97PerfHead"><div><span>PERFORMANCE CENTER</span><h2>📈 Hiệu suất A / B / C / L</h2><p>Tách riêng từng track và một trang Tổng quan để nhìn cùng một hệ chỉ số. Không dùng bảng này để biến kết quả quá khứ thành xác suất kỳ tiếp theo.</p></div></div><nav class="rc97PerfTabs" aria-label="Chọn track hiệu suất"><button class="rc97PerfTab active" data-perf-tab="overview">Tổng quan</button><button class="rc97PerfTab" data-perf-tab="A">A</button><button class="rc97PerfTab" data-perf-tab="B">B</button><button class="rc97PerfTab" data-perf-tab="C">C</button><button class="rc97PerfTab" data-perf-tab="L">L</button></nav><div class="rc97PerfPane" data-perf-pane="overview"><div class="rc97Dynamic"></div><div class="rc97LegacyInsights"></div></div><div class="rc97PerfPane" data-perf-pane="A" hidden><div class="rc97Dynamic"></div><div class="rc97AValidation"></div></div><div class="rc97PerfPane" data-perf-pane="B" hidden><div class="rc97Dynamic"></div></div><div class="rc97PerfPane" data-perf-pane="C" hidden><div class="rc97Dynamic"></div></div><div class="rc97PerfPane" data-perf-pane="L" hidden><div class="rc97Dynamic"></div></div>';
+  if(oldPanel)oldPanel.parentNode.insertBefore(center,oldPanel);else perf.appendChild(center);
+  if(insights)center.querySelector('.rc97LegacyInsights').appendChild(insights);
+  if(aHistory)center.querySelector('.rc97AValidation').appendChild(aHistory);
+  if(oldPanel&&oldPanel.children.length===0)oldPanel.remove();
+  center.querySelectorAll('[data-perf-tab]').forEach(b=>b.addEventListener('click',()=>rc97SetTab(b.dataset.perfTab)));
+  let saved='overview';try{saved=localStorage.getItem('powerai_rc97_perf_tab')||'overview'}catch(e){}rc97SetTab(saved);
+}
+rc97BuildPerformance();
+try{const base=rc93ActivateMain;rc93ActivateMain=function(view,opts={}){const r=base(view,opts);if(view==='performance'){rc97BuildPerformance();queueMicrotask(()=>rc97SetTab(rc97PerfTrack))}return r}}catch(e){}
+try{const baseSet=setTarget;setTarget=async function(id){const r=await baseSet(id);if(document.querySelector('.rc97PerformanceCenter'))queueMicrotask(()=>rc97SetTab(rc97PerfTrack));return r}}catch(e){}
+window.addEventListener('load',()=>{rc97BuildPerformance();rc97SetTab(rc97PerfTrack)},{once:true});
 
