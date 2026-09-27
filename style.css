@@ -101,7 +101,12 @@ main{max-width:1520px;margin:0 auto;padding:26px 22px 42px}
 .hero h1{font-size:40px;line-height:1;margin:8px 0 11px;letter-spacing:-.045em}
 .hero h1 span{color:#86c9ff}
 .hero p{margin:0;max-width:850px;color:var(--muted);line-height:1.65;font-size:14px}
-.heroActions{display:flex;flex-direction:column;gap:9px;min-width:220px;position:relative;z-index:1}
+.heroActions{display:flex;flex-direction:column;gap:9px;min-width:260px;position:relative;z-index:1}
+.powerTargetBox{display:flex;flex-direction:column;gap:6px;margin-bottom:2px}
+.powerTargetBox label{font-size:9px;color:var(--muted2);text-transform:uppercase;letter-spacing:.10em;font-weight:800}
+.powerTargetBox select{width:100%;min-width:260px;color:var(--text);background:#071522;border:1px solid var(--lineStrong);border-radius:11px;padding:11px 12px;outline:none;font-weight:760}
+.powerTargetBox select:focus{border-color:rgba(98,181,255,.75);box-shadow:0 0 0 3px rgba(77,164,238,.10)}
+.powerTargetBox select:disabled{opacity:.55}
 .heroActions small{color:var(--muted2);font-size:10px;line-height:1.45;text-align:center}
 .lockBtn{min-height:44px}
 .trackLegend{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
@@ -640,7 +645,8 @@ button:disabled{filter:saturate(.6)}
 /* RC8 — Auth + cloud state */
 .authMini{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.03)}
 .authMini span{font-size:12px;color:var(--muted,#9aa7bb);max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tinyBtn{padding:7px 10px!important;font-size:12px!important}.authModal{position:fixed;inset:0;z-index:9999;background:rgba(3,8,18,.78);backdrop-filter:blur(8px);display:grid;place-items:center;padding:18px}.authModal[hidden]{display:none}.authCard{width:min(440px,100%);background:#101827;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:24px;box-shadow:0 26px 80px rgba(0,0,0,.45);position:relative}.authCard h2{margin:6px 0 8px}.authCard p{color:#9fb0c8}.authCard label{display:block;margin:14px 0 0;font-size:13px;color:#b9c6d8}.authCard input{width:100%;box-sizing:border-box;margin-top:6px;padding:12px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0b1220;color:#fff}.authActions{display:flex;gap:10px;margin-top:18px}.authClose{position:absolute;right:12px;top:10px;border:0;background:transparent;color:#9fb0c8;font-size:26px;cursor:pointer}.cloudBanner{margin:0 0 14px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1);font-size:13px}.cloudBanner.good{background:rgba(29,185,84,.08)}.cloudBanner.warn{background:rgba(245,166,35,.09)}
-@media(max-width:760px){.authMini span{display:none}.topbarRight{gap:6px}.authActions{flex-direction:column}}
+@media(max-width:760px){
+.powerTargetBox select{min-width:0;width:100%}.authMini span{display:none}.topbarRight{gap:6px}.authActions{flex-direction:column}}
 
 /* RC8.3 — guest read-only gate */
 .guestReadOnlyBar{position:sticky;top:0;z-index:8000;margin:0;padding:10px 16px;text-align:center;background:rgba(245,166,35,.12);border-bottom:1px solid rgba(245,166,35,.28);color:#f7d9a1;font-size:13px;backdrop-filter:blur(8px)}

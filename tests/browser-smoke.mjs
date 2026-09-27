@@ -44,6 +44,25 @@ async function runViewport(browser, name, viewport) {
     }
   });
 
+  // Draw selector mirrors Mega UX while preserving Power setTarget/replay semantics.
+  const targetSelect = page.locator('#targetSelect');
+  assert.equal(await targetSelect.count(), 1, `${name}: Power target selector missing`);
+  await page.waitForFunction(() => {
+    const s=document.getElementById('targetSelect');
+    return !!s && !s.disabled && s.options.length >= 2;
+  }, null, { timeout: 90000 });
+  const targetOptions = await targetSelect.locator('option').evaluateAll(opts => opts.map(o => o.value));
+  const initialTarget = Number((await page.locator('#targetId').innerText()).replace(/\D/g,''));
+  const replayValue = targetOptions.find(v => Number(v) < initialTarget);
+  assert.ok(replayValue, `${name}: selector has no historical draw option`);
+  await targetSelect.selectOption(replayValue);
+  await page.waitForFunction(v => Number(String(document.getElementById('targetId')?.textContent||'').replace(/\D/g,''))===Number(v), replayValue, { timeout: 90000 });
+  const replayCutoff = Number((await page.locator('#cutoffId').innerText()).replace(/\D/g,''));
+  const replayTarget = Number((await page.locator('#targetId').innerText()).replace(/\D/g,''));
+  assert.ok(replayCutoff < replayTarget, `${name}: selector replay leaked target/future history`);
+  await targetSelect.selectOption(String(initialTarget));
+  await page.waitForFunction(v => Number(String(document.getElementById('targetId')?.textContent||'').replace(/\D/g,''))===Number(v), String(initialTarget), { timeout: 90000 });
+
   // Result is deliberately outside the main navigation after RC9.4.
   assert.equal(await page.locator('.rc94ResultDock').count(), 1, `${name}: Result Dock missing`);
   assert.equal(await page.locator('.rc93MainNav [data-main-view]').count(), 3, `${name}: main nav should have 3 sections`);

@@ -1186,6 +1186,27 @@ function previousNavigableTarget(){
   const ids=draws.map(d=>Number(d.id)).filter(id=>Number.isFinite(id)&&id<cur);
   return ids.length?ids[ids.length-1]:null;
 }
+function renderTargetSelect(){
+  const sel=$("targetSelect");
+  if(!sel||!latest||!Array.isArray(draws)||!draws.length)return;
+  const next=nextNavigableTarget(),recent=draws.slice(-36).reverse(),seen=new Set(),options=[];
+  const push=(id,label)=>{id=Number(id);if(!Number.isFinite(id)||seen.has(id))return;seen.add(id);options.push(`<option value="${id}">${label}</option>`)};
+  push(next,`${drawLabel(next)} • kỳ tiếp theo`);
+  const currentOfficial=draws.find(d=>Number(d.id)===Number(targetId));
+  if(currentOfficial&&!recent.some(d=>Number(d.id)===Number(targetId)))recent.unshift(currentOfficial);
+  for(const d of recent)push(Number(d.id),`${drawLabel(d.id)} • ${d.date||"kỳ đã quay"}`);
+  sel.innerHTML=options.join("");
+  if(!seen.has(Number(targetId)))push(Number(targetId),drawLabel(targetId));
+  if(!seen.has(Number(targetId))){sel.insertAdjacentHTML("beforeend",`<option value="${Number(targetId)}">${drawLabel(targetId)}</option>`)}
+  sel.value=String(targetId);
+  sel.disabled=false;
+}
+async function chooseTargetFromSelect(){
+  const sel=$("targetSelect");if(!sel)return;
+  const id=Number(sel.value);if(!Number.isFinite(id)||id===Number(targetId))return;
+  sel.disabled=true;
+  try{await setTarget(id)}catch(e){console.error(e);showToast?.("Không mở được kỳ đã chọn.","bad")}finally{renderTargetSelect()}
+}
 async function openLoggedTarget(id){
   await setTarget(Number(id));
   const log=getLog(Number(id));
@@ -1585,7 +1606,7 @@ function renderState(){
 }
 async function setTarget(id){
   targetId=Number(id);try{localStorage.setItem("powerai_rc6_active_target",String(targetId))}catch{}cloudSyncSoon();
-  $("targetId").textContent=drawLabel(targetId);renderTargetContexts();
+  $("targetId").textContent=drawLabel(targetId);renderTargetSelect();renderTargetContexts();
   const L=getLock(targetId);
 
   // STAGE 1: Track A is always built/rendered first and painted before any heavy B/C work.
@@ -1705,7 +1726,7 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>activateTrack(b.datas
 document.querySelectorAll("[data-open-tab]").forEach(b=>b.onclick=()=>openTrack(b.dataset.openTab));
 $("manualResult").addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("manualBtn").disabled)manualResult()});
 $("runLearningBtn").onclick=runLearning;$("buildLearningPortfolioBtn").onclick=prepareAndBuildLearningPortfolio;$("copyLearningBtn").onclick=()=>copySet(rankLearningRows().map(p=>p.a),"L");$("lockLearningBtn").onclick=lockLearningPortfolio;$("resetLearningBtn").onclick=resetLearning;
-$("refreshBtn").onclick=load;$("lockBothBtn").onclick=lockBoth;$("manualBtn").onclick=manualResult;if($("prevBtn"))$("prevBtn").onclick=previousDraw;$("nextBtn").onclick=nextDraw;$("regenLegacyBtn").onclick=buildLegacyPortfolio;$("rebuildHybridBtn").onclick=buildHybridPortfolio;
+$("refreshBtn").onclick=load;if($("targetSelect"))$("targetSelect").onchange=chooseTargetFromSelect;$("lockBothBtn").onclick=lockBoth;$("manualBtn").onclick=manualResult;if($("prevBtn"))$("prevBtn").onclick=previousDraw;$("nextBtn").onclick=nextDraw;$("regenLegacyBtn").onclick=buildLegacyPortfolio;$("rebuildHybridBtn").onclick=buildHybridPortfolio;
 $("copyGeoBtn").onclick=()=>copySet(rankGeoRows().map(p=>p.a),"A");$("copyLegacyBtn").onclick=()=>copySet(rankLegacyRows().map(p=>p.a),"B");$("copyHybridBtn").onclick=()=>copySet(rankHybridRows().map(p=>p.a),"C");$("exportBtn").onclick=exportLogs;
 
 /* =========================
