@@ -1195,9 +1195,8 @@ function renderTargetSelect(){
   const currentOfficial=draws.find(d=>Number(d.id)===Number(targetId));
   if(currentOfficial&&!recent.some(d=>Number(d.id)===Number(targetId)))recent.unshift(currentOfficial);
   for(const d of recent)push(Number(d.id),`${drawLabel(d.id)} • ${d.date||"kỳ đã quay"}`);
+  if(!seen.has(Number(targetId)))push(Number(targetId),`${drawLabel(targetId)} • kỳ đang chọn`);
   sel.innerHTML=options.join("");
-  if(!seen.has(Number(targetId)))push(Number(targetId),drawLabel(targetId));
-  if(!seen.has(Number(targetId))){sel.insertAdjacentHTML("beforeend",`<option value="${Number(targetId)}">${drawLabel(targetId)}</option>`)}
   sel.value=String(targetId);
   sel.disabled=false;
 }
