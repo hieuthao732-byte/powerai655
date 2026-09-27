@@ -23,22 +23,27 @@ Mục tiêu: đóng băng tính năng, giảm rủi ro hồi quy, gom code vá R
 ## Phase 3 — Regression checks
 - [x] Build sạch từ đầu và kiểm tra source = dist cho app/index/style/auth.
 - [x] Thêm GitHub Actions `Stabilization Checks` để chặn việc quay lại chuỗi post-build patch.
-- [ ] Chuyển kỳ mới / kỳ cũ / replay.
-- [ ] A/B/C/L render đúng và không đổi portfolio khi không có chủ đích.
-- [ ] Hit số chính màu xanh; số đặc biệt màu vàng.
-- [ ] JP1 / JP2 / Nhất / Nhì / Ba chấm đúng.
-- [ ] Result Dock hoạt động ở desktop + mobile.
-- [ ] Number Intelligence 01–55 dùng dữ liệu trước kỳ mục tiêu.
-- [ ] Performance Center A/B/C/L chỉ tính log feed official theo thiết kế hiện tại.
-- [ ] Guest read-only / login / logout / cloud state không vỡ.
-- [ ] Khóa A/B/C và L giữ nguyên semantics prospective.
+- [x] Chuyển kỳ mới / kỳ cũ / replay và quay lại kỳ prospective.
+- [x] A/B/C/L render đúng; khóa không làm đổi A/B/C đang được tạo cho kỳ.
+- [x] Hit số chính màu xanh; số đặc biệt màu vàng.
+- [x] JP1 / JP2 / Nhất / Nhì / Ba chấm đúng.
+- [x] Result Dock hoạt động ở desktop + mobile.
+- [x] Number Intelligence 01–55 dùng dữ liệu trước kỳ mục tiêu.
+- [x] Performance Center A/B/C/L chỉ tính log feed official theo thiết kế hiện tại.
+- [x] Guest read-only + màn hình login/signup + cloud hydrate/save/logout bridge không vỡ. CI dùng mock cloud, không ghi dữ liệu Supabase thật.
+- [x] Khóa A/B/C và L giữ nguyên semantics prospective và còn nguyên sau khi đi replay rồi quay lại.
 
 ## Phase 4 — Release candidate
 - [x] Tạo preview deployment từ nhánh stabilization và Vercel build thành công sau consolidation.
-- [ ] Smoke test desktop.
-- [ ] Smoke test mobile.
-- [ ] So sánh UI/behavior với stable snapshot.
+- [x] Smoke test desktop tự động bằng Chromium.
+- [x] Smoke test mobile 390×844 tự động bằng Chromium.
+- [ ] So sánh UI/behavior với stable snapshot bằng kiểm tra trực quan cuối cùng.
+- [ ] Xác minh đăng nhập thật trên preview bằng một tài khoản test trước khi merge (không chạy credential thật trong GitHub Actions).
 - [ ] Chỉ merge về `main` sau khi không còn blocker.
+
+## Regression automation hiện có
+- `tests/browser-smoke.mjs`: navigation, A/B/C/L UI, Result Dock, Number Intelligence anti-leak, Performance official-feed-only, prize rules, hit xanh/bóng vàng, desktop/mobile overflow.
+- `tests/state-regression.mjs`: auth shell, A/B/C/L lock persistence, previous/next + replay, cloud hydrate/save/logout bằng mock.
 
 ## Nguyên tắc trong giai đoạn ổn định hóa
 1. Không thêm feature lớn mới vào Power 6/55 cho tới khi source consolidation xong.
