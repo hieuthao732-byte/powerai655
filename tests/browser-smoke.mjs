@@ -57,6 +57,11 @@ async function runViewport(browser, name, viewport) {
   assert.ok(replayValue, `${name}: selector has no historical draw option`);
   await targetSelect.selectOption(replayValue);
   await page.waitForFunction(v => Number(String(document.getElementById('targetId')?.textContent||'').replace(/\D/g,''))===Number(v), replayValue, { timeout: 90000 });
+  await page.waitForFunction(() => {
+    const t=Number(String(document.getElementById('targetId')?.textContent||'').replace(/\D/g,''));
+    const c=Number(String(document.getElementById('cutoffId')?.textContent||'').replace(/\D/g,''));
+    return Number.isFinite(t)&&Number.isFinite(c)&&c>0&&c<t;
+  }, null, { timeout: 90000 });
   const replayCutoff = Number((await page.locator('#cutoffId').innerText()).replace(/\D/g,''));
   const replayTarget = Number((await page.locator('#targetId').innerText()).replace(/\D/g,''));
   assert.ok(replayCutoff < replayTarget, `${name}: selector replay leaked target/future history`);
