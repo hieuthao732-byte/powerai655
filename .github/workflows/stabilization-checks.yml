@@ -1,0 +1,69 @@
+name: Stabilization Checks
+
+on:
+  push:
+    branches:
+      - stabilization/v1
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify consolidated source and deterministic build
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          npm run build
+
+          test -s app.js
+          test -s index.html
+          test -s style.css
+          test -s auth.js
+          test -s dist/app.js
+          test -s dist/index.html
+          test -s dist/style.css
+
+          node --check app.js
+          node --check auth.js
+          node --check dist/app.js
+
+          cmp -s app.js dist/app.js
+          cmp -s index.html dist/index.html
+          cmp -s style.css dist/style.css
+          cmp -s auth.js dist/auth.js
+
+          grep -q 'PERFORMANCE CENTER A/B/C/L' app.js
+          grep -q 'NUMBER INTELLIGENCE 01–55' app.js
+          grep -q 'NAVIGATION RESTRUCTURE' app.js
+          grep -q 'RESULT DOCK' app.js
+          grep -q 'BÓNG VÀNG HIGHLIGHT' app.js
+          grep -q 'powerai_rc6_' app.js
+          grep -q 'user_app_state' app.js
+          grep -q 'RC9.7' index.html
+
+          if compgen -G 'rc*.mjs' >/dev/null; then
+            echo 'Post-build patch scripts must not return:'
+            ls rc*.mjs
+            exit 1
+          fi
+
+          if grep -qE 'rc89\.mjs|rc90\.mjs|rc91\.mjs|rc92\.mjs|rc93\.mjs|rc94\.mjs|rc96\.mjs|rc97\.mjs' package.json build.mjs; then
+            echo 'Build still references legacy RC patch scripts.'
+            exit 1
+          fi
+
+          node <<'NODE'
+          const fs=require('fs');
+          const p=JSON.parse(fs.readFileSync('package.json','utf8'));
+          if(p?.scripts?.build!=='node build.mjs') throw new Error('Build command is not consolidated');
+          console.log('Stabilization static checks passed.');
+          NODE
