@@ -1,0 +1,39 @@
+name: Fix Power Target Selector Fallback
+
+on:
+  push:
+    branches:
+      - feature/power-target-selector
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/power-target-selector
+      - name: Fix fallback option ordering
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('app.js')
+          s=p.read_text()
+          old='''  for(const d of recent)push(Number(d.id),`${drawLabel(d.id)} • ${d.date||"kỳ đã quay"}`);\n  sel.innerHTML=options.join("");\n  if(!seen.has(Number(targetId)))push(Number(targetId),drawLabel(targetId));\n  if(!seen.has(Number(targetId))){sel.insertAdjacentHTML("beforeend",`<option value="${Number(targetId)}">${drawLabel(targetId)}</option>`)}\n  sel.value=String(targetId);'''
+          new='''  for(const d of recent)push(Number(d.id),`${drawLabel(d.id)} • ${d.date||"kỳ đã quay"}`);\n  if(!seen.has(Number(targetId)))push(Number(targetId),`${drawLabel(targetId)} • kỳ đang chọn`);\n  sel.innerHTML=options.join("");\n  sel.value=String(targetId);'''
+          assert old in s, 'fallback anchor not found'
+          p.write_text(s.replace(old,new,1))
+          PY
+          node --check app.js
+          npm run build
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js
+          git commit -m "Fix Power selector fallback target option"
+          git push origin HEAD:feature/power-target-selector
