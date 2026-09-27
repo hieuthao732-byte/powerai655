@@ -1,0 +1,66 @@
+name: Wire Track D Phase 2
+
+on:
+  push:
+    branches:
+      - feature/adaptive-track-d
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/adaptive-track-d
+      - name: Wire D UI into static app
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('index.html'); s=p.read_text()
+          if 'adaptive-d.css' not in s:
+              anchor='<link rel="stylesheet" href="style.css?v=9.7">'
+              assert anchor in s, 'style anchor missing'
+              s=s.replace(anchor, anchor+'\n<link rel="stylesheet" href="adaptive-d.css?v=0.2">',1)
+          if 'adaptive-d-ui.js' not in s:
+              anchor='<script src="app.js?v=9.7"></script>'
+              assert anchor in s, 'app script anchor missing'
+              s=s.replace(anchor, anchor+'\n<script src="adaptive-d.js?v=0.2"></script>\n<script src="adaptive-d-ui.js?v=0.2"></script>',1)
+          p.write_text(s)
+
+          p=Path('build.mjs'); s=p.read_text()
+          if "'adaptive-d-ui.js'" not in s:
+              anchor="  'adaptive-d.js',"
+              assert anchor in s, 'build adaptive-d anchor missing'
+              s=s.replace(anchor, anchor+"\n  'adaptive-d-ui.js',\n  'adaptive-d.css',",1)
+          p.write_text(s)
+
+          p=Path('.github/workflows/adaptive-d-checks.yml'); s=p.read_text()
+          if 'adaptive-d-ui.js' not in s:
+              s=s.replace('          node --check adaptive-d.js\n', '          node --check adaptive-d.js\n          node --check adaptive-d-ui.js\n',1)
+              s=s.replace('          test -s dist/adaptive-d.js\n', '          test -s dist/adaptive-d.js\n          test -s dist/adaptive-d-ui.js\n          test -s dist/adaptive-d.css\n',1)
+              s=s.replace('          cmp -s adaptive-d.js dist/adaptive-d.js\n', '          cmp -s adaptive-d.js dist/adaptive-d.js\n          cmp -s adaptive-d-ui.js dist/adaptive-d-ui.js\n          cmp -s adaptive-d.css dist/adaptive-d.css\n',1)
+              s=s.replace('          node tests/adaptive-d-unit.mjs\n', '          node tests/adaptive-d-unit.mjs\n          node tests/adaptive-d-ui-static.mjs\n',1)
+          p.write_text(s)
+
+          p=Path('ADAPTIVE_TRACK_D_PLAN.md'); s=p.read_text()
+          s=s.replace('> Xổ số vẫn là ngẫu nhiên. Track D là cơ chế nghiên cứu thích nghi và kiểm chứng out-of-sample, không phải cam kết tăng xác suất trúng.\n\n','')
+          s=s.replace('- [ ] Tab D UI','- [x] Tab D UI')
+          s=s.replace('- [ ] D lock/snapshot prospective','- [x] D lock/snapshot prospective')
+          s=s.replace('- [ ] D official score/log','- [x] D official score/log')
+          s=s.replace('- [ ] D cloud state','- [x] D cloud state (qua namespace powerai_rc6_ hiện có)')
+          s=s.replace('- [ ] Performance Center A/B/C/L/D','- [x] Performance Center A/B/C/L/D')
+          p.write_text(s)
+          PY
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html build.mjs .github/workflows/adaptive-d-checks.yml ADAPTIVE_TRACK_D_PLAN.md
+          git commit -m "Wire Track D into Power app"
+          git push origin HEAD:feature/adaptive-track-d
