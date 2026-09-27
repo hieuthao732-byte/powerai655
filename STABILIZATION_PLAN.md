@@ -10,18 +10,19 @@ Mục tiêu: đóng băng tính năng, giảm rủi ro hồi quy, gom code vá R
 ## Phase 1 — Freeze & audit
 - [x] Tạo stable snapshot từ production hiện tại.
 - [x] Tạo nhánh stabilization riêng, không sửa production trực tiếp.
-- [ ] Gỡ workflow cũ/hỏng không còn dùng.
-- [ ] Kiểm kê toàn bộ chuỗi build patch (`build.mjs`, `rc89.mjs`, `rc90.mjs`, `rc91.mjs`, `rc92.mjs`, `rc93.mjs`, `rc94.mjs`, `rc96.mjs`, `rc97.mjs`).
-- [ ] Ghi rõ chức năng nào thuộc source gốc và chức năng nào chỉ tồn tại ở post-build patch.
+- [x] Gỡ workflow cũ/hỏng không còn dùng.
+- [x] Kiểm kê toàn bộ chuỗi build patch (`build.mjs`, `rc89.mjs`, `rc90.mjs`, `rc91.mjs`, `rc92.mjs`, `rc93.mjs`, `rc94.mjs`, `rc96.mjs`, `rc97.mjs`, `rc89-fix.mjs`).
+- [x] Ghi lại trạng thái source/post-build trong `SOURCE_CONSOLIDATION.md`.
 
 ## Phase 2 — Source consolidation
-- [ ] Materialize UI + logic RC8.9–RC9.7 vào `app.js`, `index.html`, `style.css`.
-- [ ] Rút `build.mjs` về build/copy thuần, không dùng chuỗi replace dễ gãy.
-- [ ] Xóa các patch file đã được materialize.
-- [ ] Giữ nguyên localStorage keys, Supabase schema, lock/log format và URL production.
+- [x] Materialize UI + logic RC8.9–RC9.7 vào `app.js`, `index.html`, `style.css`.
+- [x] Rút `build.mjs` về build/copy thuần, không dùng chuỗi replace dễ gãy.
+- [x] Xóa toàn bộ `rc*.mjs` sau khi behavior đã được materialize.
+- [x] Giữ nguyên localStorage keys, Supabase/auth integration, lock/log format và URL production.
 
 ## Phase 3 — Regression checks
-- [ ] Build sạch từ đầu.
+- [x] Build sạch từ đầu và kiểm tra source = dist cho app/index/style/auth.
+- [x] Thêm GitHub Actions `Stabilization Checks` để chặn việc quay lại chuỗi post-build patch.
 - [ ] Chuyển kỳ mới / kỳ cũ / replay.
 - [ ] A/B/C/L render đúng và không đổi portfolio khi không có chủ đích.
 - [ ] Hit số chính màu xanh; số đặc biệt màu vàng.
@@ -33,7 +34,7 @@ Mục tiêu: đóng băng tính năng, giảm rủi ro hồi quy, gom code vá R
 - [ ] Khóa A/B/C và L giữ nguyên semantics prospective.
 
 ## Phase 4 — Release candidate
-- [ ] Tạo preview deployment từ nhánh stabilization.
+- [x] Tạo preview deployment từ nhánh stabilization và Vercel build thành công sau consolidation.
 - [ ] Smoke test desktop.
 - [ ] Smoke test mobile.
 - [ ] So sánh UI/behavior với stable snapshot.
