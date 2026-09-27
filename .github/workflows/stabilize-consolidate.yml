@@ -39,7 +39,7 @@ jobs:
           grep -q 'NUMBER INTELLIGENCE 01–55' dist/app.js
           grep -q 'NAVIGATION RESTRUCTURE' dist/app.js
           grep -q 'RESULT DOCK' dist/app.js
-          grep -q 'SPECIAL BALL HIGHLIGHT' dist/app.js
+          grep -q 'BÓNG VÀNG HIGHLIGHT' dist/app.js
           grep -q 'RC9.7' dist/index.html
 
       - name: Materialize final built behavior into source
@@ -98,7 +98,7 @@ jobs:
           grep -q 'NUMBER INTELLIGENCE 01–55' app.js
           grep -q 'NAVIGATION RESTRUCTURE' app.js
           grep -q 'RESULT DOCK' app.js
-          grep -q 'SPECIAL BALL HIGHLIGHT' app.js
+          grep -q 'BÓNG VÀNG HIGHLIGHT' app.js
           if ls rc*.mjs >/dev/null 2>&1; then
             echo 'Unexpected RC patch files remain:'
             ls rc*.mjs
