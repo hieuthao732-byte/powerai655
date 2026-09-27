@@ -5,6 +5,8 @@ const files = [
   'index.html',
   'app.js',
   'adaptive-d.js',
+  'adaptive-d-ui.js',
+  'adaptive-d.css',
   'auth.js',
   'style.css',
   'favicon.svg',

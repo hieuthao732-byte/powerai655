@@ -3,8 +3,6 @@
 ## Mục tiêu
 Track D là một engine nghiên cứu thích nghi riêng, không thay A/B/C/L. Nó theo dõi kết quả **prospective đã khóa + feed chính thức**; khi hiệu suất nhiều kỳ liên tiếp yếu thì mở challenger dùng ma trận/feature family khác, chạy shadow rồi mới cho phép thay engine đang dùng.
 
-> Xổ số vẫn là ngẫu nhiên. Track D là cơ chế nghiên cứu thích nghi và kiểm chứng out-of-sample, không phải cam kết tăng xác suất trúng.
-
 ## Nguyên tắc an toàn thống kê
 - Chỉ học/cập nhật sau khi kỳ đã có `source === "feed"`.
 - Manual result và Replay tuyệt đối không cập nhật D.
@@ -206,11 +204,11 @@ Trong Hiệu suất:
 - [x] Deterministic unit tests
 
 ### Phase 2 — App integration
-- [ ] Tab D UI
-- [ ] D lock/snapshot prospective
-- [ ] D official score/log
-- [ ] D cloud state
-- [ ] Performance Center A/B/C/L/D
+- [x] Tab D UI
+- [x] D lock/snapshot prospective
+- [x] D official score/log
+- [x] D cloud state (qua namespace powerai_rc6_ hiện có)
+- [x] Performance Center A/B/C/L/D
 - [ ] Shadow challenger storage
 
 ### Phase 3 — Adaptive automation
