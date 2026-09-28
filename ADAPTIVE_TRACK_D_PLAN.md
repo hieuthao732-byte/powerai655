@@ -1,61 +1,60 @@
-# Track D — Adaptive Research Engine
+# Bộ D — Tự kiểm tra và tự điều chỉnh
 
 ## Trạng thái
-- Phase 1 Core: xong
-- Phase 2 App integration: xong
-- Phase 3 Adaptive cycle: xong
-- Phase 4 Validation Lab: xong
-- Phase 5 Integrity hardening: xong D14 snapshot reproducibility guard
-- Phase 6 Release hardening: đang kiểm tra full regression + Vercel trước khi release
+- Bước 1 — Bộ máy D: xong
+- Bước 2 — Đưa D vào web Power: xong
+- Bước 3 — Tự theo dõi và thử cách mới: xong
+- Bước 4 — Khu kiểm tra riêng: xong
+- Bước 5 — Kiểm tra dữ liệu khóa: xong
+- Bước 6 — Kiểm tra toàn bộ trước khi đưa lên bản chính: đang làm
 
-## Engine
-- D1 Residual Pair Matrix
-- D2 Gap Transition Matrix
-- D3 Shape-Conditional Matrix
-- D4 Spectral Residual Graph
-- Multi-horizon: 30 / 60 / 120 / 250
-- Stability penalty + matched-random benchmark
-- 20 vé D deterministic, diversity/exposure/entropy guard
+## 4 cách phân tích của D
+- D1 — Liên kết cặp số: xem các cặp số có liên kết nổi bật hơn mức bình thường hay không.
+- D2 — Nhịp xuất hiện: theo dõi khoảng cách và trạng thái xuất hiện của từng số.
+- D3 — Mẫu kỳ quay: xem tổng, chẵn/lẻ, thấp/cao, độ trải và số liên tiếp.
+- D4 — Mạng liên kết số: nhìn toàn bộ quan hệ giữa các số như một mạng để tìm cấu trúc yếu nhưng ổn định.
+- D nhìn nhiều khoảng dữ liệu cùng lúc: 30 / 60 / 120 / 250 kỳ.
+- D ưu tiên tín hiệu ổn định và luôn so với các bộ ngẫu nhiên có cùng cấu trúc.
+- Mỗi kỳ D tạo 20 vé riêng, có giới hạn độ trùng và mức tập trung số.
 
-## Adaptive cycle
-- Rolling drift detector
-- Champion / tối đa 2 challenger
-- Shadow >= 6 kỳ official
-- Stress gate trước promote
-- Slow weight update, quarantine expert yếu
-- Negative memory + hypothesis registry + lineage
-- Orthogonality so A/B/C/L
+## Cách D tự thay đổi
+- D theo dõi kết quả của chính nó qua nhiều kỳ.
+- Nếu kết quả yếu kéo dài, D mở tối đa 2 bản thử mới.
+- Bản thử chạy âm thầm ít nhất 6 kỳ có kết quả chính thức.
+- Trước khi thay bản đang dùng, bản thử phải vượt kiểm tra độ bền.
+- Nếu bản thử không tốt hơn rõ ràng thì bị loại.
+- Một cách phân tích yếu kéo dài có thể bị giảm ảnh hưởng hoặc tạm nghỉ.
+- D nhớ những bản đã thử, bản nào tốt, bản nào thất bại và lý do đổi.
+- D cũng cố giữ 20 vé của mình khác A/B/C/L để bổ sung vùng phủ thay vì sao chép.
 
-## Validation
-- Historical walk-forward, cutoff luôn `< target`
-- Counterfactual Lab
-- Change-point flag so matched-null
-- Marginal novelty audit
-- Bayesian paired evidence
-- Validation không ghi vào official log / weights / promotion
+## Khu kiểm tra riêng
+- Kiểm tra lại từng kỳ theo đúng dữ liệu có trước kỳ đó.
+- Thử bỏ bớt một số kỳ hoặc đổi nhẹ trọng số để xem kết quả có còn ổn không.
+- So D với nhiều bộ ngẫu nhiên có cùng cách phân bổ số.
+- Kiểm tra xem D có thực sự bổ sung vùng số/cặp mà A/B/C/L chưa phủ hay không.
+- Các bài kiểm tra này chỉ dùng để đánh giá, không được ghi ngược vào lịch sử dự đoán chính thức.
 
-## D14 Integrity Guard
-Mỗi lock prospective lưu model hash, portfolio hash, seed và generator config. Trước khi chấm feed official, D phải dựng lại snapshot và pass toàn bộ:
-- ticket shape hợp lệ;
-- portfolio hash khớp;
-- audit khớp;
-- cutoff `< target` và đúng snapshot;
-- model hash khớp;
-- tái sinh 20 vé từ seed cho cùng portfolio hash.
+## Kiểm tra dữ liệu khóa
+Mỗi bộ D đã khóa trước kỳ quay sẽ lưu:
+- mã phiên bản D;
+- mã bộ 20 vé;
+- dữ liệu được phép dùng đến kỳ nào;
+- số dùng để tái tạo lại đúng bộ vé;
+- cấu hình tạo vé.
 
-Nếu fail bất kỳ mục nào: `INVALID`, không ghi official D log và không dùng kỳ đó cho adaptive learning.
+Khi có kết quả chính thức, hệ thống phải dựng lại đúng bộ D đã khóa. Nếu không khớp thì kỳ đó bị đánh dấu **KHÔNG HỢP LỆ**, không được tính vào quá trình tự học của D.
 
-## Release gate
-- Power selector đã merge vào `main`.
-- PR D base trực tiếp `main`.
-- Adaptive core/unit phải pass.
-- D browser smoke phải pass.
-- Power Browser Smoke + Stabilization Checks phải pass.
-- Vercel preview phải Success.
-- Chưa merge D cho tới khi toàn bộ gate trên xanh.
+## Điều kiện trước khi đưa lên bản chính
+- Bộ chọn kỳ của Power đã ổn định trên `main`.
+- PR D lấy `main` làm nền.
+- Kiểm tra phần tính toán D phải đạt.
+- Kiểm tra giao diện D phải đạt.
+- Kiểm tra Power cũ phải vẫn đạt.
+- Bản xem thử trên Vercel phải chạy thành công.
+- Chưa đưa D vào bản chính cho tới khi tất cả mục trên đều đạt.
 
 ## Quy tắc dữ liệu
-- Chỉ `source === feed` được dùng cho official learning.
-- Manual và Replay không train.
-- Không dùng target/future draw để build feature.
-- Score nội bộ không phải xác suất trúng.
+- Chỉ kết quả chính thức từ feed mới được dùng để D tự điều chỉnh.
+- Kết quả nhập tay và Replay không được dùng để học.
+- D không được nhìn kết quả của kỳ đang dự đoán hoặc các kỳ tương lai.
+- Điểm của D chỉ là điểm xếp hạng nội bộ, không phải xác suất trúng thưởng.
