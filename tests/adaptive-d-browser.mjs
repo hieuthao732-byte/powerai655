@@ -13,13 +13,13 @@ await page.evaluate(()=>{document.body.classList.remove('guestMode');const m=doc
 await page.locator('[data-tab="adaptiveDTab"]').click();
 await page.waitForFunction(()=>document.querySelectorAll('#dTickets .dTicket').length===20,null,{timeout:90000});
 assert.equal(await page.locator('#dWeights .dExpert').count(),4,'D should render four experts');
-assert.match(await page.locator('#dModelHash').innerText(),/model [A-F0-9]{8}/,'D model hash missing');
-assert.match(await page.locator('#dContext').innerText(),/Cutoff/i,'D cutoff context missing');
+assert.match(await page.locator('#dModelHash').innerText(),/mã mô hình [A-F0-9]{8}/i,'D model hash missing');
+assert.match(await page.locator('#dContext').innerText(),/Dữ liệu gần nhất/i,'D cutoff context missing');
 assert.equal(await page.locator('#dCopyBtn').isDisabled(),false,'D copy should be enabled after build');
 
 // D14 reproducibility guard: a prospective lock must rebuild to the same model + portfolio hash.
 await page.locator('#dLockBtn').click();
-await page.waitForFunction(()=>/VERIFIED/.test(document.querySelector('#dIntegrity')?.textContent||''),null,{timeout:90000});
+await page.waitForFunction(()=>/ĐÃ XÁC MINH/.test(document.querySelector('#dIntegrity')?.textContent||''),null,{timeout:90000});
 const integrity=await page.evaluate(()=>{
   const id=Number((document.querySelector('#targetId')?.textContent||'').replace(/\D/g,''));
   const x=JSON.parse(localStorage.getItem('powerai_rc6_d_lock_'+id)||'null');
@@ -30,22 +30,25 @@ assert.ok(Object.values(integrity?.checks||{}).every(Boolean),'Every D integrity
 
 // Phase 3 adaptive cycle is loaded and visible, but starts in warmup on a clean browser.
 await page.waitForFunction(()=>window.PowerAIAdaptiveCycle&&document.querySelector('#dCyclePanel'),null,{timeout:30000});
+await page.waitForFunction(()=>/ĐANG TÍCH LŨY DỮ LIỆU|CHƯA THẤY LỢI THẾ|ĐANG CAO HƠN MỐC NGẪU NHIÊN/.test(document.querySelector('#dCycleBaseline')?.textContent||''),null,{timeout:30000});
 assert.match(await page.locator('#dCycleChampion').innerText(),/^D-/,'Adaptive cycle champion missing');
-assert.match(await page.locator('#dCycleBaseline').innerText(),/WARMUP|NO EDGE DETECTED|ABOVE NULL WINDOW/,'Adaptive baseline state missing');
+assert.match(await page.locator('#dCycleBaseline').innerText(),/ĐANG TÍCH LŨY DỮ LIỆU|CHƯA THẤY LỢI THẾ|ĐANG CAO HƠN MỐC NGẪU NHIÊN/,'Adaptive baseline state missing');
 assert.equal(await page.locator('#dCycleChallengeCount').innerText(),'0','Clean browser must not invent a challenger');
-assert.match(await page.locator('#dCycleProgress').innerText(),/Không có shadow test/i,'Adaptive shadow warmup note missing');
+assert.match(await page.locator('#dCycleProgress').innerText(),/Không có phiên bản mới đang thử/i,'Adaptive shadow warmup note missing');
 
 // D v1.1 rolling scorecard must start clean and only count official prospective logs.
 await page.waitForFunction(()=>document.querySelector('#dRollSample')&&document.querySelector('#dRollStatus'),null,{timeout:30000});
+await page.waitForFunction(()=>/ĐANG TÍCH LŨY DỮ LIỆU/.test(document.querySelector('#dRollStatus')?.textContent||''),null,{timeout:30000});
 assert.equal(await page.locator('#dRollSample').innerText(),'0/12','Clean browser rolling sample must start at 0/12');
-assert.equal(await page.locator('#dRollStatus').innerText(),'WARMUP','Clean browser rolling state must be WARMUP');
+assert.equal(await page.locator('#dRollStatus').innerText(),'ĐANG TÍCH LŨY DỮ LIỆU','Clean browser rolling state must be warmup');
 assert.equal((await page.locator('#dRollHigh').innerText()).trim(),'0 / 0','Clean browser high-hit counter must start at zero');
-assert.match(await page.locator('#dRollAction').innerText(),/12 kỳ official/i,'Rolling warmup action missing');
+assert.match(await page.locator('#dRollAction').innerText(),/12 kỳ theo dõi/i,'Rolling warmup action missing');
 
 // Phase 4 retrospective validation lab is visible but isolated from official D state.
 await page.waitForFunction(()=>window.PowerAIAdaptiveValidation&&document.querySelector('#dValidationPanel'),null,{timeout:30000});
-assert.match(await page.locator('#dValidationPanel').innerText(),/Walk-forward/i,'D validation lab missing');
-assert.match(await page.locator('#dValidationPanel').innerText(),/Không ghi vào official log/i,'D validation isolation note missing');
+await page.waitForFunction(()=>/Kiểm tra lại trên nhiều kỳ/i.test(document.querySelector('#dValidationPanel')?.innerText||''),null,{timeout:30000});
+assert.match(await page.locator('#dValidationPanel').innerText(),/Kiểm tra lại trên nhiều kỳ/i,'D validation lab missing');
+assert.match(await page.locator('#dValidationPanel').innerText(),/tách riêng khỏi kết quả chính thức/i,'D validation isolation note missing');
 assert.equal(await page.locator('#dValidationRunBtn').count(),1,'D validation run button missing');
 
 // A draw that is already in the official feed must stay replay-only.
@@ -68,7 +71,7 @@ await page.evaluate(()=>{if(typeof rc93ActivateMain==='function')rc93ActivateMai
 await page.waitForFunction(()=>document.querySelector('[data-perf-tab="D"]'),null,{timeout:30000});
 await page.locator('[data-perf-tab="D"]').click();
 await page.waitForFunction(()=>!document.querySelector('[data-perf-pane="D"]')?.hidden,null,{timeout:30000});
-assert.match(await page.locator('[data-perf-pane="D"]').innerText(),/D • PERFORMANCE/i);
+assert.match(await page.locator('[data-perf-pane="D"]').innerText(),/D • KẾT QUẢ/i);
 
 assert.equal(pageErrors.length,0,'Browser page errors: '+pageErrors.join(' | '));
 await browser.close();
