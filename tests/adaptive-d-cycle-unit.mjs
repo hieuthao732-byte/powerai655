@@ -55,6 +55,22 @@ const weak=Array.from({length:6},(_,i)=>({
 const bad=C._test.robustDecision(weak);
 assert.equal(bad.robust,false);
 
+const warmLogs=Array.from({length:5},(_,i)=>({source:'feed',targetId:1800+i,D:{best:2+(i%2),null:{bestMean:2.2}}}));
+const warm=C._test.rollingScorecard(warmLogs,{challengers:[]},[]);
+assert.equal(warm.sample,5);
+assert.equal(warm.status,'WARMUP');
+
+const noEdgeLogs=Array.from({length:12},(_,i)=>({source:'feed',targetId:1900+i,D:{best:2,null:{bestMean:2.1}}}));
+const noEdge=C._test.rollingScorecard(noEdgeLogs,{challengers:[]},[]);
+assert.equal(noEdge.status,'NO EDGE DETECTED');
+assert.equal(noEdge.best4,0);
+
+const shadowState={challengers:[{id:'CH-X',engineId:'D-AR2-X',status:'SHADOW',minOfficial:6}]};
+const shadowRows=Array.from({length:3},(_,i)=>({source:'feed',targetId:2000+i,challengerId:'CH-X'}));
+const shadowCard=C._test.rollingScorecard(noEdgeLogs,shadowState,shadowRows);
+assert.equal(shadowCard.status,'CHALLENGER TEST');
+assert.equal(shadowCard.progress[0].done,3);
+
 const P=[[1,2,3,4,5,6],[7,8,9,10,11,12]],Q=[[1,2,3,20,21,22],[30,31,32,33,34,35]];
 assert.ok(C._test.portfolioSimilarity(P,Q)>0);
 

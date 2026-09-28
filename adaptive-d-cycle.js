@@ -263,20 +263,41 @@
     return delta<=.05?{label:'NO EDGE DETECTED',note:`Δ best/null ${delta.toFixed(3)}`}:{label:'ABOVE NULL WINDOW',note:`Δ best/null +${delta.toFixed(3)}`};
   }
 
+  function rollingScorecard(logs=officialLogs(),state=researchState(),shadows=shadowLogs()){
+    const recent=(Array.isArray(logs)?logs:[]).filter(r=>r?.source==='feed'&&r?.D&&Number.isFinite(Number(r.D.best))).slice(-12);
+    const n=recent.length,avgBest=mean(recent.map(r=>Number(r.D.best))),best3=recent.filter(r=>Number(r.D.best)>=3).length,best4=recent.filter(r=>Number(r.D.best)>=4).length;
+    const deltas=recent.map(r=>Number(r.D.best)-Number(r.D?.null?.bestMean)).filter(Number.isFinite),nullDelta=deltas.length?mean(deltas):null;
+    const active=(state?.challengers||[]).filter(c=>c?.status==='SHADOW');
+    const progress=active.map(c=>{const done=(Array.isArray(shadows)?shadows:[]).filter(r=>r?.challengerId===c.id&&r?.source==='feed').length;return{engineId:c.engineId,done,need:Number(c.minOfficial||6)}});
+    let status='WARMUP',action=`Cần thêm ${Math.max(0,12-n)} kỳ official để đủ rolling 12.`;
+    if(active.length){status='CHALLENGER TEST';action=progress.map(x=>`${x.engineId} ${x.done}/${x.need}`).join(' • ')}
+    else if(n>=12&&Number.isFinite(nullDelta)&&nullDelta<=.05){status='NO EDGE DETECTED';action='Giữ champion, tiếp tục theo dõi; chỉ mở challenger khi drift trigger bật.'}
+    else if(n>=12&&Number.isFinite(nullDelta)){status='ABOVE NULL WINDOW';action='Giữ champion và tiếp tục kiểm chứng ngoài mẫu.'}
+    else if(n>=12){status='MONITORING';action='Đủ rolling 12 nhưng chưa có matched-null đầy đủ.'}
+    return{sample:n,window:12,avgBest:+avgBest.toFixed(3),best3,best4,nullDelta:Number.isFinite(nullDelta)?+nullDelta.toFixed(3):null,status,action,progress};
+  }
+
   function ensureCycleUI(){
     const pane=el('adaptiveDTab');if(!pane||el('dCyclePanel'))return false;
     const panel=document.createElement('section');panel.id='dCyclePanel';panel.className='panel dCyclePanel';panel.innerHTML=`<div class="head"><div><div class="sectionKicker dText">ADAPTIVE CYCLE</div><h2>⚙️ Champion / Challenger</h2></div></div><div class="dStatusGrid"><div class="dStat"><span>Champion</span><b id="dCycleChampion">—</b><small id="dCycleWeights">—</small></div><div class="dStat"><span>Baseline</span><b id="dCycleBaseline">—</b><small id="dCycleBaselineNote">—</small></div><div class="dStat"><span>Challenger</span><b id="dCycleChallengeCount">0</b><small id="dCycleProgress">—</small></div><div class="dStat"><span>Memory</span><b id="dCycleMemory">0</b><small id="dCycleDecision">—</small></div></div><div id="dCycleRows" class="dCycleRows"></div>`;
+    panel.insertAdjacentHTML('beforeend',`<div class="dStatusGrid dRollingScorecard"><div class="dStat"><span>Rolling official</span><b id="dRollSample">0/12</b><small id="dRollStatus">WARMUP</small></div><div class="dStat"><span>Avg best</span><b id="dRollAvgBest">—</b><small>trên 20 vé / kỳ</small></div><div class="dStat"><span>Kỳ best ≥3 / ≥4</span><b id="dRollHigh">0 / 0</b><small>rolling 12</small></div><div class="dStat"><span>Δ so matched-null</span><b id="dRollNullDelta">—</b><small>best D − null mean</small></div></div><div id="dRollAction" class="notice">Đang chờ log official.</div>`);
     const hero=pane.querySelector('.dHero');hero?.insertAdjacentElement('afterend',panel);return true;
   }
 
   function renderCycleUI(){
-    if(!ensureCycleUI()){}const state=researchState(),base=baselineStatus(),rows=shadowLogs();
+    if(!ensureCycleUI()){}const state=researchState(),base=baselineStatus(),rows=shadowLogs(),roll=rollingScorecard(officialLogs(),state,rows);
     if(!el('dCycleChampion'))return;
     el('dCycleChampion').textContent=state.engineId;el('dCycleWeights').textContent=EXPERTS.map(k=>`${k} ${Math.round((state.weights[k]||0)*100)}%`).join(' • ');
     el('dCycleBaseline').textContent=base.label;el('dCycleBaselineNote').textContent=base.note;
     const active=(state.challengers||[]).filter(c=>c?.status==='SHADOW');el('dCycleChallengeCount').textContent=String(active.length);
     el('dCycleProgress').textContent=active.length?active.map(c=>`${c.engineId} ${rows.filter(r=>r.challengerId===c.id).length}/${c.minOfficial||6}`).join(' • '):'Không có shadow test';
     el('dCycleMemory').textContent=String((state.memory||[]).length);el('dCycleDecision').textContent=state.lastDecision?`${state.lastDecision.type} @ #${String(state.lastDecision.targetId||0).padStart(5,'0')}`:'Chưa có quyết định';
+    if(el('dRollSample'))el('dRollSample').textContent=`${roll.sample}/${roll.window}`;
+    if(el('dRollStatus'))el('dRollStatus').textContent=roll.status;
+    if(el('dRollAvgBest'))el('dRollAvgBest').textContent=roll.sample?`${roll.avgBest.toFixed(2)}/6`:'—';
+    if(el('dRollHigh'))el('dRollHigh').textContent=`${roll.best3} / ${roll.best4}`;
+    if(el('dRollNullDelta'))el('dRollNullDelta').textContent=roll.nullDelta===null?'—':`${roll.nullDelta>=0?'+':''}${roll.nullDelta.toFixed(3)}`;
+    if(el('dRollAction'))el('dRollAction').textContent=roll.action;
     const box=el('dCycleRows');if(box)box.innerHTML=active.length?active.map(c=>{const n=rows.filter(r=>r.challengerId===c.id).length;return `<div class="dHistoryRow"><span>${c.engineId}</span><b>${n}/${c.minOfficial||6} kỳ shadow</b><small>${c.kind}</small><small>${c.change}</small></div>`}).join(''):'<div class="notice">Challenger chỉ mở khi rolling official kích hoạt drift detector.</div>';
   }
 
@@ -296,7 +317,7 @@
     const refresh=el('refreshBtn');if(refresh&&!refresh.dataset.dCycleHook){refresh.dataset.dCycleHook='1';refresh.addEventListener('click',()=>schedule(1900))}
   }
 
-  root.PowerAIAdaptiveCycle={VERSION,configFingerprint,candidateTemplates,diagnose,portfolioSimilarity,robustDecision,syncCycle,augmentLockWithShadows,scoreShadows,baselineStatus,_test:{candidateTemplates,configFingerprint,robustDecision,portfolioSimilarity}};
+  root.PowerAIAdaptiveCycle={VERSION,configFingerprint,candidateTemplates,diagnose,portfolioSimilarity,robustDecision,syncCycle,augmentLockWithShadows,scoreShadows,baselineStatus,rollingScorecard,_test:{candidateTemplates,configFingerprint,robustDecision,portfolioSimilarity,rollingScorecard}};
   root.addEventListener('powerai-auth-changed',()=>schedule(300));
   root.addEventListener('load',()=>{attachHooks();schedule(450);setInterval(()=>{attachHooks();schedule(0)},5000)},{once:true});
 })(typeof window!=='undefined'?window:globalThis);
