@@ -29,9 +29,9 @@
         checks.rebuild=rebuilt.tickets.length===20&&rebuilt.hash===lock.portfolioHash;
       }
       const failed=Object.entries(checks).filter(([,v])=>!v).map(([k])=>k),ok=failed.length===0;
-      return{version:INTEGRITY_VERSION,ok,status:ok?'VERIFIED':'INVALID',checkedAt:new Date().toISOString(),checks,reason:ok?'Snapshot dựng lại khớp hoàn toàn.':'Sai kiểm tra: '+failed.join(', ')};
+      return{version:INTEGRITY_VERSION,ok,status:ok?'VERIFIED':'INVALID',checkedAt:new Date().toISOString(),checks,reason:ok?'Bộ đã lưu dựng lại khớp hoàn toàn.':'Sai kiểm tra: '+failed.join(', ')};
     }catch(e){
-      return{version:INTEGRITY_VERSION,ok:false,status:'INVALID',checkedAt:new Date().toISOString(),checks,reason:'Không dựng lại được snapshot: '+String(e?.message||e)};
+      return{version:INTEGRITY_VERSION,ok:false,status:'INVALID',checkedAt:new Date().toISOString(),checks,reason:'Không dựng lại được bộ đã lưu: '+String(e?.message||e)};
     }
   }
 
@@ -169,7 +169,7 @@
   function renderHistory(){
     const box=el('dHistory');if(!box)return;const rows=dLogs().slice(-12).reverse();
     if(!rows.length){box.innerHTML='<div class="notice">Chưa có kỳ D nào được kiểm chứng chính thức.</div>';return}
-    box.innerHTML=rows.map(x=>`<div class="dHistoryRow"><span>${drawLabel(x.targetId)}</span><b>Cao nhất ${x.D.best}/6</b><small>Tổng hit ${x.D.total??0}</small><small>≥3: ${x.D.g3??0}</small><small>Ngẫu nhiên TB ${fmt(x.D?.null?.bestMean)}</small><div>${dPrizeChips(x.D)}</div></div>`).join('');
+    box.innerHTML=rows.map(x=>`<div class="dHistoryRow"><span>${drawLabel(x.targetId)}</span><b>Cao nhất ${x.D.best}/6</b><small>Tổng số trùng ${x.D.total??0}</small><small>≥3: ${x.D.g3??0}</small><small>Ngẫu nhiên TB ${fmt(x.D?.null?.bestMean)}</small><div>${dPrizeChips(x.D)}</div></div>`).join('');
   }
 
   function dPrizeChips(s={}){
@@ -185,12 +185,12 @@
   function lockD(){
     try{
       if(!loggedIn())return showToast?.('Đăng nhập để khóa bộ D.','bad');
-      if(hasAnyKnownResult(targetId))return showToast?.('Kỳ này đã có kết quả nên D chỉ ở chế độ Replay.','bad');
+      if(hasAnyKnownResult(targetId))return showToast?.('Kỳ này đã có kết quả nên D chỉ cho xem lại.','bad');
       if(getDLock(targetId))return;
       if(!currentModel||!currentPortfolio)buildCurrent();
       const conf=D.confidenceGate(currentModel),obj={version:D.VERSION,targetId:Number(targetId),cutoffId:currentModel.cutoffId,lockedAt:new Date().toISOString(),engineId:currentModel.engineId,weights:currentModel.weights,horizons:currentModel.horizons,modelHash:currentModel.modelHash,portfolioHash:currentPortfolio.hash,seed:currentPortfolio.seed,generator:{...GENERATOR_CONFIG},audit:currentPortfolio.audit,confidence:conf,tickets:currentPortfolio.tickets};
       const integrity=verifyLockIntegrity(obj);
-      if(!integrity.ok)return showToast?.('D không khóa vì snapshot không dựng lại khớp: '+integrity.reason,'bad');
+      if(!integrity.ok)return showToast?.('D không khóa vì bộ đã lưu không dựng lại khớp: '+integrity.reason,'bad');
       obj.integrity=integrity;writeJSON(dLockKey(targetId),obj);showToast?.(`Đã khóa bộ D cho ${drawLabel(targetId)} • kiểm tra dữ liệu hợp lệ.`, 'good');renderModel();
     }catch(e){console.error(e);showToast?.('Không khóa được D: '+e.message,'bad')}
   }
