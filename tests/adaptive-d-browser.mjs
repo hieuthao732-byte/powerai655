@@ -24,6 +24,12 @@ assert.match(await page.locator('#dCycleBaseline').innerText(),/WARMUP|NO EDGE D
 assert.equal(await page.locator('#dCycleChallengeCount').innerText(),'0','Clean browser must not invent a challenger');
 assert.match(await page.locator('#dCycleProgress').innerText(),/Không có shadow test/i,'Adaptive shadow warmup note missing');
 
+// Phase 4 retrospective validation lab is visible but isolated from official D state.
+await page.waitForFunction(()=>window.PowerAIAdaptiveValidation&&document.querySelector('#dValidationPanel'),null,{timeout:30000});
+assert.match(await page.locator('#dValidationPanel').innerText(),/Walk-forward/i,'D validation lab missing');
+assert.match(await page.locator('#dValidationPanel').innerText(),/Không ghi vào official log/i,'D validation isolation note missing');
+assert.equal(await page.locator('#dValidationRunBtn').count(),1,'D validation run button missing');
+
 // A draw that is already in the official feed must stay replay-only.
 const targetSelect=page.locator('#targetSelect');
 await page.waitForFunction(()=>document.querySelector('#targetSelect')?.options?.length>1,null,{timeout:90000});

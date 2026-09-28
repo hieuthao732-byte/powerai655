@@ -220,6 +220,16 @@ Trong Hiệu suất:
 - [x] Engine lineage/memory UI
 - [x] Orthogonality vs A/B/C/L
 
+
+### Phase 4 — Validation Lab
+- [x] Strict historical walk-forward, cutoff luôn `< target`
+- [x] D5 Counterfactual Lab: Champion vs tối đa 2 cấu hình challenger có kiểm soát
+- [x] D6 Change-point flag trên residual performance so matched-null
+- [x] D7 Marginal novelty audit so A/B/C/L khi có lock cùng kỳ
+- [x] D8 Bayesian evidence gate cho so sánh paired retrospective
+- [x] Validation tách hoàn toàn khỏi official D logs / promotion / weights
+- [x] Unit + browser smoke cho Validation Lab
+
 ## Không làm
 - Không tự tối ưu hàng trăm hyperparameter sau mỗi draw.
 - Không backfit toàn bộ lịch sử để chọn engine thắng nhất rồi gọi đó là “dự đoán”.
