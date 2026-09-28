@@ -6,6 +6,7 @@ const files = [
   'app.js',
   'adaptive-d.js',
   'adaptive-d-ui.js',
+  'adaptive-d-cycle.js',
   'adaptive-d.css',
   'auth.js',
   'style.css',
