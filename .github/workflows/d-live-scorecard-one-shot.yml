@@ -1,0 +1,70 @@
+name: D Live Scorecard One Shot
+
+on:
+  push:
+    branches:
+      - feature/d-live-scorecard-v1
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/d-live-scorecard-v1
+      - name: Add rolling multi-draw scorecard
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p=Path('adaptive-d-cycle.js')
+          s=p.read_text()
+          anchor='''  function ensureCycleUI(){\n'''
+          insert='''  function rollingScorecard(logs=officialLogs(),state=researchState(),shadows=shadowLogs()){\n    const recent=(Array.isArray(logs)?logs:[]).filter(r=>r?.source==='feed'&&r?.D&&Number.isFinite(Number(r.D.best))).slice(-12);\n    const n=recent.length,avgBest=mean(recent.map(r=>Number(r.D.best))),best3=recent.filter(r=>Number(r.D.best)>=3).length,best4=recent.filter(r=>Number(r.D.best)>=4).length;\n    const deltas=recent.map(r=>Number(r.D.best)-Number(r.D?.null?.bestMean)).filter(Number.isFinite),nullDelta=deltas.length?mean(deltas):null;\n    const active=(state?.challengers||[]).filter(c=>c?.status==='SHADOW');\n    const progress=active.map(c=>{const done=(Array.isArray(shadows)?shadows:[]).filter(r=>r?.challengerId===c.id&&r?.source==='feed').length;return{engineId:c.engineId,done,need:Number(c.minOfficial||6)}});\n    let status='WARMUP',action=`Cần thêm ${Math.max(0,12-n)} kỳ official để đủ rolling 12.`;\n    if(active.length){status='CHALLENGER TEST';action=progress.map(x=>`${x.engineId} ${x.done}/${x.need}`).join(' • ')}\n    else if(n>=12&&Number.isFinite(nullDelta)&&nullDelta<=.05){status='NO EDGE DETECTED';action='Giữ champion, tiếp tục theo dõi; chỉ mở challenger khi drift trigger bật.'}\n    else if(n>=12&&Number.isFinite(nullDelta)){status='ABOVE NULL WINDOW';action='Giữ champion và tiếp tục kiểm chứng ngoài mẫu.'}\n    else if(n>=12){status='MONITORING';action='Đủ rolling 12 nhưng chưa có matched-null đầy đủ.'}\n    return{sample:n,window:12,avgBest:+avgBest.toFixed(3),best3,best4,nullDelta:Number.isFinite(nullDelta)?+nullDelta.toFixed(3):null,status,action,progress};\n  }\n\n'''
+          assert anchor in s, 'ensureCycleUI anchor missing'
+          s=s.replace(anchor,insert+anchor,1)
+
+          old='''    const hero=pane.querySelector('.dHero');hero?.insertAdjacentElement('afterend',panel);return true;\n'''
+          new='''    panel.insertAdjacentHTML('beforeend',`<div class="dStatusGrid dRollingScorecard"><div class="dStat"><span>Rolling official</span><b id="dRollSample">0/12</b><small id="dRollStatus">WARMUP</small></div><div class="dStat"><span>Avg best</span><b id="dRollAvgBest">—</b><small>trên 20 vé / kỳ</small></div><div class="dStat"><span>Kỳ best ≥3 / ≥4</span><b id="dRollHigh">0 / 0</b><small>rolling 12</small></div><div class="dStat"><span>Δ so matched-null</span><b id="dRollNullDelta">—</b><small>best D − null mean</small></div></div><div id="dRollAction" class="notice">Đang chờ log official.</div>`);\n    const hero=pane.querySelector('.dHero');hero?.insertAdjacentElement('afterend',panel);return true;\n'''
+          assert old in s, 'cycle panel insert anchor missing'
+          s=s.replace(old,new,1)
+
+          old='''    if(!ensureCycleUI()){}const state=researchState(),base=baselineStatus(),rows=shadowLogs();\n'''
+          new='''    if(!ensureCycleUI()){}const state=researchState(),base=baselineStatus(),rows=shadowLogs(),roll=rollingScorecard(officialLogs(),state,rows);\n'''
+          assert old in s, 'renderCycleUI state anchor missing'
+          s=s.replace(old,new,1)
+
+          old='''    el('dCycleMemory').textContent=String((state.memory||[]).length);el('dCycleDecision').textContent=state.lastDecision?`${state.lastDecision.type} @ #${String(state.lastDecision.targetId||0).padStart(5,'0')}`:'Chưa có quyết định';\n'''
+          new='''    el('dCycleMemory').textContent=String((state.memory||[]).length);el('dCycleDecision').textContent=state.lastDecision?`${state.lastDecision.type} @ #${String(state.lastDecision.targetId||0).padStart(5,'0')}`:'Chưa có quyết định';\n    if(el('dRollSample'))el('dRollSample').textContent=`${roll.sample}/${roll.window}`;\n    if(el('dRollStatus'))el('dRollStatus').textContent=roll.status;\n    if(el('dRollAvgBest'))el('dRollAvgBest').textContent=roll.sample?`${roll.avgBest.toFixed(2)}/6`:'—';\n    if(el('dRollHigh'))el('dRollHigh').textContent=`${roll.best3} / ${roll.best4}`;\n    if(el('dRollNullDelta'))el('dRollNullDelta').textContent=roll.nullDelta===null?'—':`${roll.nullDelta>=0?'+':''}${roll.nullDelta.toFixed(3)}`;\n    if(el('dRollAction'))el('dRollAction').textContent=roll.action;\n'''
+          assert old in s, 'cycle memory anchor missing'
+          s=s.replace(old,new,1)
+
+          old='''  root.PowerAIAdaptiveCycle={VERSION,configFingerprint,candidateTemplates,diagnose,portfolioSimilarity,robustDecision,syncCycle,augmentLockWithShadows,scoreShadows,baselineStatus,_test:{candidateTemplates,configFingerprint,robustDecision,portfolioSimilarity}};\n'''
+          new='''  root.PowerAIAdaptiveCycle={VERSION,configFingerprint,candidateTemplates,diagnose,portfolioSimilarity,robustDecision,syncCycle,augmentLockWithShadows,scoreShadows,baselineStatus,rollingScorecard,_test:{candidateTemplates,configFingerprint,robustDecision,portfolioSimilarity,rollingScorecard}};\n'''
+          assert old in s, 'cycle export anchor missing'
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          t=Path('tests/adaptive-d-cycle-unit.mjs')
+          q=t.read_text()
+          test_anchor='''const P=[[1,2,3,4,5,6],[7,8,9,10,11,12]],Q=[[1,2,3,20,21,22],[30,31,32,33,34,35]];\n'''
+          test_insert='''const warmLogs=Array.from({length:5},(_,i)=>({source:'feed',targetId:1800+i,D:{best:2+(i%2),null:{bestMean:2.2}}}));\nconst warm=C._test.rollingScorecard(warmLogs,{challengers:[]},[]);\nassert.equal(warm.sample,5);\nassert.equal(warm.status,'WARMUP');\n\nconst noEdgeLogs=Array.from({length:12},(_,i)=>({source:'feed',targetId:1900+i,D:{best:2,null:{bestMean:2.1}}}));\nconst noEdge=C._test.rollingScorecard(noEdgeLogs,{challengers:[]},[]);\nassert.equal(noEdge.status,'NO EDGE DETECTED');\nassert.equal(noEdge.best4,0);\n\nconst shadowState={challengers:[{id:'CH-X',engineId:'D-AR2-X',status:'SHADOW',minOfficial:6}]};\nconst shadowRows=Array.from({length:3},(_,i)=>({source:'feed',targetId:2000+i,challengerId:'CH-X'}));\nconst shadowCard=C._test.rollingScorecard(noEdgeLogs,shadowState,shadowRows);\nassert.equal(shadowCard.status,'CHALLENGER TEST');\nassert.equal(shadowCard.progress[0].done,3);\n\n'''
+          assert test_anchor in q, 'cycle unit test anchor missing'
+          q=q.replace(test_anchor,test_insert+test_anchor,1)
+          t.write_text(q)
+          PY
+
+          node --check adaptive-d-cycle.js
+          node tests/adaptive-d-cycle-unit.mjs
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add adaptive-d-cycle.js tests/adaptive-d-cycle-unit.mjs
+          git commit -m "Add D rolling live scorecard"
+          git push origin HEAD:feature/d-live-scorecard-v1
