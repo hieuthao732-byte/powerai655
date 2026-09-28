@@ -62,6 +62,74 @@
   }
   function loggedIn(){return !document.body.classList.contains('guestMode')}
 
+  const D_STATE_VI={
+    WARMUP:'ĐANG TÍCH LŨY DỮ LIỆU',
+    STABLE:'ỔN ĐỊNH',
+    DRIFT:'CÓ DẤU HIỆU THAY ĐỔI',
+    COOLDOWN:'ĐANG THEO DÕI SAU THAY ĐỔI',
+    'NO EDGE DETECTED':'CHƯA THẤY LỢI THẾ',
+    'ABOVE NULL WINDOW':'ĐANG CAO HƠN MỐC NGẪU NHIÊN',
+    'CHALLENGER TEST':'ĐANG THỬ PHIÊN BẢN MỚI',
+    MONITORING:'ĐANG THEO DÕI',
+    'SHIFT FLAG':'CÓ DẤU HIỆU ĐỔI XU HƯỚNG',
+    LOW_CONFIDENCE:'ĐỘ TIN CẬY THẤP',
+    MEDIUM_CONFIDENCE:'ĐỘ TIN CẬY VỪA',
+    HIGH_CONFIDENCE:'ĐỘ TIN CẬY CAO',
+    VERIFIED:'ĐÃ XÁC MINH',
+    INVALID:'KHÔNG HỢP LỆ',
+    CANDIDATE:'CHƯA KHÓA'
+  };
+  function viState(x){const s=String(x??'').trim();return D_STATE_VI[s]||s.replaceAll('_',' ')}
+  function plainLeafText(raw){
+    const exact={
+      'ADAPTIVE CYCLE':'THEO DÕI & TỰ ĐIỀU CHỈNH',
+      '⚙️ Champion / Challenger':'⚙️ Phiên bản đang dùng / Bản thử mới',
+      'Champion':'Phiên bản đang dùng',
+      'Baseline':'So với ngẫu nhiên',
+      'Challenger':'Bản thử mới',
+      'Memory':'Lịch sử thử nghiệm',
+      'Rolling official':'Theo dõi các kỳ gần nhất',
+      'Avg best':'Trùng cao nhất TB',
+      'Kỳ best ≥3 / ≥4':'Kỳ có vé trùng ≥3 / ≥4',
+      'Δ so matched-null':'Chênh so với ngẫu nhiên',
+      'trên 20 vé / kỳ':'tính trên 20 vé mỗi kỳ',
+      'best D − null mean':'D trừ mức ngẫu nhiên TB',
+      'Không có shadow test':'Không có phiên bản mới đang thử.',
+      'VALIDATION LAB':'KHU KIỂM TRA RIÊNG',
+      '🧪 Walk-forward & Counterfactual':'🧪 Kiểm tra lại trên nhiều kỳ',
+      'Chạy validation':'Chạy kiểm tra',
+      'retrospective only':'chỉ kiểm tra dữ liệu cũ',
+      'Champion Δ null':'D chênh so với ngẫu nhiên',
+      'best-hit so matched random':'trùng cao nhất của D so với ngẫu nhiên',
+      'Change-point':'Dấu hiệu đổi xu hướng',
+      'Novelty hiện tại':'Mức khác A/B/C/L',
+      'so A/B/C/L nếu có lock':'so với các bộ đã khóa nếu có',
+      'Champion hiện tại':'Phiên bản đang dùng'
+    };
+    let s=exact[raw]||D_STATE_VI[raw]||raw;
+    s=s.replace(/^Cần thêm (\d+) kỳ official để đủ rolling 12\.$/,'Cần thêm $1 kỳ chính thức để đủ 12 kỳ theo dõi.');
+    s=s.replace('Giữ champion, tiếp tục theo dõi; chỉ mở challenger khi drift trigger bật.','Giữ phiên bản hiện tại và tiếp tục theo dõi; chỉ thử bản mới khi có dấu hiệu hiệu suất thay đổi.');
+    s=s.replace('Giữ champion và tiếp tục kiểm chứng ngoài mẫu.','Giữ phiên bản hiện tại và tiếp tục kiểm tra bằng các kỳ mới.');
+    s=s.replace('Đủ rolling 12 nhưng chưa có matched-null đầy đủ.','Đã đủ 12 kỳ nhưng chưa đủ dữ liệu so với ngẫu nhiên.');
+    s=s.replace('Challenger chỉ mở khi rolling official kích hoạt drift detector.','Chỉ tạo bản thử mới khi kết quả nhiều kỳ cho thấy phiên bản hiện tại có dấu hiệu yếu đi.');
+    s=s.replace(/(\d+)\/(\d+) kỳ shadow/g,'đã thử $1/$2 kỳ');
+    s=s.replace(/Best TB/g,'Trùng cao nhất TB').replace(/Δ null/g,'Chênh so ngẫu nhiên').replace(/Evidence > Champion/g,'Bằng chứng tốt hơn bản hiện tại');
+    s=s.replace(/prospective official/gi,'chỉ kỳ khóa trước').replace(/KỲ OFFICIAL/g,'KỲ CHÍNH THỨC');
+    s=s.replace('Bấm “Chạy validation” để replay walk-forward nhiều kỳ. Kết quả này không được tính là dự đoán prospective.','Chạy kiểm tra để xem D hoạt động thế nào trên nhiều kỳ cũ. Kết quả này chỉ để nghiên cứu, không tính vào thành tích chính thức.');
+    s=s.replace('Retrospective riêng để kiểm tra D. Không ghi vào official log, không tự promote challenger.','Khu kiểm tra dữ liệu cũ, tách riêng khỏi kết quả chính thức. Không tự đổi phiên bản D.');
+    s=s.replace('Đang replay walk-forward...','Đang kiểm tra lại nhiều kỳ...');
+    s=s.replace('không ghi official','không tính vào kết quả chính thức');
+    s=s.replace('Không tự promote:','Không tự đổi phiên bản:').replace('prospective lock + feed official','bộ đã khóa trước kỳ quay + kết quả chính thức');
+    return s;
+  }
+  function plainTrackDText(){
+    const pane=el('adaptiveDTab');if(!pane)return;
+    pane.querySelectorAll('span,small,b,h2,h3,p,button,em,div.notice').forEach(node=>{
+      if(node.children.length)return;
+      const raw=node.textContent.trim(),next=plainLeafText(raw);if(next!==raw)node.textContent=next;
+    });
+  }
+
   function ensureUI(){
     if(el('adaptiveDTab'))return;
     const choose=document.querySelector('[data-main-pane="choose"]');
@@ -69,7 +137,7 @@
     if(!choose||!tabs)return;
 
     const btn=document.createElement('button');
-    btn.className='tab trackDTabBtn';btn.dataset.tab='adaptiveDTab';btn.type='button';btn.textContent='D • Adaptive';
+    btn.className='tab trackDTabBtn';btn.dataset.tab='adaptiveDTab';btn.type='button';btn.textContent='D • Tự điều chỉnh';
     btn.onclick=()=>{try{activateTrack('adaptiveDTab')}catch{};scheduleRefresh(0)};
     tabs.appendChild(btn);
 
@@ -78,36 +146,36 @@
     pane.innerHTML=`
       <section class="panel dHero">
         <div class="head">
-          <div><div class="sectionKicker dText">D • ADAPTIVE RESEARCH ENGINE</div><h2>🧬 Bộ D — Engine thích nghi</h2><p>D1–D4 chạy đa cửa sổ, tạo riêng 20 vé D và chỉ ghi nhận hiệu suất khi bộ đã khóa trước kết quả chính thức.</p></div>
+          <div><div class="sectionKicker dText">D • BỘ PHÂN TÍCH TỰ ĐIỀU CHỈNH</div><h2>🧬 Bộ D — Tự điều chỉnh theo dữ liệu</h2><p>D1–D4 xem dữ liệu ở nhiều khoảng thời gian, tạo riêng 20 vé D và chỉ chấm thành tích khi bộ đã khóa trước kết quả chính thức.</p></div>
           <div class="actions"><button id="dRebuildBtn">Tạo lại D</button><button id="dCopyBtn" disabled>Sao chép 20 vé D</button><button id="dLockBtn" class="primary" disabled>🔒 Khóa bộ D</button></div>
         </div>
         <div id="dContext" class="trackContext"></div>
         <div class="dStatusGrid">
-          <div class="dStat"><span>Engine</span><b id="dEngine">—</b><small id="dModelHash">—</small><small id="dIntegrity">integrity —</small></div>
+          <div class="dStat"><span>Phiên bản D</span><b id="dEngine">—</b><small id="dModelHash">—</small><small id="dIntegrity">kiểm tra khóa —</small></div>
           <div class="dStat"><span>Trạng thái</span><b id="dState">—</b><small id="dStateNote">—</small></div>
-          <div class="dStat"><span>Confidence</span><b id="dConfidence">—</b><small id="dDisagreement">—</small></div>
-          <div class="dStat"><span>Official log</span><b id="dOfficialCount">0</b><small>prospective + feed</small></div>
+          <div class="dStat"><span>Độ tin cậy</span><b id="dConfidence">—</b><small id="dDisagreement">—</small></div>
+          <div class="dStat"><span>Kỳ đã chấm chính thức</span><b id="dOfficialCount">0</b><small>chỉ kỳ khóa trước + kết quả chính thức</small></div>
         </div>
       </section>
 
       <section class="panel">
-        <div class="head"><div><div class="sectionKicker dText">D1 / D2 / D3 / D4</div><h2>🧠 Expert & đa cửa sổ</h2></div></div>
+        <div class="head"><div><div class="sectionKicker dText">D1 / D2 / D3 / D4</div><h2>🧠 4 cách phân tích ở nhiều khoảng thời gian</h2></div></div>
         <div id="dWeights" class="dExpertGrid"></div>
         <div class="analyticsGrid">
           <div class="analyticsCard"><h3>🎯 Tín hiệu tổng hợp</h3><div id="dTopSignals" class="chips"></div></div>
           <div class="analyticsCard"><h3>🛡 Độ ổn định</h3><div id="dStableSignals" class="chips"></div></div>
-          <div class="analyticsCard"><h3>📐 Portfolio audit</h3><div id="dAudit" class="dAudit"></div></div>
-          <div class="analyticsCard"><h3>🧪 Matched-null</h3><div id="dNullStatus" class="dAudit"></div></div>
+          <div class="analyticsCard"><h3>📐 Kiểm tra bộ 20 vé</h3><div id="dAudit" class="dAudit"></div></div>
+          <div class="analyticsCard"><h3>🧪 So với bộ vé ngẫu nhiên tương đương</h3><div id="dNullStatus" class="dAudit"></div></div>
         </div>
       </section>
 
       <section class="panel dTicketsPanel">
-        <div class="head"><div><div class="sectionKicker dText">20 VÉ D</div><h2>🎟 Portfolio D</h2><p id="dPortfolioNote">Đang dựng model...</p></div></div>
+        <div class="head"><div><div class="sectionKicker dText">20 VÉ D</div><h2>🎟 20 vé D</h2><p id="dPortfolioNote">Đang tạo bộ D...</p></div></div>
         <div id="dTickets" class="ticketGrid"></div>
       </section>
 
       <section class="panel">
-        <div class="head"><div><div class="sectionKicker">D PERFORMANCE</div><h2>📈 Official history</h2><p>Chỉ các bộ D đã khóa trước kỳ quay và được feed chính thức xác nhận.</p></div></div>
+        <div class="head"><div><div class="sectionKicker">KẾT QUẢ BỘ D</div><h2>📈 Lịch sử chấm chính thức</h2><p>Chỉ tính các bộ D đã khóa trước kỳ quay và được nguồn kết quả chính thức xác nhận.</p></div></div>
         <div id="dHistory" class="dHistory"></div>
       </section>`;
     choose.appendChild(pane);
@@ -116,6 +184,7 @@
     el('dCopyBtn').onclick=copyD;
     el('dLockBtn').onclick=lockD;
     ensurePerformanceD();
+    plainTrackDText();
   }
 
   function topChips(arr,valueFn,labelFn,count=12){
@@ -130,9 +199,9 @@
 
   function renderTickets(){
     const box=el('dTickets'),p=currentDisplayPortfolio();if(!box)return;
-    if(!p?.tickets?.length){box.innerHTML='<div class="notice">Chưa dựng được portfolio D.</div>';return}
+    if(!p?.tickets?.length){box.innerHTML='<div class="notice">Chưa tạo được bộ 20 vé D.</div>';return}
     const actual=actualForTarget(targetId),sp=specialForTarget(targetId);
-    box.innerHTML=p.tickets.map((a,i)=>`<div class="ticket dTicket"><div class="ticketTop"><b>VÉ D${String(i+1).padStart(2,'0')}</b><span>${p.locked?'ĐÃ KHÓA':'candidate'}</span></div><div class="balls">${typeof ballsPrize==='function'?ballsPrize(a,actual,sp):a.map(n=>`<span class="ball">${String(n).padStart(2,'0')}</span>`).join('')}</div>${actual.length&&typeof prizeBadge==='function'?prizeBadge(a,actual,sp):''}</div>`).join('');
+    box.innerHTML=p.tickets.map((a,i)=>`<div class="ticket dTicket"><div class="ticketTop"><b>VÉ D${String(i+1).padStart(2,'0')}</b><span>${p.locked?'ĐÃ KHÓA':'CHƯA KHÓA'}</span></div><div class="balls">${typeof ballsPrize==='function'?ballsPrize(a,actual,sp):a.map(n=>`<span class="ball">${String(n).padStart(2,'0')}</span>`).join('')}</div>${actual.length&&typeof prizeBadge==='function'?prizeBadge(a,actual,sp):''}</div>`).join('');
   }
 
   function renderModel(){
@@ -140,33 +209,33 @@
     const logs=dLogs(),drift=D.evaluateDrift(logs,{lastChangeTarget:dState().lastChangeTarget}),conf=D.confidenceGate(currentModel),lock=getDLock(targetId),known=hasAnyKnownResult(targetId);
     const display=currentDisplayPortfolio(),audit=display?.audit||currentPortfolio.audit;
     el('dEngine').textContent=currentModel.engineId;
-    el('dModelHash').textContent='model '+currentModel.modelHash+' • cutoff #'+String(currentModel.cutoffId).padStart(5,'0');
-    const integrity=lock?.integrity;
-    el('dIntegrity').textContent='integrity '+(integrity?.status|| (lock?'CHỜ KIỂM TRA':'CANDIDATE'));
-    el('dState').textContent=drift.state;
-    el('dStateNote').textContent=drift.reason;
-    el('dConfidence').textContent=conf.confidence;
-    el('dDisagreement').textContent='disagreement '+fmt(conf.disagreement);
+    el('dModelHash').textContent='mã mô hình '+currentModel.modelHash+' • dữ liệu đến kỳ #'+String(currentModel.cutoffId).padStart(5,'0');
+    const integrity=lock?.integrity,integrityState=integrity?.status||(lock?'CHỜ KIỂM TRA':'CANDIDATE');
+    el('dIntegrity').textContent='kiểm tra khóa '+viState(integrityState);
+    el('dState').textContent=viState(drift.state);
+    el('dStateNote').textContent=plainLeafText(drift.reason);
+    el('dConfidence').textContent=viState(conf.confidence);
+    el('dDisagreement').textContent='mức bất đồng '+fmt(conf.disagreement);
     el('dOfficialCount').textContent=String(logs.length);
-    el('dContext').innerHTML=`<div class="targetMain">D • ${drawLabel(targetId)}</div><div class="targetDesc">D chỉ dùng dữ liệu trước ${drawLabel(targetId)}. Cutoff <b>#${String(currentModel.cutoffId).padStart(5,'0')}</b>.</div><span class="targetState ${lock?'locked':'ready'}">${lock?'ĐÃ KHÓA':known?'REPLAY':'CHƯA KHÓA'}</span>`;
-    el('dWeights').innerHTML=['D1','D2','D3','D4'].map(k=>`<div class="dExpert"><span>${k}</span><b>${(currentModel.weights[k]*100).toFixed(1)}%</b><small>${({D1:'Residual Pair',D2:'Gap Transition',D3:'Shape Conditional',D4:'Spectral Graph'})[k]}</small></div>`).join('');
+    el('dContext').innerHTML=`<div class="targetMain">D • ${drawLabel(targetId)}</div><div class="targetDesc">D chỉ dùng dữ liệu trước ${drawLabel(targetId)}. Dữ liệu gần nhất là <b>#${String(currentModel.cutoffId).padStart(5,'0')}</b>.</div><span class="targetState ${lock?'locked':'ready'}">${lock?'ĐÃ KHÓA':known?'CHỈ XEM LẠI':'CHƯA KHÓA'}</span>`;
+    el('dWeights').innerHTML=['D1','D2','D3','D4'].map(k=>`<div class="dExpert"><span>${k}</span><b>${(currentModel.weights[k]*100).toFixed(1)}%</b><small>${({D1:'Liên kết cặp số',D2:'Nhịp xuất hiện',D3:'Cấu trúc bộ số',D4:'Mạng liên kết số'})[k]}</small></div>`).join('');
     const ranked=[...Array(D.N)].map((_,i)=>i+1).sort((a,b)=>currentModel.nodeScores[b]-currentModel.nodeScores[a]||a-b);
     const stable=[...ranked].sort((a,b)=>currentModel.stability[b]-currentModel.stability[a]||a-b);
     el('dTopSignals').innerHTML=topChips(ranked,n=>currentModel.nodeScores[n]);
     el('dStableSignals').innerHTML=topChips(stable,n=>currentModel.stability[n]);
-    el('dAudit').innerHTML=`<span>Coverage <b>${audit.coverage}/55</b></span><span>Exposure <b>${audit.minExposure}–${audit.maxExposure}</b></span><span>Pair lặp <b>${audit.repeatedPairs}</b></span><span>Max overlap <b>${audit.maxOverlap}</b></span><span>Entropy <b>${audit.entropy}</b></span>`;
-    const last=logs.at(-1);el('dNullStatus').innerHTML=last?.D?.null?`<span>Kỳ gần nhất <b>${drawLabel(last.targetId)}</b></span><span>Best D <b>${last.D.best}/6</b></span><span>Null mean <b>${fmt(last.D.null.bestMean)}</b></span><span>p(best) <b>${fmt(last.D.null.pBest)}</b></span>`:'<span>Chưa có kỳ D official để benchmark.</span>';
-    el('dPortfolioNote').textContent=lock?'Portfolio đã khóa; hash '+(lock.portfolioHash||'—'):'Candidate deterministic • hash '+currentPortfolio.hash;
+    el('dAudit').innerHTML=`<span>Số khác nhau <b>${audit.coverage}/55</b></span><span>Số lần xuất hiện <b>${audit.minExposure}–${audit.maxExposure}</b></span><span>Cặp bị lặp <b>${audit.repeatedPairs}</b></span><span>Trùng tối đa giữa 2 vé <b>${audit.maxOverlap}</b></span><span>Độ phân tán <b>${audit.entropy}</b></span>`;
+    const last=logs.at(-1);el('dNullStatus').innerHTML=last?.D?.null?`<span>Kỳ gần nhất <b>${drawLabel(last.targetId)}</b></span><span>Trùng cao nhất D <b>${last.D.best}/6</b></span><span>Ngẫu nhiên TB <b>${fmt(last.D.null.bestMean)}</b></span><span>Tỷ lệ ngẫu nhiên đạt tương đương <b>${fmt(last.D.null.pBest)}</b></span>`:'<span>Chưa có kỳ D chính thức để so với ngẫu nhiên.</span>';
+    el('dPortfolioNote').textContent=lock?'Bộ 20 vé đã khóa • mã '+(lock.portfolioHash||'—'):'Bộ 20 vé thử trước khi khóa • mã '+currentPortfolio.hash;
     el('dCopyBtn').disabled=!display?.tickets?.length;
     el('dLockBtn').disabled=!!lock||known||!loggedIn()||!currentPortfolio?.tickets?.length;
-    el('dLockBtn').textContent=lock?'✓ D đã khóa':known?'Replay • không khóa':'🔒 Khóa bộ D';
-    renderTickets();renderHistory();
+    el('dLockBtn').textContent=lock?'✓ D đã khóa':known?'Kỳ đã có kết quả • chỉ xem lại':'🔒 Khóa bộ D';
+    renderTickets();renderHistory();plainTrackDText();
   }
 
   function renderHistory(){
     const box=el('dHistory');if(!box)return;const rows=dLogs().slice(-12).reverse();
-    if(!rows.length){box.innerHTML='<div class="notice">Chưa có log D official.</div>';return}
-    box.innerHTML=rows.map(x=>`<div class="dHistoryRow"><span>${drawLabel(x.targetId)}</span><b>Best ${x.D.best}/6</b><small>Tổng hit ${x.D.total??0}</small><small>≥3: ${x.D.g3??0}</small><small>Null ${fmt(x.D?.null?.bestMean)}</small><div>${dPrizeChips(x.D)}</div></div>`).join('');
+    if(!rows.length){box.innerHTML='<div class="notice">Chưa có kỳ D nào đã chấm chính thức.</div>';return}
+    box.innerHTML=rows.map(x=>`<div class="dHistoryRow"><span>${drawLabel(x.targetId)}</span><b>Trùng cao nhất ${x.D.best}/6</b><small>Tổng số trùng ${x.D.total??0}</small><small>≥3: ${x.D.g3??0}</small><small>Ngẫu nhiên TB ${fmt(x.D?.null?.bestMean)}</small><div>${dPrizeChips(x.D)}</div></div>`).join('');
   }
 
   function dPrizeChips(s={}){
@@ -182,13 +251,13 @@
   function lockD(){
     try{
       if(!loggedIn())return showToast?.('Đăng nhập để khóa bộ D.','bad');
-      if(hasAnyKnownResult(targetId))return showToast?.('Kỳ này đã có kết quả nên D chỉ ở chế độ Replay.','bad');
+      if(hasAnyKnownResult(targetId))return showToast?.('Kỳ này đã có kết quả nên D chỉ ở chế độ xem lại.','bad');
       if(getDLock(targetId))return;
       if(!currentModel||!currentPortfolio)buildCurrent();
       const conf=D.confidenceGate(currentModel),obj={version:D.VERSION,targetId:Number(targetId),cutoffId:currentModel.cutoffId,lockedAt:new Date().toISOString(),engineId:currentModel.engineId,weights:currentModel.weights,horizons:currentModel.horizons,modelHash:currentModel.modelHash,portfolioHash:currentPortfolio.hash,seed:currentPortfolio.seed,generator:{...GENERATOR_CONFIG},audit:currentPortfolio.audit,confidence:conf,tickets:currentPortfolio.tickets};
       const integrity=verifyLockIntegrity(obj);
-      if(!integrity.ok)return showToast?.('D không khóa vì snapshot không dựng lại khớp: '+integrity.reason,'bad');
-      obj.integrity=integrity;writeJSON(dLockKey(targetId),obj);showToast?.(`Đã khóa bộ D cho ${drawLabel(targetId)} • integrity VERIFIED.`, 'good');renderModel();
+      if(!integrity.ok)return showToast?.('D không khóa vì bộ đã tạo không khớp khi kiểm tra lại: '+integrity.reason,'bad');
+      obj.integrity=integrity;writeJSON(dLockKey(targetId),obj);showToast?.(`Đã khóa bộ D cho ${drawLabel(targetId)} • kiểm tra khóa đạt.`, 'good');renderModel();
     }catch(e){console.error(e);showToast?.('Không khóa được D: '+e.message,'bad')}
   }
 
@@ -242,7 +311,7 @@
         const baseScore=rc97ScoreForLog;rc97ScoreForLog=function(log,key){return key==='D'?log?.D:baseScore(log,key)};
       }
       if(typeof rc97TrackName==='function'){
-        const baseName=rc97TrackName;rc97TrackName=function(k){return k==='D'?'D • Adaptive':baseName(k)};
+        const baseName=rc97TrackName;rc97TrackName=function(k){return k==='D'?'D • Tự điều chỉnh':baseName(k)};
       }
       if(typeof rc97HighPrizeStats==='function'){
         rc97HighPrizeStats=function(logs){
@@ -253,8 +322,8 @@
       if(typeof rc97Overview==='function'){
         const baseOverview=rc97Overview;rc97Overview=function(logs){
           const base=baseOverview(logs),s=rc97Stat('D',logs);
-          const card=`<article class="rc97TrackCard trackD"><div class="rc97TrackHead"><b>D</b><span>Adaptive</span><em>${s.n} kỳ</em></div><div class="rc97Kpis"><div><span>Best-hit TB</span><b>${s.avgBest.toFixed(2)}</b></div><div><span>Best ≥3</span><b>${rc97Pct(s.ge3,s.n)}</b></div><div><span>Best ≥4</span><b>${rc97Pct(s.ge4,s.n)}</b></div><div><span>Best ≥5</span><b>${rc97Pct(s.ge5,s.n)}</b></div></div><div class="rc97PrizeRow">${rc97PrizeChips(s.prizes)}</div></article>`;
-          return base+`<section class="dPerfAddon"><div class="rc97RecentHead"><b>Track D</b><span>prospective official</span></div><div class="rc97TrackGrid">${card}</div></section>`;
+          const card=`<article class="rc97TrackCard trackD"><div class="rc97TrackHead"><b>D</b><span>Tự điều chỉnh</span><em>${s.n} kỳ</em></div><div class="rc97Kpis"><div><span>Trùng cao nhất TB</span><b>${s.avgBest.toFixed(2)}</b></div><div><span>Trùng ≥3</span><b>${rc97Pct(s.ge3,s.n)}</b></div><div><span>Trùng ≥4</span><b>${rc97Pct(s.ge4,s.n)}</b></div><div><span>Trùng ≥5</span><b>${rc97Pct(s.ge5,s.n)}</b></div></div><div class="rc97PrizeRow">${rc97PrizeChips(s.prizes)}</div></article>`;
+          return base+`<section class="dPerfAddon"><div class="rc97RecentHead"><b>Bộ D</b><span>chỉ kỳ khóa trước</span></div><div class="rc97TrackGrid">${card}</div></section>`;
         };
       }
       const center=document.querySelector('.rc97PerformanceCenter');
@@ -268,7 +337,7 @@
           if(tab!=='D')return baseSet(tab);
           rc97PerfTrack='D';document.querySelectorAll('.rc97PerfTab').forEach(b=>{const on=b.dataset.perfTab==='D';b.classList.toggle('active',on);b.setAttribute('aria-selected',on?'true':'false')});document.querySelectorAll('.rc97PerfPane').forEach(p=>p.hidden=p.dataset.perfPane!=='D');
           const logs=rc97Logs(),s=rc97Stat('D',logs),recent=s.rows.slice(-20).reverse(),pane=document.querySelector('[data-perf-pane="D"] .rc97Dynamic');
-          if(pane)pane.innerHTML=`<div class="rc97TrackIntro"><div><span>D • PERFORMANCE</span><h3>D • Adaptive</h3><p>Chỉ tổng hợp portfolio D đã khóa trước kết quả và được feed chính thức xác nhận.</p></div><em>${s.n} KỲ OFFICIAL</em></div><div class="rc97MetricGrid"><div><span>Best-hit trung bình</span><b>${s.avgBest.toFixed(3)}</b></div><div><span>Best cao nhất</span><b>${s.maxBest}/6</b></div><div><span>Kỳ Best ≥3</span><b>${s.ge3} <small>(${rc97Pct(s.ge3,s.n)})</small></b></div><div><span>Kỳ Best ≥4</span><b>${s.ge4} <small>(${rc97Pct(s.ge4,s.n)})</small></b></div></div><div class="rc97TrackRows">${recent.length?recent.map(x=>`<div class="rc97TrackRow"><span>${drawLabel(x.id)}</span><b>Best ${x.s.best}/6</b><small>Tổng hit ${x.s.total??0}</small><small>≥3: ${x.s.g3??0}</small><div>${rc97PrizeChips(x.s)}</div></div>`).join(''):'<div class="notice">Chưa có log official cho D.</div>'}</div>`;
+          if(pane)pane.innerHTML=`<div class="rc97TrackIntro"><div><span>D • KẾT QUẢ</span><h3>D • Tự điều chỉnh</h3><p>Chỉ tổng hợp bộ D đã khóa trước kỳ quay và được nguồn kết quả chính thức xác nhận.</p></div><em>${s.n} KỲ CHÍNH THỨC</em></div><div class="rc97MetricGrid"><div><span>Trùng cao nhất TB</span><b>${s.avgBest.toFixed(3)}</b></div><div><span>Trùng cao nhất</span><b>${s.maxBest}/6</b></div><div><span>Kỳ trùng ≥3</span><b>${s.ge3} <small>(${rc97Pct(s.ge3,s.n)})</small></b></div><div><span>Kỳ trùng ≥4</span><b>${s.ge4} <small>(${rc97Pct(s.ge4,s.n)})</small></b></div></div><div class="rc97TrackRows">${recent.length?recent.map(x=>`<div class="rc97TrackRow"><span>${drawLabel(x.id)}</span><b>Trùng cao nhất ${x.s.best}/6</b><small>Tổng số trùng ${x.s.total??0}</small><small>≥3: ${x.s.g3??0}</small><div>${rc97PrizeChips(x.s)}</div></div>`).join(''):'<div class="notice">Chưa có kỳ chính thức cho D.</div>'}</div>`;
           try{localStorage.setItem('powerai_rc97_perf_tab','D')}catch{}
         };
       }
@@ -286,10 +355,18 @@
     setTarget=async function(id){const r=await baseSetTargetD(id);scheduleRefresh(20);return r};
   }catch(e){console.error('Track D target hook failed',e)}
 
+  let plainTextBusy=false;
+  function schedulePlainText(){
+    if(plainTextBusy)return;plainTextBusy=true;
+    requestAnimationFrame(()=>{plainTextBusy=false;plainTrackDText()});
+  }
+  const plainObserver=new MutationObserver(schedulePlainText);
+  plainObserver.observe(document.body,{subtree:true,childList:true,characterData:true});
+
   window.addEventListener('powerai-auth-changed',()=>scheduleRefresh(120));
   document.getElementById('refreshBtn')?.addEventListener('click',()=>scheduleRefresh(1500));
-  window.addEventListener('load',()=>{ensureUI();scheduleRefresh(100);setTimeout(()=>scheduleRefresh(1800),1800)},{once:true});
-  ensureUI();scheduleRefresh(250);
+  window.addEventListener('load',()=>{ensureUI();scheduleRefresh(100);setTimeout(()=>{scheduleRefresh(1800);plainTrackDText()},1800)},{once:true});
+  ensureUI();scheduleRefresh(250);plainTrackDText();
 
   window.PowerAIAdaptiveDApp={refresh:refreshD,getLogs:dLogs,getLock:getDLock,getState:dState,saveState:saveDState,verifyLockIntegrity};
 })();
