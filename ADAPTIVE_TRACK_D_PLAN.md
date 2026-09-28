@@ -6,7 +6,8 @@
 - Bước 3 — Tự theo dõi và thử cách mới: xong
 - Bước 4 — Khu kiểm tra riêng: xong
 - Bước 5 — Kiểm tra dữ liệu khóa: xong
-- Bước 6 — Kiểm tra toàn bộ trước khi đưa lên bản chính: đang làm
+- Bước 6 — Kiểm tra toàn bộ và đưa lên bản chính: xong
+- Bước 7 — Theo dõi nhiều kỳ bằng rolling scorecard: đang test
 
 ## 4 cách phân tích của D
 - D1 — Liên kết cặp số: xem các cặp số có liên kết nổi bật hơn mức bình thường hay không.
@@ -25,7 +26,18 @@
 - Nếu bản thử không tốt hơn rõ ràng thì bị loại.
 - Một cách phân tích yếu kéo dài có thể bị giảm ảnh hưởng hoặc tạm nghỉ.
 - D nhớ những bản đã thử, bản nào tốt, bản nào thất bại và lý do đổi.
-- D cũng cố giữ 20 vé của mình khác A/B/C/L để bổ sung vùng phủ thay vì sao chép.
+- D giữ 20 vé của mình đủ khác A/B/C/L để bổ sung vùng phủ.
+
+## Rolling scorecard
+Theo dõi 12 kỳ official gần nhất:
+- số kỳ đã đủ trong cửa sổ 12;
+- Best hit trung bình;
+- số kỳ Best ≥3 và Best ≥4;
+- chênh lệch Best của D so với matched-null;
+- trạng thái WARMUP / NO EDGE DETECTED / ABOVE NULL WINDOW / CHALLENGER TEST;
+- tiến độ shadow challenger nếu đang thử engine mới.
+
+Scorecard chỉ dùng log prospective đã khóa và feed chính thức. Replay hoặc kết quả nhập tay không được tính.
 
 ## Khu kiểm tra riêng
 - Kiểm tra lại từng kỳ theo đúng dữ liệu có trước kỳ đó.
@@ -43,15 +55,6 @@ Mỗi bộ D đã khóa trước kỳ quay sẽ lưu:
 - cấu hình tạo vé.
 
 Khi có kết quả chính thức, hệ thống phải dựng lại đúng bộ D đã khóa. Nếu không khớp thì kỳ đó bị đánh dấu **KHÔNG HỢP LỆ**, không được tính vào quá trình tự học của D.
-
-## Điều kiện trước khi đưa lên bản chính
-- Bộ chọn kỳ của Power đã ổn định trên `main`.
-- PR D lấy `main` làm nền.
-- Kiểm tra phần tính toán D phải đạt.
-- Kiểm tra giao diện D phải đạt.
-- Kiểm tra Power cũ phải vẫn đạt.
-- Bản xem thử trên Vercel phải chạy thành công.
-- Chưa đưa D vào bản chính cho tới khi tất cả mục trên đều đạt.
 
 ## Quy tắc dữ liệu
 - Chỉ kết quả chính thức từ feed mới được dùng để D tự điều chỉnh.
