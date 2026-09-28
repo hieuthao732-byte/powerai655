@@ -17,6 +17,17 @@ assert.match(await page.locator('#dModelHash').innerText(),/model [A-F0-9]{8}/,'
 assert.match(await page.locator('#dContext').innerText(),/Cutoff/i,'D cutoff context missing');
 assert.equal(await page.locator('#dCopyBtn').isDisabled(),false,'D copy should be enabled after build');
 
+// D14 reproducibility guard: a prospective lock must rebuild to the same model + portfolio hash.
+await page.locator('#dLockBtn').click();
+await page.waitForFunction(()=>/VERIFIED/.test(document.querySelector('#dIntegrity')?.textContent||''),null,{timeout:90000});
+const integrity=await page.evaluate(()=>{
+  const id=Number((document.querySelector('#targetId')?.textContent||'').replace(/\D/g,''));
+  const x=JSON.parse(localStorage.getItem('powerai_rc6_d_lock_'+id)||'null');
+  return x?.integrity||null;
+});
+assert.equal(integrity?.ok,true,'D lock integrity must be verified');
+assert.ok(Object.values(integrity?.checks||{}).every(Boolean),'Every D integrity check must pass');
+
 // Phase 3 adaptive cycle is loaded and visible, but starts in warmup on a clean browser.
 await page.waitForFunction(()=>window.PowerAIAdaptiveCycle&&document.querySelector('#dCyclePanel'),null,{timeout:30000});
 assert.match(await page.locator('#dCycleChampion').innerText(),/^D-/,'Adaptive cycle champion missing');

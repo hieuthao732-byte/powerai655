@@ -8,6 +8,33 @@
   const D=window.PowerAIAdaptiveD;
   if(!D){console.error('Track D core missing');return}
 
+  const INTEGRITY_VERSION='D-INTEGRITY-1';
+  const GENERATOR_CONFIG={count:20,candidates:3600,maxExposure:4};
+
+  function verifyLockIntegrity(lock){
+    const checks={ticketShape:false,portfolioHash:false,audit:false,cutoff:false,modelHash:false,rebuild:false};
+    try{
+      const target=Number(lock?.targetId),tickets=Array.isArray(lock?.tickets)?lock.tickets:[];
+      checks.ticketShape=Number.isFinite(target)&&tickets.length===20&&tickets.every(t=>Array.isArray(t)&&t.length===6&&new Set(t).size===6&&t.every(n=>Number.isInteger(Number(n))&&Number(n)>=1&&Number(n)<=D.N));
+      if(!checks.ticketShape)throw new Error('ticket-shape');
+      checks.portfolioHash=typeof lock?.portfolioHash==='string'&&D.hashPortfolio(tickets)===lock.portfolioHash;
+      const audit=D.auditPortfolio(tickets),saved=lock?.audit;
+      checks.audit=!saved||['tickets','coverage','minExposure','maxExposure','repeatedPairs','maxOverlap','entropy'].every(k=>Number(saved[k])===Number(audit[k]));
+      const model=D.buildModel(draws,target,{engineId:lock.engineId,weights:lock.weights,horizons:lock.horizons});
+      checks.cutoff=Number(model.cutoffId)===Number(lock.cutoffId)&&Number(model.cutoffId)<target;
+      checks.modelHash=String(model.modelHash)===String(lock.modelHash);
+      const g={...GENERATOR_CONFIG,...(lock.generator||{})},seed=Number(lock.seed);
+      if(Number.isFinite(seed)){
+        const rebuilt=D.buildPortfolio(model,{count:Number(g.count)||20,candidates:Number(g.candidates)||3600,maxExposure:Number(g.maxExposure)||4,seed});
+        checks.rebuild=rebuilt.tickets.length===20&&rebuilt.hash===lock.portfolioHash;
+      }
+      const failed=Object.entries(checks).filter(([,v])=>!v).map(([k])=>k),ok=failed.length===0;
+      return{version:INTEGRITY_VERSION,ok,status:ok?'VERIFIED':'INVALID',checkedAt:new Date().toISOString(),checks,reason:ok?'Snapshot dựng lại khớp hoàn toàn.':'Sai kiểm tra: '+failed.join(', ')};
+    }catch(e){
+      return{version:INTEGRITY_VERSION,ok:false,status:'INVALID',checkedAt:new Date().toISOString(),checks,reason:'Không dựng lại được snapshot: '+String(e?.message||e)};
+    }
+  }
+
   const LOCK_PREFIX='powerai_rc6_d_lock_';
   const LOG_KEY='powerai_rc6_d_logs';
   const STATE_KEY='powerai_rc6_d_state';
@@ -56,7 +83,7 @@
         </div>
         <div id="dContext" class="trackContext"></div>
         <div class="dStatusGrid">
-          <div class="dStat"><span>Engine</span><b id="dEngine">—</b><small id="dModelHash">—</small></div>
+          <div class="dStat"><span>Engine</span><b id="dEngine">—</b><small id="dModelHash">—</small><small id="dIntegrity">integrity —</small></div>
           <div class="dStat"><span>Trạng thái</span><b id="dState">—</b><small id="dStateNote">—</small></div>
           <div class="dStat"><span>Confidence</span><b id="dConfidence">—</b><small id="dDisagreement">—</small></div>
           <div class="dStat"><span>Official log</span><b id="dOfficialCount">0</b><small>prospective + feed</small></div>
@@ -114,6 +141,8 @@
     const display=currentDisplayPortfolio(),audit=display?.audit||currentPortfolio.audit;
     el('dEngine').textContent=currentModel.engineId;
     el('dModelHash').textContent='model '+currentModel.modelHash+' • cutoff #'+String(currentModel.cutoffId).padStart(5,'0');
+    const integrity=lock?.integrity;
+    el('dIntegrity').textContent='integrity '+(integrity?.status|| (lock?'CHỜ KIỂM TRA':'CANDIDATE'));
     el('dState').textContent=drift.state;
     el('dStateNote').textContent=drift.reason;
     el('dConfidence').textContent=conf.confidence;
@@ -156,8 +185,10 @@
       if(hasAnyKnownResult(targetId))return showToast?.('Kỳ này đã có kết quả nên D chỉ ở chế độ Replay.','bad');
       if(getDLock(targetId))return;
       if(!currentModel||!currentPortfolio)buildCurrent();
-      const conf=D.confidenceGate(currentModel),obj={version:D.VERSION,targetId:Number(targetId),cutoffId:currentModel.cutoffId,lockedAt:new Date().toISOString(),engineId:currentModel.engineId,weights:currentModel.weights,horizons:currentModel.horizons,modelHash:currentModel.modelHash,portfolioHash:currentPortfolio.hash,seed:currentPortfolio.seed,audit:currentPortfolio.audit,confidence:conf,tickets:currentPortfolio.tickets};
-      writeJSON(dLockKey(targetId),obj);showToast?.(`Đã khóa bộ D cho ${drawLabel(targetId)}.`, 'good');renderModel();
+      const conf=D.confidenceGate(currentModel),obj={version:D.VERSION,targetId:Number(targetId),cutoffId:currentModel.cutoffId,lockedAt:new Date().toISOString(),engineId:currentModel.engineId,weights:currentModel.weights,horizons:currentModel.horizons,modelHash:currentModel.modelHash,portfolioHash:currentPortfolio.hash,seed:currentPortfolio.seed,generator:{...GENERATOR_CONFIG},audit:currentPortfolio.audit,confidence:conf,tickets:currentPortfolio.tickets};
+      const integrity=verifyLockIntegrity(obj);
+      if(!integrity.ok)return showToast?.('D không khóa vì snapshot không dựng lại khớp: '+integrity.reason,'bad');
+      obj.integrity=integrity;writeJSON(dLockKey(targetId),obj);showToast?.(`Đã khóa bộ D cho ${drawLabel(targetId)} • integrity VERIFIED.`, 'good');renderModel();
     }catch(e){console.error(e);showToast?.('Không khóa được D: '+e.message,'bad')}
   }
 
@@ -171,10 +202,16 @@
     const logs=dLogs(),byId=new Map(logs.map(x=>[Number(x.targetId),x]));let changed=false;
     for(const lock of allDLocks()){
       const id=Number(lock.targetId),draw=officialDraw(id);if(!draw||byId.has(id)||!Array.isArray(lock.tickets)||lock.tickets.length!==20)continue;
+      const integrity=verifyLockIntegrity(lock);
+      if(!integrity.ok){
+        if(lock.integrity?.status!==integrity.status||lock.integrity?.reason!==integrity.reason)writeJSON(dLockKey(id),{...lock,integrity});
+        console.error('Track D snapshot integrity failed',id,integrity);continue;
+      }
+      if(lock.integrity?.version!==INTEGRITY_VERSION||lock.integrity?.status!=='VERIFIED')writeJSON(dLockKey(id),{...lock,integrity});
       const actual=nums(draw),sp=specialNum(draw);if(actual.length!==6)continue;
       const s=typeof scoreTrack==='function'?scoreTrack(lock.tickets,actual,sp):D.scorePortfolio(lock.tickets,actual);
       const nul=D.matchedNullBenchmark(lock.tickets,actual,{trials:400,seed:((id*104729)+99173)>>>0});
-      const row={targetId:id,source:'feed',actual,special:sp,cutoffId:lock.cutoffId,engineId:lock.engineId,modelHash:lock.modelHash,portfolioHash:lock.portfolioHash,lockedAt:lock.lockedAt,scoredAt:new Date().toISOString(),D:{...s,null:{trials:nul.trials,bestMean:nul.bestMean,totalMean:nul.totalMean,pBest:nul.pBest,pTotal:nul.pTotal}}};
+      const row={targetId:id,source:'feed',actual,special:sp,cutoffId:lock.cutoffId,engineId:lock.engineId,modelHash:lock.modelHash,portfolioHash:lock.portfolioHash,integrity:{version:integrity.version,status:integrity.status,checks:integrity.checks},lockedAt:lock.lockedAt,scoredAt:new Date().toISOString(),D:{...s,null:{trials:nul.trials,bestMean:nul.bestMean,totalMean:nul.totalMean,pBest:nul.pBest,pTotal:nul.pTotal}}};
       logs.push(row);byId.set(id,row);changed=true;
     }
     if(changed){logs.sort((a,b)=>Number(a.targetId)-Number(b.targetId));saveDLogs(logs)}
@@ -254,5 +291,5 @@
   window.addEventListener('load',()=>{ensureUI();scheduleRefresh(100);setTimeout(()=>scheduleRefresh(1800),1800)},{once:true});
   ensureUI();scheduleRefresh(250);
 
-  window.PowerAIAdaptiveDApp={refresh:refreshD,getLogs:dLogs,getLock:getDLock,getState:dState,saveState:saveDState};
+  window.PowerAIAdaptiveDApp={refresh:refreshD,getLogs:dLogs,getLock:getDLock,getState:dState,saveState:saveDState,verifyLockIntegrity};
 })();
