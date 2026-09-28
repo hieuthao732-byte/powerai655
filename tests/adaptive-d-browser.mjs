@@ -35,6 +35,13 @@ assert.match(await page.locator('#dCycleBaseline').innerText(),/WARMUP|NO EDGE D
 assert.equal(await page.locator('#dCycleChallengeCount').innerText(),'0','Clean browser must not invent a challenger');
 assert.match(await page.locator('#dCycleProgress').innerText(),/Không có shadow test/i,'Adaptive shadow warmup note missing');
 
+// D v1.1 rolling scorecard must start clean and only count official prospective logs.
+await page.waitForFunction(()=>document.querySelector('#dRollSample')&&document.querySelector('#dRollStatus'),null,{timeout:30000});
+assert.equal(await page.locator('#dRollSample').innerText(),'0/12','Clean browser rolling sample must start at 0/12');
+assert.equal(await page.locator('#dRollStatus').innerText(),'WARMUP','Clean browser rolling state must be WARMUP');
+assert.equal((await page.locator('#dRollHigh').innerText()).trim(),'0 / 0','Clean browser high-hit counter must start at zero');
+assert.match(await page.locator('#dRollAction').innerText(),/12 kỳ official/i,'Rolling warmup action missing');
+
 // Phase 4 retrospective validation lab is visible but isolated from official D state.
 await page.waitForFunction(()=>window.PowerAIAdaptiveValidation&&document.querySelector('#dValidationPanel'),null,{timeout:30000});
 assert.match(await page.locator('#dValidationPanel').innerText(),/Walk-forward/i,'D validation lab missing');
