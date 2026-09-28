@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/adaptive-track-d
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
