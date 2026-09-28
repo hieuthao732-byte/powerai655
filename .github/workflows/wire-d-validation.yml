@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: feature/adaptive-track-d
-      - name: Wire validation lab into build, UI tests and plan
+      - name: Wire validation lab into app and tests
         shell: bash
         run: |
           set -euo pipefail
@@ -38,14 +38,6 @@ jobs:
               '<script src="adaptive-d-cycle.js?v=0.3"></script>\n',
               '<script src="adaptive-d-cycle.js?v=0.3"></script>\n<script src="adaptive-d-validation.js?v=0.1"></script>\n')
 
-          p=Path('.github/workflows/adaptive-d-checks.yml'); s=p.read_text()
-          s=s.replace('Build and verify Track D core + UI + adaptive cycle','Build and verify Track D core + UI + adaptive cycle + validation')
-          s=s.replace('          node --check adaptive-d-cycle.js\n          npm run build', '          node --check adaptive-d-cycle.js\n          node --check adaptive-d-validation.js\n          npm run build')
-          s=s.replace('          test -s dist/adaptive-d-cycle.js\n          test -s dist/adaptive-d.css', '          test -s dist/adaptive-d-cycle.js\n          test -s dist/adaptive-d-validation.js\n          test -s dist/adaptive-d.css')
-          s=s.replace('          cmp -s adaptive-d-cycle.js dist/adaptive-d-cycle.js\n          cmp -s adaptive-d.css dist/adaptive-d.css', '          cmp -s adaptive-d-cycle.js dist/adaptive-d-cycle.js\n          cmp -s adaptive-d-validation.js dist/adaptive-d-validation.js\n          cmp -s adaptive-d.css dist/adaptive-d.css')
-          s=s.replace('          node tests/adaptive-d-cycle-unit.mjs\n          node tests/adaptive-d-ui-static.mjs', '          node tests/adaptive-d-cycle-unit.mjs\n          node tests/adaptive-d-validation-unit.mjs\n          node tests/adaptive-d-ui-static.mjs')
-          p.write_text(s)
-
           replace_once('tests/adaptive-d-browser.mjs',
               "assert.match(await page.locator('#dCycleProgress').innerText(),/Không có shadow test/i,'Adaptive shadow warmup note missing');\n",
               "assert.match(await page.locator('#dCycleProgress').innerText(),/Không có shadow test/i,'Adaptive shadow warmup note missing');\n\n// Phase 4 retrospective validation lab is visible but isolated from official D state.\nawait page.waitForFunction(()=>window.PowerAIAdaptiveValidation&&document.querySelector('#dValidationPanel'),null,{timeout:30000});\nassert.match(await page.locator('#dValidationPanel').innerText(),/Walk-forward/i,'D validation lab missing');\nassert.match(await page.locator('#dValidationPanel').innerText(),/Không ghi vào official log/i,'D validation isolation note missing');\nassert.equal(await page.locator('#dValidationRunBtn').count(),1,'D validation run button missing');\n")
@@ -59,10 +51,13 @@ jobs:
           p.write_text(s)
           PY
 
-          rm -f .github/workflows/wire-d-validation.yml
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add build.mjs index.html .github/workflows/adaptive-d-checks.yml tests/adaptive-d-browser.mjs ADAPTIVE_TRACK_D_PLAN.md .github/workflows/wire-d-validation.yml
+          git add build.mjs index.html tests/adaptive-d-browser.mjs ADAPTIVE_TRACK_D_PLAN.md
+          if git diff --cached --quiet; then
+            echo 'Already wired.'
+            exit 0
+          fi
           git commit -m "Wire Track D Phase 4 validation lab"
           git push origin HEAD:feature/adaptive-track-d
