@@ -209,16 +209,16 @@ Trong Hiệu suất:
 - [x] D official score/log
 - [x] D cloud state (qua namespace powerai_rc6_ hiện có)
 - [x] Performance Center A/B/C/L/D
-- [ ] Shadow challenger storage
+- [x] Shadow challenger storage
 
 ### Phase 3 — Adaptive automation
-- [ ] Weight reward update from official outcomes
-- [ ] Feature quarantine
-- [ ] Challenger tournament
-- [ ] Stress-test promote gate
-- [ ] Failure diagnosis
-- [ ] Engine lineage/memory UI
-- [ ] Orthogonality vs A/B/C/L
+- [x] Weight reward update from official outcomes
+- [x] Feature quarantine
+- [x] Challenger tournament
+- [x] Stress-test promote gate
+- [x] Failure diagnosis
+- [x] Engine lineage/memory UI
+- [x] Orthogonality vs A/B/C/L
 
 ## Không làm
 - Không tự tối ưu hàng trăm hyperparameter sau mỗi draw.
