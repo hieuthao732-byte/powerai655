@@ -4,6 +4,11 @@ import { join } from 'node:path';
 const files = [
   'index.html',
   'app.js',
+  'adaptive-d.js',
+  'adaptive-d-ui.js',
+  'adaptive-d-cycle.js',
+  'adaptive-d-validation.js',
+  'adaptive-d.css',
   'auth.js',
   'style.css',
   'favicon.svg',

@@ -113,7 +113,7 @@ async function runViewport(browser, name, viewport) {
     const r=rc97HighPrizeStats(logs);
     return {counts:Object.fromEntries(r.stats.map(s=>[s.key,s.highDraws])),leaders:r.leaders,max:r.max};
   });
-  assert.deepEqual(highPrizeCheck,{counts:{A:2,B:0,C:1,L:1},leaders:['A'],max:2},`${name}: high-prize draw counting regression`);
+  assert.deepEqual(highPrizeCheck,{counts:{A:2,B:0,C:1,L:1,D:0},leaders:['A'],max:2},`${name}: high-prize draw counting regression`);
 
   // Prize classification regression tests, independent of any live draw.
   const prizeCheck = await page.evaluate(() => {
