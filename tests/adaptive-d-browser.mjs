@@ -17,6 +17,13 @@ assert.match(await page.locator('#dModelHash').innerText(),/model [A-F0-9]{8}/,'
 assert.match(await page.locator('#dContext').innerText(),/Cutoff/i,'D cutoff context missing');
 assert.equal(await page.locator('#dCopyBtn').isDisabled(),false,'D copy should be enabled after build');
 
+// Phase 3 adaptive cycle is loaded and visible, but starts in warmup on a clean browser.
+await page.waitForFunction(()=>window.PowerAIAdaptiveCycle&&document.querySelector('#dCyclePanel'),null,{timeout:30000});
+assert.match(await page.locator('#dCycleChampion').innerText(),/^D-/,'Adaptive cycle champion missing');
+assert.match(await page.locator('#dCycleBaseline').innerText(),/WARMUP|NO EDGE DETECTED|ABOVE NULL WINDOW/,'Adaptive baseline state missing');
+assert.equal(await page.locator('#dCycleChallengeCount').innerText(),'0','Clean browser must not invent a challenger');
+assert.match(await page.locator('#dCycleProgress').innerText(),/Không có shadow test/i,'Adaptive shadow warmup note missing');
+
 // A draw that is already in the official feed must stay replay-only.
 const targetSelect=page.locator('#targetSelect');
 await page.waitForFunction(()=>document.querySelector('#targetSelect')?.options?.length>1,null,{timeout:90000});
