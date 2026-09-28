@@ -6,6 +6,7 @@
 - Phase 3 Adaptive cycle: xong
 - Phase 4 Validation Lab: xong
 - Phase 5 Integrity hardening: xong D14 snapshot reproducibility guard
+- Phase 6 Release hardening: đang kiểm tra full regression + Vercel trước khi release
 
 ## Engine
 - D1 Residual Pair Matrix
@@ -43,6 +44,15 @@ Mỗi lock prospective lưu model hash, portfolio hash, seed và generator confi
 - tái sinh 20 vé từ seed cho cùng portfolio hash.
 
 Nếu fail bất kỳ mục nào: `INVALID`, không ghi official D log và không dùng kỳ đó cho adaptive learning.
+
+## Release gate
+- Power selector đã merge vào `main`.
+- PR D base trực tiếp `main`.
+- Adaptive core/unit phải pass.
+- D browser smoke phải pass.
+- Power Browser Smoke + Stabilization Checks phải pass.
+- Vercel preview phải Success.
+- Chưa merge D cho tới khi toàn bộ gate trên xanh.
 
 ## Quy tắc dữ liệu
 - Chỉ `source === feed` được dùng cho official learning.
