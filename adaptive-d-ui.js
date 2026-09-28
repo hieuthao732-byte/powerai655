@@ -43,6 +43,9 @@
   const el=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const fmt=x=>Number.isFinite(Number(x))?Number(x).toFixed(3):'—';
+  function dStateLabel(x){return ({STABLE:'ỔN ĐỊNH',WARMUP:'ĐANG TÍCH LŨY DỮ LIỆU',DRIFT:'HIỆU SUẤT ĐANG YẾU',COOLDOWN:'ĐANG CHỜ THÊM KỲ',CHALLENGER_TEST:'ĐANG THỬ CÁCH MỚI'})[String(x)]||String(x||'—')}
+  function dConfidenceLabel(x){return ({HIGH:'TÍN HIỆU KHÁ ĐỒNG THUẬN',MEDIUM:'TÍN HIỆU TẠM ỔN',LOW:'TÍN HIỆU CHƯA RÕ',LOW_CONFIDENCE:'TÍN HIỆU CHƯA RÕ'})[String(x)]||String(x||'—')}
+  function dIntegrityLabel(x){return ({VERIFIED:'HỢP LỆ',INVALID:'KHÔNG HỢP LỆ',CANDIDATE:'CHƯA KHÓA','CHỜ KIỂM TRA':'CHỜ KIỂM TRA'})[String(x)]||String(x||'—')}
   const dLockKey=id=>LOCK_PREFIX+Number(id);
 
   function readJSON(key,fallback){try{const x=JSON.parse(localStorage.getItem(key)||'null');return x??fallback}catch{return fallback}}
@@ -69,7 +72,7 @@
     if(!choose||!tabs)return;
 
     const btn=document.createElement('button');
-    btn.className='tab trackDTabBtn';btn.dataset.tab='adaptiveDTab';btn.type='button';btn.textContent='D • Adaptive';
+    btn.className='tab trackDTabBtn';btn.dataset.tab='adaptiveDTab';btn.type='button';btn.textContent='D • Tự điều chỉnh';
     btn.onclick=()=>{try{activateTrack('adaptiveDTab')}catch{};scheduleRefresh(0)};
     tabs.appendChild(btn);
 
@@ -78,26 +81,26 @@
     pane.innerHTML=`
       <section class="panel dHero">
         <div class="head">
-          <div><div class="sectionKicker dText">D • ADAPTIVE RESEARCH ENGINE</div><h2>🧬 Bộ D — Engine thích nghi</h2><p>D1–D4 chạy đa cửa sổ, tạo riêng 20 vé D và chỉ ghi nhận hiệu suất khi bộ đã khóa trước kết quả chính thức.</p></div>
+          <div><div class="sectionKicker dText">D • TỰ KIỂM TRA & TỰ ĐIỀU CHỈNH</div><h2>🧬 Bộ D — Tự kiểm tra và đổi cách chọn khi cần</h2><p>D dùng 4 cách phân tích cùng lúc, tạo riêng 20 vé và chỉ tính thành tích khi bộ đã khóa trước kết quả chính thức.</p></div>
           <div class="actions"><button id="dRebuildBtn">Tạo lại D</button><button id="dCopyBtn" disabled>Sao chép 20 vé D</button><button id="dLockBtn" class="primary" disabled>🔒 Khóa bộ D</button></div>
         </div>
         <div id="dContext" class="trackContext"></div>
         <div class="dStatusGrid">
-          <div class="dStat"><span>Engine</span><b id="dEngine">—</b><small id="dModelHash">—</small><small id="dIntegrity">integrity —</small></div>
+          <div class="dStat"><span>Phiên bản D</span><b id="dEngine">—</b><small id="dModelHash">—</small><small id="dIntegrity">Kiểm tra dữ liệu —</small></div>
           <div class="dStat"><span>Trạng thái</span><b id="dState">—</b><small id="dStateNote">—</small></div>
-          <div class="dStat"><span>Confidence</span><b id="dConfidence">—</b><small id="dDisagreement">—</small></div>
-          <div class="dStat"><span>Official log</span><b id="dOfficialCount">0</b><small>prospective + feed</small></div>
+          <div class="dStat"><span>Độ đồng thuận</span><b id="dConfidence">—</b><small id="dDisagreement">—</small></div>
+          <div class="dStat"><span>Số kỳ đã kiểm chứng</span><b id="dOfficialCount">0</b><small>đã khóa trước kỳ + kết quả chính thức</small></div>
         </div>
       </section>
 
       <section class="panel">
-        <div class="head"><div><div class="sectionKicker dText">D1 / D2 / D3 / D4</div><h2>🧠 Expert & đa cửa sổ</h2></div></div>
+        <div class="head"><div><div class="sectionKicker dText">4 CÁCH PHÂN TÍCH CỦA D</div><h2>🧠 4 cách phân tích đang phối hợp</h2></div></div>
         <div id="dWeights" class="dExpertGrid"></div>
         <div class="analyticsGrid">
           <div class="analyticsCard"><h3>🎯 Tín hiệu tổng hợp</h3><div id="dTopSignals" class="chips"></div></div>
           <div class="analyticsCard"><h3>🛡 Độ ổn định</h3><div id="dStableSignals" class="chips"></div></div>
-          <div class="analyticsCard"><h3>📐 Portfolio audit</h3><div id="dAudit" class="dAudit"></div></div>
-          <div class="analyticsCard"><h3>🧪 Matched-null</h3><div id="dNullStatus" class="dAudit"></div></div>
+          <div class="analyticsCard"><h3>📐 Kiểm tra độ phân tán</h3><div id="dAudit" class="dAudit"></div></div>
+          <div class="analyticsCard"><h3>🧪 So với bộ ngẫu nhiên</h3><div id="dNullStatus" class="dAudit"></div></div>
         </div>
       </section>
 
@@ -107,7 +110,7 @@
       </section>
 
       <section class="panel">
-        <div class="head"><div><div class="sectionKicker">D PERFORMANCE</div><h2>📈 Official history</h2><p>Chỉ các bộ D đã khóa trước kỳ quay và được feed chính thức xác nhận.</p></div></div>
+        <div class="head"><div><div class="sectionKicker">KẾT QUẢ D</div><h2>📈 Lịch sử kiểm chứng</h2><p>Chỉ tính những bộ D đã khóa trước kỳ quay và sau đó có kết quả chính thức.</p></div></div>
         <div id="dHistory" class="dHistory"></div>
       </section>`;
     choose.appendChild(pane);
@@ -132,7 +135,7 @@
     const box=el('dTickets'),p=currentDisplayPortfolio();if(!box)return;
     if(!p?.tickets?.length){box.innerHTML='<div class="notice">Chưa dựng được portfolio D.</div>';return}
     const actual=actualForTarget(targetId),sp=specialForTarget(targetId);
-    box.innerHTML=p.tickets.map((a,i)=>`<div class="ticket dTicket"><div class="ticketTop"><b>VÉ D${String(i+1).padStart(2,'0')}</b><span>${p.locked?'ĐÃ KHÓA':'candidate'}</span></div><div class="balls">${typeof ballsPrize==='function'?ballsPrize(a,actual,sp):a.map(n=>`<span class="ball">${String(n).padStart(2,'0')}</span>`).join('')}</div>${actual.length&&typeof prizeBadge==='function'?prizeBadge(a,actual,sp):''}</div>`).join('');
+    box.innerHTML=p.tickets.map((a,i)=>`<div class="ticket dTicket"><div class="ticketTop"><b>VÉ D${String(i+1).padStart(2,'0')}</b><span>${p.locked?'ĐÃ KHÓA':'CHƯA KHÓA'}</span></div><div class="balls">${typeof ballsPrize==='function'?ballsPrize(a,actual,sp):a.map(n=>`<span class="ball">${String(n).padStart(2,'0')}</span>`).join('')}</div>${actual.length&&typeof prizeBadge==='function'?prizeBadge(a,actual,sp):''}</div>`).join('');
   }
 
   function renderModel(){
@@ -140,23 +143,23 @@
     const logs=dLogs(),drift=D.evaluateDrift(logs,{lastChangeTarget:dState().lastChangeTarget}),conf=D.confidenceGate(currentModel),lock=getDLock(targetId),known=hasAnyKnownResult(targetId);
     const display=currentDisplayPortfolio(),audit=display?.audit||currentPortfolio.audit;
     el('dEngine').textContent=currentModel.engineId;
-    el('dModelHash').textContent='model '+currentModel.modelHash+' • cutoff #'+String(currentModel.cutoffId).padStart(5,'0');
+    el('dModelHash').textContent='mã '+currentModel.modelHash+' • dữ liệu đến #'+String(currentModel.cutoffId).padStart(5,'0');
     const integrity=lock?.integrity;
-    el('dIntegrity').textContent='integrity '+(integrity?.status|| (lock?'CHỜ KIỂM TRA':'CANDIDATE'));
-    el('dState').textContent=drift.state;
+    el('dIntegrity').textContent='Kiểm tra dữ liệu '+dIntegrityLabel(integrity?.status|| (lock?'CHỜ KIỂM TRA':'CANDIDATE'));
+    el('dState').textContent=dStateLabel(drift.state);
     el('dStateNote').textContent=drift.reason;
-    el('dConfidence').textContent=conf.confidence;
-    el('dDisagreement').textContent='disagreement '+fmt(conf.disagreement);
+    el('dConfidence').textContent=dConfidenceLabel(conf.confidence);
+    el('dDisagreement').textContent='Mức bất đồng '+fmt(conf.disagreement);
     el('dOfficialCount').textContent=String(logs.length);
     el('dContext').innerHTML=`<div class="targetMain">D • ${drawLabel(targetId)}</div><div class="targetDesc">D chỉ dùng dữ liệu trước ${drawLabel(targetId)}. Cutoff <b>#${String(currentModel.cutoffId).padStart(5,'0')}</b>.</div><span class="targetState ${lock?'locked':'ready'}">${lock?'ĐÃ KHÓA':known?'REPLAY':'CHƯA KHÓA'}</span>`;
-    el('dWeights').innerHTML=['D1','D2','D3','D4'].map(k=>`<div class="dExpert"><span>${k}</span><b>${(currentModel.weights[k]*100).toFixed(1)}%</b><small>${({D1:'Residual Pair',D2:'Gap Transition',D3:'Shape Conditional',D4:'Spectral Graph'})[k]}</small></div>`).join('');
+    el('dWeights').innerHTML=['D1','D2','D3','D4'].map(k=>`<div class="dExpert"><span>${k}</span><b>${(currentModel.weights[k]*100).toFixed(1)}%</b><small>${({D1:'Liên kết cặp số',D2:'Nhịp xuất hiện',D3:'Mẫu kỳ quay',D4:'Mạng liên kết số'})[k]}</small></div>`).join('');
     const ranked=[...Array(D.N)].map((_,i)=>i+1).sort((a,b)=>currentModel.nodeScores[b]-currentModel.nodeScores[a]||a-b);
     const stable=[...ranked].sort((a,b)=>currentModel.stability[b]-currentModel.stability[a]||a-b);
     el('dTopSignals').innerHTML=topChips(ranked,n=>currentModel.nodeScores[n]);
     el('dStableSignals').innerHTML=topChips(stable,n=>currentModel.stability[n]);
     el('dAudit').innerHTML=`<span>Coverage <b>${audit.coverage}/55</b></span><span>Exposure <b>${audit.minExposure}–${audit.maxExposure}</b></span><span>Pair lặp <b>${audit.repeatedPairs}</b></span><span>Max overlap <b>${audit.maxOverlap}</b></span><span>Entropy <b>${audit.entropy}</b></span>`;
-    const last=logs.at(-1);el('dNullStatus').innerHTML=last?.D?.null?`<span>Kỳ gần nhất <b>${drawLabel(last.targetId)}</b></span><span>Best D <b>${last.D.best}/6</b></span><span>Null mean <b>${fmt(last.D.null.bestMean)}</b></span><span>p(best) <b>${fmt(last.D.null.pBest)}</b></span>`:'<span>Chưa có kỳ D official để benchmark.</span>';
-    el('dPortfolioNote').textContent=lock?'Portfolio đã khóa; hash '+(lock.portfolioHash||'—'):'Candidate deterministic • hash '+currentPortfolio.hash;
+    const last=logs.at(-1);el('dNullStatus').innerHTML=last?.D?.null?`<span>Kỳ gần nhất <b>${drawLabel(last.targetId)}</b></span><span>Cao nhất D <b>${last.D.best}/6</b></span><span>Ngẫu nhiên trung bình <b>${fmt(last.D.null.bestMean)}</b></span><span>Tỷ lệ ngẫu nhiên đạt bằng/tốt hơn <b>${fmt(last.D.null.pBest)}</b></span>`:'<span>Chưa có kỳ D chính thức để so sánh.</span>';
+    el('dPortfolioNote').textContent=lock?'Bộ 20 vé đã khóa • mã '+(lock.portfolioHash||'—'):'Bộ 20 vé chưa khóa • mã '+currentPortfolio.hash;
     el('dCopyBtn').disabled=!display?.tickets?.length;
     el('dLockBtn').disabled=!!lock||known||!loggedIn()||!currentPortfolio?.tickets?.length;
     el('dLockBtn').textContent=lock?'✓ D đã khóa':known?'Replay • không khóa':'🔒 Khóa bộ D';
@@ -165,8 +168,8 @@
 
   function renderHistory(){
     const box=el('dHistory');if(!box)return;const rows=dLogs().slice(-12).reverse();
-    if(!rows.length){box.innerHTML='<div class="notice">Chưa có log D official.</div>';return}
-    box.innerHTML=rows.map(x=>`<div class="dHistoryRow"><span>${drawLabel(x.targetId)}</span><b>Best ${x.D.best}/6</b><small>Tổng hit ${x.D.total??0}</small><small>≥3: ${x.D.g3??0}</small><small>Null ${fmt(x.D?.null?.bestMean)}</small><div>${dPrizeChips(x.D)}</div></div>`).join('');
+    if(!rows.length){box.innerHTML='<div class="notice">Chưa có kỳ D nào được kiểm chứng chính thức.</div>';return}
+    box.innerHTML=rows.map(x=>`<div class="dHistoryRow"><span>${drawLabel(x.targetId)}</span><b>Cao nhất ${x.D.best}/6</b><small>Tổng hit ${x.D.total??0}</small><small>≥3: ${x.D.g3??0}</small><small>Ngẫu nhiên TB ${fmt(x.D?.null?.bestMean)}</small><div>${dPrizeChips(x.D)}</div></div>`).join('');
   }
 
   function dPrizeChips(s={}){
