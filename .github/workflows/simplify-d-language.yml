@@ -64,6 +64,7 @@ jobs:
 
           t=Path('tests/adaptive-d-ui-static.mjs')
           q=t.read_text()
+          q=q.replace("assert.match(ui,/D1 \\/ D2 \\/ D3 \\/ D4/);","assert.match(ui,/4 CÁCH PHÂN TÍCH CỦA D/);")
           q=q.replace("assert.match(ui,/integrity VERIFIED/);","assert.match(ui,/Kiểm tra dữ liệu/);")
           t.write_text(q)
           PY
