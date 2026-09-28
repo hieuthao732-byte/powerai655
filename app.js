@@ -1186,6 +1186,26 @@ function previousNavigableTarget(){
   const ids=draws.map(d=>Number(d.id)).filter(id=>Number.isFinite(id)&&id<cur);
   return ids.length?ids[ids.length-1]:null;
 }
+function renderTargetSelect(){
+  const sel=$("targetSelect");
+  if(!sel||!latest||!Array.isArray(draws)||!draws.length)return;
+  const next=nextNavigableTarget(),recent=draws.slice(-36).reverse(),seen=new Set(),options=[];
+  const push=(id,label)=>{id=Number(id);if(!Number.isFinite(id)||seen.has(id))return;seen.add(id);options.push(`<option value="${id}">${label}</option>`)};
+  push(next,`${drawLabel(next)} • kỳ tiếp theo`);
+  const currentOfficial=draws.find(d=>Number(d.id)===Number(targetId));
+  if(currentOfficial&&!recent.some(d=>Number(d.id)===Number(targetId)))recent.unshift(currentOfficial);
+  for(const d of recent)push(Number(d.id),`${drawLabel(d.id)} • ${d.date||"kỳ đã quay"}`);
+  if(!seen.has(Number(targetId)))push(Number(targetId),`${drawLabel(targetId)} • kỳ đang chọn`);
+  sel.innerHTML=options.join("");
+  sel.value=String(targetId);
+  sel.disabled=false;
+}
+async function chooseTargetFromSelect(){
+  const sel=$("targetSelect");if(!sel)return;
+  const id=Number(sel.value);if(!Number.isFinite(id)||id===Number(targetId))return;
+  sel.disabled=true;
+  try{await setTarget(id)}catch(e){console.error(e);showToast?.("Không mở được kỳ đã chọn.","bad")}finally{renderTargetSelect()}
+}
 async function openLoggedTarget(id){
   await setTarget(Number(id));
   const log=getLog(Number(id));
@@ -1585,7 +1605,7 @@ function renderState(){
 }
 async function setTarget(id){
   targetId=Number(id);try{localStorage.setItem("powerai_rc6_active_target",String(targetId))}catch{}cloudSyncSoon();
-  $("targetId").textContent=drawLabel(targetId);renderTargetContexts();
+  $("targetId").textContent=drawLabel(targetId);renderTargetSelect();renderTargetContexts();
   const L=getLock(targetId);
 
   // STAGE 1: Track A is always built/rendered first and painted before any heavy B/C work.
@@ -1705,7 +1725,7 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>activateTrack(b.datas
 document.querySelectorAll("[data-open-tab]").forEach(b=>b.onclick=()=>openTrack(b.dataset.openTab));
 $("manualResult").addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("manualBtn").disabled)manualResult()});
 $("runLearningBtn").onclick=runLearning;$("buildLearningPortfolioBtn").onclick=prepareAndBuildLearningPortfolio;$("copyLearningBtn").onclick=()=>copySet(rankLearningRows().map(p=>p.a),"L");$("lockLearningBtn").onclick=lockLearningPortfolio;$("resetLearningBtn").onclick=resetLearning;
-$("refreshBtn").onclick=load;$("lockBothBtn").onclick=lockBoth;$("manualBtn").onclick=manualResult;if($("prevBtn"))$("prevBtn").onclick=previousDraw;$("nextBtn").onclick=nextDraw;$("regenLegacyBtn").onclick=buildLegacyPortfolio;$("rebuildHybridBtn").onclick=buildHybridPortfolio;
+$("refreshBtn").onclick=load;if($("targetSelect"))$("targetSelect").onchange=chooseTargetFromSelect;$("lockBothBtn").onclick=lockBoth;$("manualBtn").onclick=manualResult;if($("prevBtn"))$("prevBtn").onclick=previousDraw;$("nextBtn").onclick=nextDraw;$("regenLegacyBtn").onclick=buildLegacyPortfolio;$("rebuildHybridBtn").onclick=buildHybridPortfolio;
 $("copyGeoBtn").onclick=()=>copySet(rankGeoRows().map(p=>p.a),"A");$("copyLegacyBtn").onclick=()=>copySet(rankLegacyRows().map(p=>p.a),"B");$("copyHybridBtn").onclick=()=>copySet(rankHybridRows().map(p=>p.a),"C");$("exportBtn").onclick=exportLogs;
 
 /* =========================
@@ -2142,11 +2162,37 @@ let rc97PerfTrack='overview';
 function rc97Logs(){
   try{return (typeof allLogs==='function'?allLogs():[]).filter(x=>x&&x.source==='feed').sort((a,b)=>Number(a.targetId)-Number(b.targetId))}catch(e){return[]}
 }
+function rc97ScoreForLog(log,key){
+  const raw=log?.[key];
+  try{return typeof prizeSummaryScore==='function'?prizeSummaryScore(log,key,raw):raw}catch(e){return raw}
+}
 function rc97Stat(key,logs){
-  const rows=logs.map(l=>({id:Number(l.targetId),s:l?.[key]})).filter(x=>x.s&&Number.isFinite(Number(x.s.best)));
+  const rows=logs.map(l=>({id:Number(l.targetId),s:rc97ScoreForLog(l,key)})).filter(x=>x.s&&Number.isFinite(Number(x.s.best)));
   const n=rows.length,sum=f=>rows.reduce((a,x)=>a+(Number(f(x.s))||0),0);
   const prizes={jp1:sum(s=>s.jp1),jp2:sum(s=>s.jp2),first:sum(s=>s.first),second:sum(s=>s.second),third:sum(s=>s.third)};
   return{key,n,rows,avgBest:n?sum(s=>s.best)/n:0,avgTotal:n?sum(s=>s.total)/n:0,ge3:rows.filter(x=>Number(x.s.best)>=3).length,ge4:rows.filter(x=>Number(x.s.best)>=4).length,ge5:rows.filter(x=>Number(x.s.best)>=5).length,maxBest:n?Math.max(...rows.map(x=>Number(x.s.best)||0)):0,prizes};
+}
+function rc97HighPrizeStats(logs){
+  const stats=['A','B','C','L'].map(k=>{
+    const s=rc97Stat(k,logs);
+    const highDraws=s.rows.filter(x=>Number(x.s.best)>=4).length;
+    const eliteDraws=s.rows.filter(x=>Number(x.s.best)>=5).length;
+    return{...s,highDraws,eliteDraws,highRate:s.n?highDraws/s.n:0};
+  });
+  const max=Math.max(0,...stats.map(s=>s.highDraws));
+  const leaders=max>0?stats.filter(s=>s.highDraws===max).map(s=>s.key):[];
+  return{stats,max,leaders};
+}
+function rc97HighPrizeBoard(logs){
+  const r=rc97HighPrizeStats(logs);
+  if(!r.stats.some(s=>s.n))return '<section class="rc97HighPrizeBoard"><div class="rc97HighPrizeHead"><div><span>THÀNH TÍCH GIẢI CAO</span><b>Chưa có đủ log official</b></div></div><p class="rc97HighPrizeNote">Mục này chỉ tính các kỳ prospective đã khóa và sau đó được feed chính thức đối chiếu.</p></section>';
+  const leadText=r.leaders.length?r.leaders.join(' / ')+' • '+r.max+' kỳ':'Chưa track nào có Best ≥4/6';
+  const cards=r.stats.map(s=>{
+    const leader=r.leaders.includes(s.key)&&r.max>0;
+    const p=s.prizes;
+    return '<article class="rc97HighPrizeCard track'+s.key+(leader?' leader':'')+'"><div class="rc97HighPrizeCardHead"><b>'+s.key+'</b><span>'+rc97TrackName(s.key).split('•')[1].trim()+'</span>'+(leader?'<em>DẪN ĐẦU</em>':'')+'</div><strong>'+s.highDraws+' / '+s.n+' kỳ</strong><small>Best ≥4/6 • '+rc97Pct(s.highDraws,s.n)+'</small><div class="rc97HighPrizeBreakdown"><span>≥5: <b>'+s.eliteDraws+'</b></span><span>JP1 <b>'+(p.jp1||0)+'</b></span><span>JP2 <b>'+(p.jp2||0)+'</b></span><span>Nhất <b>'+(p.first||0)+'</b></span><span>Nhì <b>'+(p.second||0)+'</b></span></div></article>';
+  }).join('');
+  return '<section class="rc97HighPrizeBoard"><div class="rc97HighPrizeHead"><div><span>THÀNH TÍCH GIẢI CAO • NHIỀU KỲ</span><b>Dẫn đầu theo số kỳ có Best ≥4/6: '+leadText+'</b></div><small>Best ≥4/6 tương ứng ít nhất 1 vé đạt Giải Nhì hoặc cao hơn.</small></div><div class="rc97HighPrizeGrid">'+cards+'</div><p class="rc97HighPrizeNote">Đây là thống kê kết quả đã ghi nhận trên log official của tài khoản, không phải xác suất trúng ở kỳ tiếp theo. Vì L có thể có ít kỳ tham gia hơn, xem cả số kỳ và tỷ lệ.</p></section>';
 }
 function rc97Pct(a,n){return n?(a/n*100).toFixed(1)+'%':'—'}
 function rc97PrizeChips(p){
@@ -2160,7 +2206,7 @@ function rc97Overview(logs){
   const cards=stats.map(s=>'<article class="rc97TrackCard track'+s.key+'"><div class="rc97TrackHead"><b>'+s.key+'</b><span>'+rc97TrackName(s.key).split('•')[1].trim()+'</span><em>'+s.n+' kỳ</em></div><div class="rc97Kpis"><div><span>Best-hit TB</span><b>'+s.avgBest.toFixed(2)+'</b></div><div><span>Best ≥3</span><b>'+rc97Pct(s.ge3,s.n)+'</b></div><div><span>Best ≥4</span><b>'+rc97Pct(s.ge4,s.n)+'</b></div><div><span>Best ≥5</span><b>'+rc97Pct(s.ge5,s.n)+'</b></div></div><div class="rc97PrizeRow">'+rc97PrizeChips(s.prizes)+'</div></article>').join('');
   const recent=logs.slice(-12).reverse();
   const table=recent.length?'<div class="rc97Recent"><div class="rc97RecentHead"><b>12 kỳ official gần nhất đã lưu</b><span>Best hit của từng track</span></div><div class="rc97Table"><div class="rc97TR head"><span>Kỳ</span><b>A</b><b>B</b><b>C</b><b>L</b></div>'+recent.map(l=>'<div class="rc97TR"><span>'+drawLabel(l.targetId)+'</span>'+['A','B','C','L'].map(k=>'<b class="t'+k+'">'+(l[k]?String(l[k].best)+'/6':'—')+'</b>').join('')+'</div>').join('')+'</div></div>':'<div class="notice">Chưa có log kết quả chính thức đã khóa để tổng hợp.</div>';
-  return '<div class="rc97SummaryNote">Chỉ dùng log <b>feed chính thức</b> đã lưu. Kết quả nhập tay và replay không được tính vào Performance Center.</div><div class="rc97TrackGrid">'+cards+'</div>'+table;
+  return '<div class="rc97SummaryNote">Chỉ dùng log <b>feed chính thức</b> đã lưu. Kết quả nhập tay và replay không được tính vào Performance Center.</div>'+rc97HighPrizeBoard(logs)+'<div class="rc97TrackGrid">'+cards+'</div>'+table;
 }
 function rc97TrackDetail(key,logs){
   const s=rc97Stat(key,logs),recent=s.rows.slice(-20).reverse();
