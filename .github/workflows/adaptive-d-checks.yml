@@ -16,19 +16,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Build and verify Track D core + UI
+      - name: Build and verify Track D core + UI + adaptive cycle
         shell: bash
         run: |
           set -euo pipefail
           node --check adaptive-d.js
           node --check adaptive-d-ui.js
+          node --check adaptive-d-cycle.js
           npm run build
           test -s dist/adaptive-d.js
           test -s dist/adaptive-d-ui.js
+          test -s dist/adaptive-d-cycle.js
           test -s dist/adaptive-d.css
           cmp -s adaptive-d.js dist/adaptive-d.js
           cmp -s adaptive-d-ui.js dist/adaptive-d-ui.js
+          cmp -s adaptive-d-cycle.js dist/adaptive-d-cycle.js
           cmp -s adaptive-d.css dist/adaptive-d.css
           node tests/adaptive-d-unit.mjs
+          node tests/adaptive-d-cycle-unit.mjs
           node tests/adaptive-d-ui-static.mjs
           git diff --check
