@@ -63,7 +63,7 @@ assert.equal(positive.agreement,'ĐỒNG THUẬN','positive 6/12/24 windows shou
 assert.equal(positive.level,'TÍN HIỆU DƯƠNG ỔN ĐỊNH HƠN','stable positive evidence state mismatch');
 assert.ok(positive.ciLow>0,'stable positive confidence interval should stay above zero');
 
-const mixed=C.confidenceSummary(confidenceLogs([...Array(12).fill(.3),...Array(12).fill(-.3)]));
+const mixed=C.confidenceSummary(confidenceLogs([...Array(12).fill(.5),...Array(6).fill(-.8),...Array(6).fill(.2)]));
 assert.equal(mixed.level,'KẾT QUẢ CHƯA ỔN ĐỊNH','opposing recent/long windows should be marked unstable');
 const ignored=C.confidenceSummary([...confidenceLogs(Array(8).fill(.2)),...confidenceLogs(Array(8).fill(.9),{source:'manual'})]);
 assert.equal(ignored.compared,8,'manual rows must not enter confidence evidence');
