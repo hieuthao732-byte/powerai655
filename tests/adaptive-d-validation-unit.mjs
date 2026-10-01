@@ -5,7 +5,9 @@ await import('../adaptive-d-validation.js');
 
 const D=globalThis.PowerAIAdaptiveD;
 const V=globalThis.PowerAIAdaptiveValidation;
+const C=globalThis.PowerAIAdaptiveConfidence;
 assert.ok(D&&V,'Track D validation API missing');
+assert.ok(C,'Track D v1.3 confidence API missing');
 
 function rng(seed){let x=seed>>>0;return()=>{x=(Math.imul(1664525,x)+1013904223)>>>0;return x/4294967296}}
 function syntheticDraws(n=96){
@@ -51,5 +53,30 @@ for(const r of lab.results){
   for(const row of r.rows)assert.ok(row.cutoffId<row.targetId,'validation leakage: cutoff >= target');
   assert.equal(r.summary.n,4);
 }
+
+function confidenceLogs(deltas,{source='feed'}={}){
+  return deltas.map((delta,i)=>({source,targetId:i+1,D:{best:3,null:{bestMean:3-Number(delta)}}}));
+}
+const positive=C.confidenceSummary(confidenceLogs(Array.from({length:24},(_,i)=>.28+(i%3)*.02)));
+assert.equal(positive.compared,24,'confidence engine should use the 24 most recent matched official rows');
+assert.equal(positive.agreement,'ĐỒNG THUẬN','positive 6/12/24 windows should agree');
+assert.equal(positive.level,'TÍN HIỆU DƯƠNG ỔN ĐỊNH HƠN','stable positive evidence state mismatch');
+assert.ok(positive.ciLow>0,'stable positive confidence interval should stay above zero');
+
+const mixed=C.confidenceSummary(confidenceLogs([...Array(12).fill(.5),...Array(6).fill(-.8),...Array(6).fill(.2)]));
+assert.equal(mixed.level,'KẾT QUẢ CHƯA ỔN ĐỊNH','opposing recent/long windows should be marked unstable');
+const ignored=C.confidenceSummary([...confidenceLogs(Array(8).fill(.2)),...confidenceLogs(Array(8).fill(.9),{source:'manual'})]);
+assert.equal(ignored.compared,8,'manual rows must not enter confidence evidence');
+
+const registry=C.deriveExperiments({
+  engineId:'D-AR2-R',lastChangeTarget:120,
+  hypotheses:[{id:'CH-100-1',engineId:'D-AR2-R',fingerprint:'AAAA',status:'PROMOTED',change:'test change'}],
+  memory:[{engineId:'D-AR2-B',fingerprint:'BBBB',status:'REJECTED',targetId:118,delta:-.1}],
+  lineage:[{from:'D-AR1',to:'D-AR2-R',fingerprint:'AAAA',status:'PROMOTED',targetId:120,mutation:'RESIDUAL_GRAPH'}],
+  challengers:[]
+});
+assert.ok(registry.some(x=>x.status==='ACTIVE'&&x.engineId==='D-AR2-R'),'registry must include current active engine');
+assert.ok(registry.some(x=>x.status==='PROMOTED'&&x.engineId==='D-AR2-R'),'registry must include promoted lineage');
+assert.ok(registry.some(x=>x.status==='REJECTED'&&x.engineId==='D-AR2-B'),'registry must include rejected experiments');
 
 console.log('Track D validation unit tests passed.');

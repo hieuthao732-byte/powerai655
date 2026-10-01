@@ -279,3 +279,142 @@
     setTimeout(()=>schedule(0),450);
   }
 })(typeof window!=='undefined'?window:globalThis);
+
+/* PowerAI Track D v1.3 — multi-window confidence evidence + experiment registry.
+   Research display only. This layer never changes ticket generation, weights, locks,
+   drift triggers, champion/challenger decisions, or official scoring.
+*/
+(function(root){
+  'use strict';
+
+  const VERSION='D-CONFIDENCE-1.3.0';
+  const TARGET_WINDOW=24;
+  const mean=a=>a.length?a.reduce((s,x)=>s+Number(x||0),0)/a.length:0;
+  const std=a=>{if(a.length<2)return 0;const m=mean(a);return Math.sqrt(mean(a.map(x=>(Number(x)-m)**2)))};
+  const fmt=(x,d=3)=>Number.isFinite(Number(x))?Number(x).toFixed(d):'—';
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const setText=(id,value)=>{if(typeof document==='undefined')return;const n=document.getElementById(id),v=String(value??'');if(n&&n.textContent!==v)n.textContent=v};
+
+  function officialRows(input){
+    return (Array.isArray(input)?input:[]).filter(r=>r?.source==='feed'&&r?.D&&Number.isFinite(Number(r.D.best))).sort((a,b)=>Number(a.targetId)-Number(b.targetId));
+  }
+
+  function comparedRows(input){
+    return officialRows(input).map(r=>{
+      const nb=Number(r.D?.null?.bestMean),best=Number(r.D.best);
+      return Number.isFinite(nb)?{targetId:Number(r.targetId),best,nullBest:nb,delta:best-nb,row:r}:null;
+    }).filter(Boolean);
+  }
+
+  function confidenceSummary(input){
+    const official=officialRows(input),compared=comparedRows(input).slice(-TARGET_WINDOW),deltas=compared.map(x=>x.delta),n=deltas.length;
+    const avg=n?mean(deltas):null,se=n>1?std(deltas)/Math.sqrt(n):null,half=Number.isFinite(se)?1.96*se:null;
+    const ciLow=Number.isFinite(half)?avg-half:null,ciHigh=Number.isFinite(half)?avg+half:null;
+    const windows={};
+    for(const k of [6,12,24])windows[k]=n>=k?mean(deltas.slice(-k)):null;
+    const available=[6,12,24].map(k=>windows[k]).filter(Number.isFinite);
+    const sign=x=>!Number.isFinite(x)||Math.abs(x)<=.05?0:x>0?1:-1;
+    const signs=available.map(sign).filter(x=>x!==0);
+    const agreement=available.length<2?'CHƯA ĐỦ CỬA SỔ':signs.length<2?'CHƯA RÕ':signs.every(x=>x===signs[0])?'ĐỒNG THUẬN':'CHƯA ĐỒNG THUẬN';
+    const allPositive=available.length>=2&&available.every(x=>Number(x)>.05),allNegative=available.length>=2&&available.every(x=>Number(x)<-.05);
+    let level='ĐANG TÍCH LŨY',action=`Cần thêm ${Math.max(0,6-n)} kỳ có so sánh ngẫu nhiên để bắt đầu đọc tín hiệu.`;
+    if(n>=6&&n<12){level='BẰNG CHỨNG SỚM';action=`Cần thêm ${12-n} kỳ để có cửa sổ 12 kỳ.`}
+    else if(n>=12&&agreement==='CHƯA ĐỒNG THUẬN'){level='KẾT QUẢ CHƯA ỔN ĐỊNH';action='Các cửa sổ gần và dài chưa cùng hướng; tiếp tục giữ nguyên mô hình và thu thập thêm kỳ.'}
+    else if(n>=24&&Number.isFinite(ciLow)&&ciLow>0&&allPositive){level='TÍN HIỆU DƯƠNG ỔN ĐỊNH HƠN';action='Nhiều cửa sổ cùng dương và biên bất định của chênh trung bình đã nằm trên 0; vẫn tiếp tục kiểm chứng bằng kỳ mới.'}
+    else if(n>=24&&Number.isFinite(ciHigh)&&ciHigh<0&&allNegative){level='TÍN HIỆU ÂM ỔN ĐỊNH HƠN';action='Nhiều cửa sổ cùng âm và biên bất định của chênh trung bình đã nằm dưới 0; cần xem lại phiên bản D nhưng không tự đổi chỉ vì chỉ số này.'}
+    else if(n>=12&&Number.isFinite(avg)&&Math.abs(avg)<=.05){level='CHƯA THẤY KHÁC BIỆT RÕ';action=n<TARGET_WINDOW?`Cần thêm ${TARGET_WINDOW-n} kỳ để đủ cửa sổ 24 kỳ.`:'Tiếp tục theo dõi; chênh trung bình hiện gần mốc ngẫu nhiên.'}
+    else if(n>=12&&Number.isFinite(ciLow)&&Number.isFinite(ciHigh)&&ciLow<=0&&ciHigh>=0){level=avg>=0?'CÓ TÍN HIỆU DƯƠNG, CẦN THÊM KỲ':'CÓ TÍN HIỆU ÂM, CẦN THÊM KỲ';action=n<TARGET_WINDOW?`Cần thêm ${TARGET_WINDOW-n} kỳ để đủ cửa sổ 24 kỳ; biên bất định hiện vẫn đi qua 0.`:'Biên bất định hiện vẫn đi qua 0 nên chưa coi là ổn định.'}
+    else if(n>=12){level=avg>0?'CÓ TÍN HIỆU DƯƠNG, CẦN THÊM KỲ':'CÓ TÍN HIỆU ÂM, CẦN THÊM KỲ';action=n<TARGET_WINDOW?`Cần thêm ${TARGET_WINDOW-n} kỳ để đủ cửa sổ 24 kỳ.`:'Tiếp tục kiểm chứng bằng các kỳ mới.'}
+    return{version:VERSION,official:official.length,compared:n,target:TARGET_WINDOW,meanDelta:Number.isFinite(avg)?+avg.toFixed(4):null,se:Number.isFinite(se)?+se.toFixed(4):null,ciLow:Number.isFinite(ciLow)?+ciLow.toFixed(4):null,ciHigh:Number.isFinite(ciHigh)?+ciHigh.toFixed(4):null,windows:Object.fromEntries(Object.entries(windows).map(([k,v])=>[k,Number.isFinite(v)?+v.toFixed(4):null])),agreement,level,action};
+  }
+
+  function registryKey(x,prefix='exp'){
+    if(x?.fingerprint)return`fp:${x.fingerprint}`;
+    if(x?.id)return`id:${x.id}`;
+    return`${prefix}:${x?.engineId||x?.to||'D'}:${Number(x?.targetId||x?.startTarget||0)}`;
+  }
+
+  function deriveExperiments(state={}){
+    const map=new Map(),put=(key,data)=>{const prev=map.get(key)||{};map.set(key,{...prev,...data,key})};
+    for(const h of Array.isArray(state.hypotheses)?state.hypotheses:[]){
+      const key=registryKey(h,'hyp');put(key,{engineId:h.engineId||h.id||'—',fingerprint:h.fingerprint||'',status:h.status||'CANDIDATE',createdAt:h.createdAt||'',targetId:Number(h.targetId||h.startTarget||0),problem:h.problem||'',change:h.change||'',minOfficial:Number(h.minOfficial||0),source:'HYPOTHESIS'});
+    }
+    for(const c of Array.isArray(state.challengers)?state.challengers:[]){
+      const key=registryKey(c,'challenger');put(key,{engineId:c.engineId||c.id||'—',fingerprint:c.fingerprint||'',status:c.status||'SHADOW',targetId:Number(c.startTarget||0),change:c.change||'',minOfficial:Number(c.minOfficial||0),source:'CHALLENGER'});
+    }
+    for(const m of Array.isArray(state.memory)?state.memory:[]){
+      const key=registryKey(m,'memory');put(key,{engineId:m.engineId||'—',fingerprint:m.fingerprint||'',status:m.status||'MEMORY',targetId:Number(m.targetId||0),at:m.at||'',delta:Number.isFinite(Number(m.delta))?Number(m.delta):null,by:m.by||'',source:'MEMORY'});
+    }
+    for(const l of Array.isArray(state.lineage)?state.lineage:[]){
+      const key=registryKey(l,'lineage');put(key,{engineId:l.to||'—',fromEngine:l.from||'',fingerprint:l.fingerprint||'',status:'PROMOTED',targetId:Number(l.targetId||0),at:l.at||'',change:l.mutation||'',source:'LINEAGE'});
+    }
+    const currentKey=`active:${state.engineId||'D-AR1'}:${Number(state.lastChangeTarget||0)}`;
+    put(currentKey,{engineId:state.engineId||'D-AR1',status:'ACTIVE',targetId:Number(state.lastChangeTarget||0),weights:state.weights||null,horizons:state.horizons||null,source:'CURRENT'});
+    return[...map.values()].sort((a,b)=>Number(b.targetId||0)-Number(a.targetId||0)||String(b.at||b.createdAt||'').localeCompare(String(a.at||a.createdAt||'')));
+  }
+
+  const statusVi=s=>({ACTIVE:'ĐANG DÙNG',SHADOW:'ĐANG THỬ',CANDIDATE:'ỨNG VIÊN',PROMOTED:'ĐÃ NÂNG LÊN',REJECTED:'ĐÃ LOẠI',SUPERSEDED:'ĐÃ THAY',COOLDOWN:'ĐANG THEO DÕI',MEMORY:'ĐÃ GHI NHẬN'}[String(s||'').toUpperCase()]||String(s||'—'));
+
+  function ensureV13UI(){
+    if(typeof document==='undefined')return false;
+    const pane=document.getElementById('adaptiveDTab'),hero=pane?.querySelector('.dHero');if(!pane||!hero)return false;
+    if(!document.getElementById('dConfidenceMini')){
+      const mini=document.createElement('div');mini.id='dConfidenceMini';mini.className='dConfidenceMini';mini.textContent='D v1.3 • bằng chứng: đang tích lũy';
+      const evidenceMini=document.getElementById('dEvidenceMini');evidenceMini?.insertAdjacentElement('afterend',mini)||hero.appendChild(mini);
+    }
+    let conf=document.getElementById('dConfidencePanel');
+    if(!conf){
+      conf=document.createElement('section');conf.id='dConfidencePanel';conf.className='panel dAdvancedPanel dConfidencePanel';conf.innerHTML=`
+        <div class="head"><div><div class="sectionKicker dText">D v1.3 • ĐỘ TIN CẬY NHIỀU KỲ</div><h2>🧭 Mức bằng chứng hiện tại</h2><p>Đọc chênh lệch của D so với bộ ngẫu nhiên tương đương qua nhiều cửa sổ. Đây là bằng chứng quan sát, không phải xác suất trúng.</p></div></div>
+        <div class="dStatusGrid dConfidenceGrid">
+          <div class="dStat"><span>Kỳ có so sánh</span><b id="dConfSample">0/24</b><small id="dConfOfficial">0 kỳ chính thức</small></div>
+          <div class="dStat"><span>Chênh trung bình</span><b id="dConfMean">—</b><small>D trừ mốc ngẫu nhiên</small></div>
+          <div class="dStat"><span>Biên bất định 95%</span><b id="dConfCI">—</b><small>của chênh trung bình</small></div>
+          <div class="dStat"><span>Đồng thuận 6 / 12 / 24</span><b id="dConfAgreement">—</b><small id="dConfWindows">—</small></div>
+        </div>
+        <div id="dConfState" class="notice">Đang tích lũy dữ liệu.</div>`;
+      const anchor=document.getElementById('dEvidencePanel')||document.getElementById('dAdvancedToggleWrap')||hero;anchor.insertAdjacentElement('afterend',conf);
+    }
+    let reg=document.getElementById('dExperimentPanel');
+    if(!reg){
+      reg=document.createElement('section');reg.id='dExperimentPanel';reg.className='panel dAdvancedPanel dExperimentPanel';reg.innerHTML=`
+        <div class="head"><div><div class="sectionKicker dText">D v1.3 • NHẬT KÝ PHIÊN BẢN</div><h2>🗂 Phiên bản đã dùng và đã thử</h2><p>Gom lịch sử phiên bản đang dùng, bản thử, bản đã nâng lên hoặc đã loại từ state nghiên cứu của D.</p></div></div>
+        <div class="dStatusGrid dRegistryStats"><div class="dStat"><span>Phiên bản đang dùng</span><b id="dRegistryCurrent">—</b><small id="dRegistryCurrentNote">—</small></div><div class="dStat"><span>Tổng mục đã ghi</span><b id="dRegistryCount">0</b><small>phiên bản + thử nghiệm</small></div><div class="dStat"><span>Đã nâng lên</span><b id="dRegistryPromoted">0</b><small>qua vòng kiểm tra</small></div><div class="dStat"><span>Đã loại</span><b id="dRegistryRejected">0</b><small>không qua kiểm tra</small></div></div>
+        <div id="dRegistryRows" class="dHistory"></div>`;
+      conf.insertAdjacentElement('afterend',reg);
+    }
+    return true;
+  }
+
+  function renderV13(){
+    if(typeof document==='undefined'||!ensureV13UI())return;
+    const logs=root.PowerAIAdaptiveDApp?.getLogs?.()||[],state=root.PowerAIAdaptiveDApp?.getState?.()||{},c=confidenceSummary(logs),registry=deriveExperiments(state);
+    setText('dConfidenceMini',`D v1.3 • Bằng chứng: ${c.level} • ${c.compared}/${c.target} kỳ`);
+    setText('dConfSample',`${c.compared}/${c.target}`);setText('dConfOfficial',`${c.official} kỳ D chính thức`);
+    setText('dConfMean',c.meanDelta===null?'—':`${c.meanDelta>=0?'+':''}${fmt(c.meanDelta)}`);
+    setText('dConfCI',c.ciLow===null?'—':`[${c.ciLow>=0?'+':''}${fmt(c.ciLow)}, ${c.ciHigh>=0?'+':''}${fmt(c.ciHigh)}]`);
+    setText('dConfAgreement',c.agreement);
+    setText('dConfWindows',[6,12,24].map(k=>`${k}: ${c.windows[k]===null?'—':`${c.windows[k]>=0?'+':''}${fmt(c.windows[k])}`}`).join(' • '));
+    setText('dConfState',`${c.level}. ${c.action} Chỉ số này không phải xác suất trúng.`);
+    setText('dRegistryCurrent',state.engineId||'D-AR1');setText('dRegistryCurrentNote',`bắt đầu từ mốc #${String(Number(state.lastChangeTarget||0)).padStart(5,'0')}`);
+    setText('dRegistryCount',String(registry.length));setText('dRegistryPromoted',String(registry.filter(x=>x.status==='PROMOTED').length));setText('dRegistryRejected',String(registry.filter(x=>x.status==='REJECTED').length));
+    const box=document.getElementById('dRegistryRows');if(box){
+      const rows=registry.slice(0,14),html=rows.length?rows.map(x=>{
+        const target=Number(x.targetId)>0?`#${String(Number(x.targetId)).padStart(5,'0')}`:'—',detail=x.change||x.problem||x.by||x.fromEngine||'Không có ghi chú thêm';
+        return `<div class="dHistoryRow dRegistryRow"><span>${esc(x.engineId)}</span><b>${esc(statusVi(x.status))}</b><small>${esc(target)}</small><small>${esc(detail)}</small></div>`;
+      }).join(''):'<div class="notice">Chưa có thử nghiệm nào ngoài phiên bản D hiện tại.</div>';
+      if(box.innerHTML!==html)box.innerHTML=html;
+    }
+  }
+
+  let timer=null;
+  function schedule(ms=120){clearTimeout(timer);timer=setTimeout(renderV13,ms)}
+  root.PowerAIAdaptiveConfidence={VERSION,confidenceSummary,deriveExperiments,renderV13,_test:{confidenceSummary,deriveExperiments}};
+
+  if(typeof document!=='undefined'){
+    root.addEventListener('load',()=>{schedule(350);setTimeout(()=>schedule(0),1600);setInterval(()=>schedule(0),5000)},{once:true});
+    root.addEventListener('powerai-auth-changed',()=>schedule(250));
+    document.getElementById('refreshBtn')?.addEventListener('click',()=>schedule(1800));
+    setTimeout(()=>schedule(0),650);
+  }
+})(typeof window!=='undefined'?window:globalThis);

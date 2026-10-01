@@ -28,8 +28,25 @@ const order=await page.evaluate(()=>{
   return !!(hero&&tickets&&hero.nextElementSibling===tickets);
 });
 assert.equal(order,true,'20 D tickets should be placed immediately after the compact hero');
+
+// D v1.3 adds a multi-window evidence view and an experiment registry without changing D decisions.
+await page.waitForFunction(()=>window.PowerAIAdaptiveConfidence&&document.querySelector('#dConfidenceMini')&&document.querySelector('#dConfidencePanel')&&document.querySelector('#dExperimentPanel'),null,{timeout:30000});
+const v13=await page.evaluate(()=>({
+  mini:document.querySelector('#dConfidenceMini')?.textContent||'',
+  sample:document.querySelector('#dConfSample')?.textContent||'',
+  current:document.querySelector('#dRegistryCurrent')?.textContent||'',
+  count:Number(document.querySelector('#dRegistryCount')?.textContent||0)
+}));
+assert.match(v13.mini,/D v1\.3/i,'D v1.3 mini status missing');
+assert.match(v13.mini,/ĐANG TÍCH LŨY/i,'Clean browser confidence should start in accumulation');
+assert.equal(v13.sample,'0/24','Clean browser confidence window must start at 0/24');
+assert.match(v13.current,/^D-/,'Experiment registry must expose current D engine');
+assert.ok(v13.count>=1,'Experiment registry should include the current engine');
+
 await page.locator('#dAdvancedToggle').click();
 assert.equal(await page.locator('#adaptiveDTab').evaluate(el=>el.classList.contains('dShowAdvanced')),true,'Detailed analysis toggle should expand research panels');
+assert.match(await page.locator('#dConfidencePanel').innerText(),/Mức bằng chứng hiện tại/i,'D v1.3 confidence panel missing after expand');
+assert.match(await page.locator('#dExperimentPanel').innerText(),/Phiên bản đã dùng và đã thử/i,'D v1.3 experiment registry missing after expand');
 await page.locator('#dAdvancedToggle').click();
 assert.equal(await page.locator('#adaptiveDTab').evaluate(el=>el.classList.contains('dShowAdvanced')),false,'Detailed analysis toggle should collapse research panels again');
 
