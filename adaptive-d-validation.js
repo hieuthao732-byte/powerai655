@@ -13,7 +13,7 @@
   const std=a=>{if(a.length<2)return 0;const m=mean(a);return Math.sqrt(mean(a.map(x=>(Number(x)-m)**2)))};
   const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
   const drawNums=d=>(d?.result||d?.actual||[]).map(Number).filter(n=>Number.isInteger(n)&&n>=1&&n<=55).slice(0,6).sort((a,b)=>a-b);
-  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]));
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const fmt=(x,d=3)=>Number.isFinite(Number(x))?Number(x).toFixed(d):'—';
   const yieldFrame=()=>new Promise(r=>setTimeout(r,0));
 
@@ -259,10 +259,11 @@
     setText('dEvidenceTrend',s.trend);setText('dEvidenceTrendDelta',s.trendDelta===null?'cần đủ 12 kỳ có so sánh ngẫu nhiên':`chênh ${s.trendDelta>=0?'+':''}${fmt(s.trendDelta,3)}`);
     setText('dEvidenceStatus',`${s.status}. ${s.action}`);
     const box=document.getElementById('dEvidenceRows');if(box){
-      box.innerHTML=s.recent.length?s.recent.slice().reverse().map(r=>{
+      const html=s.recent.length?s.recent.slice().reverse().map(r=>{
         const nb=Number(r.D?.null?.bestMean),delta=Number.isFinite(nb)?Number(r.D.best)-nb:null,label=typeof drawLabel==='function'?drawLabel(r.targetId):`#${String(r.targetId).padStart(5,'0')}`;
         return `<div class="dHistoryRow dEvidenceRow"><span>${esc(label)}</span><b>Trùng cao nhất ${Number(r.D.best)}/6</b><small>Ngẫu nhiên TB ${Number.isFinite(nb)?fmt(nb):'—'}</small><small>${delta===null?'Chưa có so sánh':`Chênh ${delta>=0?'+':''}${fmt(delta,3)}`}</small><small>${delta===null?'—':delta>0?'Cao hơn mốc':'Không cao hơn mốc'}</small></div>`;
       }).join(''):'<div class="notice">Chưa có kỳ D chính thức. Sau khi một bộ D được khóa trước kỳ quay và có kết quả chính thức, kỳ đó sẽ tự xuất hiện ở đây.</div>';
+      if(box.innerHTML!==html)box.innerHTML=html;
     }
   }
 
@@ -272,8 +273,7 @@
   root.PowerAIAdaptiveEvidence={VERSION,evidenceSummary,ensureCompactUI,renderEvidence,_test:{evidenceSummary}};
 
   if(typeof document!=='undefined'){
-    const observer=new MutationObserver(()=>schedule(80));observer.observe(document.body,{subtree:true,childList:true});
-    root.addEventListener('load',()=>{schedule(250);setTimeout(()=>schedule(0),1400);setInterval(()=>schedule(0),5000)},{once:true});
+    root.addEventListener('load',()=>{schedule(250);setTimeout(()=>schedule(0),1400);setInterval(()=>schedule(0),4000)},{once:true});
     root.addEventListener('powerai-auth-changed',()=>schedule(250));
     document.getElementById('refreshBtn')?.addEventListener('click',()=>schedule(1800));
     setTimeout(()=>schedule(0),450);
