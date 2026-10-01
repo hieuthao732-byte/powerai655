@@ -17,6 +17,22 @@ assert.match(await page.locator('#dModelHash').innerText(),/mã mô hình [A-F0-
 assert.match(await page.locator('#dContext').innerText(),/Dữ liệu gần nhất/i,'D cutoff context missing');
 assert.equal(await page.locator('#dCopyBtn').isDisabled(),false,'D copy should be enabled after build');
 
+// D v1.2 compact UI: tickets come first while research panels remain collapsed by default.
+await page.waitForFunction(()=>window.PowerAIAdaptiveEvidence&&document.querySelector('#dAdvancedToggle')&&document.querySelector('#dEvidencePanel'),null,{timeout:30000});
+assert.equal(await page.locator('#adaptiveDTab').evaluate(el=>el.classList.contains('dCompactV12')),true,'D v1.2 compact class missing');
+assert.equal(await page.locator('#adaptiveDTab').evaluate(el=>el.classList.contains('dShowAdvanced')),false,'Detailed analysis should be collapsed by default');
+assert.match(await page.locator('#dAdvancedToggle').innerText(),/Xem phân tích chi tiết/i,'Compact analysis toggle missing');
+assert.equal(await page.locator('#dEvidenceSample').innerText(),'0/12','Clean browser evidence ledger must start at 0/12');
+const order=await page.evaluate(()=>{
+  const pane=document.querySelector('#adaptiveDTab'),hero=pane?.querySelector('.dHero'),tickets=pane?.querySelector('.dTicketsPanel');
+  return !!(hero&&tickets&&hero.nextElementSibling===tickets);
+});
+assert.equal(order,true,'20 D tickets should be placed immediately after the compact hero');
+await page.locator('#dAdvancedToggle').click();
+assert.equal(await page.locator('#adaptiveDTab').evaluate(el=>el.classList.contains('dShowAdvanced')),true,'Detailed analysis toggle should expand research panels');
+await page.locator('#dAdvancedToggle').click();
+assert.equal(await page.locator('#adaptiveDTab').evaluate(el=>el.classList.contains('dShowAdvanced')),false,'Detailed analysis toggle should collapse research panels again');
+
 // D14 reproducibility guard: a prospective lock must rebuild to the same model + portfolio hash.
 await page.locator('#dLockBtn').click();
 await page.waitForFunction(()=>/ĐÃ XÁC MINH/.test(document.querySelector('#dIntegrity')?.textContent||''),null,{timeout:90000});
