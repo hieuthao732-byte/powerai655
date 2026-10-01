@@ -155,3 +155,127 @@
     setTimeout(()=>ensureUI(),300);
   }
 })(typeof window!=='undefined'?window:globalThis);
+
+/* PowerAI Track D v1.2 — compact ticket-first UI + multi-draw evidence ledger.
+   This layer is presentation/research only: it does not alter D generation, locks,
+   official scoring, champion weights, drift decisions, or challenger promotion.
+*/
+(function(root){
+  'use strict';
+
+  const VERSION='D-EVIDENCE-1.2.0';
+  const WINDOW=12;
+  const mean=a=>a.length?a.reduce((s,x)=>s+Number(x||0),0)/a.length:0;
+  const fmt=(x,d=2)=>Number.isFinite(Number(x))?Number(x).toFixed(d):'—';
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const setText=(id,value)=>{if(typeof document==='undefined')return;const n=document.getElementById(id),v=String(value??'');if(n&&n.textContent!==v)n.textContent=v};
+
+  function cleanLogs(input){
+    return (Array.isArray(input)?input:[]).filter(r=>r?.source==='feed'&&r?.D&&Number.isFinite(Number(r.D.best))).sort((a,b)=>Number(a.targetId)-Number(b.targetId));
+  }
+
+  function evidenceSummary(input,state={}){
+    const all=cleanLogs(input),recent=all.slice(-WINDOW),n=recent.length,total=all.length;
+    const avgBest=n?mean(recent.map(r=>Number(r.D.best))):0;
+    const compared=recent.map(r=>({row:r,delta:Number(r.D.best)-Number(r.D?.null?.bestMean)})).filter(x=>Number.isFinite(x.delta));
+    const nullDelta=compared.length?mean(compared.map(x=>x.delta)):null;
+    const above=compared.filter(x=>x.delta>0).length;
+    const best3=recent.filter(r=>Number(r.D.best)>=3).length,best4=recent.filter(r=>Number(r.D.best)>=4).length;
+    let trend='CHƯA ĐỦ DỮ LIỆU',trendDelta=null;
+    if(compared.length>=12){
+      const last12=compared.slice(-12),before=mean(last12.slice(0,6).map(x=>x.delta)),after=mean(last12.slice(6).map(x=>x.delta));trendDelta=after-before;
+      trend=trendDelta>.08?'ĐANG TĂNG':trendDelta<-.08?'ĐANG GIẢM':'ĐANG ỔN ĐỊNH';
+    }
+    let status='ĐANG TÍCH LŨY DỮ LIỆU';
+    if(n>=WINDOW&&compared.length<8)status='CHƯA ĐỦ DỮ LIỆU SO SÁNH';
+    else if(n>=WINDOW&&Number.isFinite(nullDelta)&&nullDelta>.05)status='CAO HƠN MỐC NGẪU NHIÊN';
+    else if(n>=WINDOW&&Number.isFinite(nullDelta)&&nullDelta<-.05)status='THẤP HƠN MỐC NGẪU NHIÊN';
+    else if(n>=WINDOW)status='CHƯA THẤY KHÁC BIỆT RÕ';
+    const active=(state?.challengers||[]).filter(c=>c?.status==='SHADOW');
+    let action=n<WINDOW?`Cần thêm ${WINDOW-n} kỳ chính thức để đủ cửa sổ ${WINDOW} kỳ.`:'Tiếp tục giữ phiên bản hiện tại và thu thập thêm kỳ mới.';
+    if(active.length)action=`Đang thử ${active.length} phiên bản mới song song; chưa thay phiên bản đang dùng cho đến khi đủ kiểm tra.`;
+    return{version:VERSION,total,sample:n,window:WINDOW,avgBest:+avgBest.toFixed(3),best3,best4,compared:compared.length,above,nullDelta:Number.isFinite(nullDelta)?+nullDelta.toFixed(3):null,trend,trendDelta:Number.isFinite(trendDelta)?+trendDelta.toFixed(3):null,status,action,activeChallengers:active.length,recent};
+  }
+
+  function compactOpen(){try{return localStorage.getItem('powerai_d_v12_analysis_open')==='1'}catch{return false}}
+  function saveCompactOpen(on){try{localStorage.setItem('powerai_d_v12_analysis_open',on?'1':'0')}catch{}}
+
+  function ensureCompactUI(){
+    if(typeof document==='undefined')return false;
+    const pane=document.getElementById('adaptiveDTab');if(!pane)return false;
+    const hero=pane.querySelector('.dHero'),tickets=pane.querySelector('.dTicketsPanel');if(!hero||!tickets)return false;
+    pane.classList.add('dCompactV12');
+
+    if(hero.nextElementSibling!==tickets)hero.insertAdjacentElement('afterend',tickets);
+
+    if(!document.getElementById('dEvidenceMini')){
+      const mini=document.createElement('div');mini.id='dEvidenceMini';mini.className='dEvidenceMini';mini.textContent='D v1.2 • đang chờ dữ liệu chính thức';
+      hero.appendChild(mini);
+    }
+
+    let toggleWrap=document.getElementById('dAdvancedToggleWrap');
+    if(!toggleWrap){
+      toggleWrap=document.createElement('div');toggleWrap.id='dAdvancedToggleWrap';toggleWrap.className='dAdvancedToggleWrap';
+      toggleWrap.innerHTML='<button id="dAdvancedToggle" type="button" class="ghostBtn">Xem phân tích chi tiết</button><small>20 vé luôn hiển thị; phân tích, kiểm tra và lịch sử được thu gọn để đỡ rối.</small>';
+      const btn=toggleWrap.querySelector('#dAdvancedToggle');
+      btn?.addEventListener('click',()=>{
+        const on=!pane.classList.contains('dShowAdvanced');pane.classList.toggle('dShowAdvanced',on);saveCompactOpen(on);btn.textContent=on?'Ẩn phân tích chi tiết':'Xem phân tích chi tiết';
+      });
+    }
+    if(tickets.nextElementSibling!==toggleWrap)tickets.insertAdjacentElement('afterend',toggleWrap);
+
+    let evidence=document.getElementById('dEvidencePanel');
+    if(!evidence){
+      evidence=document.createElement('section');evidence.id='dEvidencePanel';evidence.className='panel dEvidencePanel';evidence.innerHTML=`
+        <div class="head"><div><div class="sectionKicker dText">D v1.2 • SỔ BẰNG CHỨNG</div><h2>📒 Theo dõi D qua nhiều kỳ</h2><p>Chỉ dùng các kỳ đã khóa trước kết quả chính thức. Một vài kỳ riêng lẻ không đủ để kết luận D tốt hơn ngẫu nhiên.</p></div></div>
+        <div class="dStatusGrid dEvidenceGrid">
+          <div class="dStat"><span>Dữ liệu</span><b id="dEvidenceSample">0/12</b><small id="dEvidenceTotal">0 kỳ chính thức</small></div>
+          <div class="dStat"><span>Trùng cao nhất TB</span><b id="dEvidenceAvgBest">—</b><small id="dEvidenceHigh">≥3: 0 • ≥4: 0</small></div>
+          <div class="dStat"><span>So với ngẫu nhiên</span><b id="dEvidenceNull">—</b><small id="dEvidenceAbove">0/0 kỳ cao hơn</small></div>
+          <div class="dStat"><span>Xu hướng gần đây</span><b id="dEvidenceTrend">—</b><small id="dEvidenceTrendDelta">so 6 kỳ trước / 6 kỳ sau</small></div>
+        </div>
+        <div id="dEvidenceStatus" class="notice">Đang chờ dữ liệu chính thức.</div>
+        <div id="dEvidenceRows" class="dHistory"></div>`;
+    }
+    if(toggleWrap.nextElementSibling!==evidence)toggleWrap.insertAdjacentElement('afterend',evidence);
+
+    pane.querySelectorAll(':scope > section.panel').forEach(p=>{
+      if(p!==hero&&p!==tickets)p.classList.add('dAdvancedPanel');
+    });
+
+    const on=compactOpen();pane.classList.toggle('dShowAdvanced',on);
+    const btn=document.getElementById('dAdvancedToggle');if(btn)btn.textContent=on?'Ẩn phân tích chi tiết':'Xem phân tích chi tiết';
+    return true;
+  }
+
+  function renderEvidence(){
+    if(typeof document==='undefined')return;
+    if(!ensureCompactUI())return;
+    const logs=root.PowerAIAdaptiveDApp?.getLogs?.()||[],state=root.PowerAIAdaptiveDApp?.getState?.()||{},s=evidenceSummary(logs,state);
+    setText('dEvidenceMini',`D v1.2 • ${s.status} • ${s.sample}/${s.window} kỳ`);
+    setText('dEvidenceSample',`${s.sample}/${s.window}`);setText('dEvidenceTotal',`${s.total} kỳ chính thức đã chấm`);
+    setText('dEvidenceAvgBest',s.sample?`${fmt(s.avgBest)}/6`:'—');setText('dEvidenceHigh',`≥3: ${s.best3} • ≥4: ${s.best4}`);
+    setText('dEvidenceNull',s.nullDelta===null?'—':`${s.nullDelta>=0?'+':''}${fmt(s.nullDelta,3)}`);setText('dEvidenceAbove',`${s.above}/${s.compared} kỳ cao hơn mốc ngẫu nhiên`);
+    setText('dEvidenceTrend',s.trend);setText('dEvidenceTrendDelta',s.trendDelta===null?'cần đủ 12 kỳ có so sánh ngẫu nhiên':`chênh ${s.trendDelta>=0?'+':''}${fmt(s.trendDelta,3)}`);
+    setText('dEvidenceStatus',`${s.status}. ${s.action}`);
+    const box=document.getElementById('dEvidenceRows');if(box){
+      const html=s.recent.length?s.recent.slice().reverse().map(r=>{
+        const nb=Number(r.D?.null?.bestMean),delta=Number.isFinite(nb)?Number(r.D.best)-nb:null,label=typeof drawLabel==='function'?drawLabel(r.targetId):`#${String(r.targetId).padStart(5,'0')}`;
+        return `<div class="dHistoryRow dEvidenceRow"><span>${esc(label)}</span><b>Trùng cao nhất ${Number(r.D.best)}/6</b><small>Ngẫu nhiên TB ${Number.isFinite(nb)?fmt(nb):'—'}</small><small>${delta===null?'Chưa có so sánh':`Chênh ${delta>=0?'+':''}${fmt(delta,3)}`}</small><small>${delta===null?'—':delta>0?'Cao hơn mốc':'Không cao hơn mốc'}</small></div>`;
+      }).join(''):'<div class="notice">Chưa có kỳ D chính thức. Sau khi một bộ D được khóa trước kỳ quay và có kết quả chính thức, kỳ đó sẽ tự xuất hiện ở đây.</div>';
+      if(box.innerHTML!==html)box.innerHTML=html;
+    }
+  }
+
+  let timer=null;
+  function schedule(ms=100){clearTimeout(timer);timer=setTimeout(renderEvidence,ms)}
+
+  root.PowerAIAdaptiveEvidence={VERSION,evidenceSummary,ensureCompactUI,renderEvidence,_test:{evidenceSummary}};
+
+  if(typeof document!=='undefined'){
+    root.addEventListener('load',()=>{schedule(250);setTimeout(()=>schedule(0),1400);setInterval(()=>schedule(0),4000)},{once:true});
+    root.addEventListener('powerai-auth-changed',()=>schedule(250));
+    document.getElementById('refreshBtn')?.addEventListener('click',()=>schedule(1800));
+    setTimeout(()=>schedule(0),450);
+  }
+})(typeof window!=='undefined'?window:globalThis);
