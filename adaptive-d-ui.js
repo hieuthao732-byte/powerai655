@@ -237,7 +237,6 @@
     if(!rows.length){box.innerHTML='<div class="notice">Chưa có kỳ D nào đã chấm chính thức.</div>';return}
     box.innerHTML=rows.map(x=>`<div class="dHistoryRow"><span>${drawLabel(x.targetId)}</span><b>Trùng cao nhất ${x.D.best}/6</b><small>Tổng số trùng ${x.D.total??0}</small><small>≥3: ${x.D.g3??0}</small><small>Ngẫu nhiên TB ${fmt(x.D?.null?.bestMean)}</small><div>${dPrizeChips(x.D)}</div></div>`).join('');
   }
-
   function dPrizeChips(s={}){
     const defs=[['jp1','JP1'],['jp2','JP2'],['first','Nhất'],['second','Nhì'],['third','Ba']];
     const a=defs.filter(([k])=>Number(s[k])>0).map(([k,l])=>`<span class="dPrize ${k}"><b>${s[k]}</b> ${l}</span>`);return a.length?a.join(''):'<span class="muted">—</span>';
@@ -369,4 +368,73 @@
   ensureUI();scheduleRefresh(250);plainTrackDText();
 
   window.PowerAIAdaptiveDApp={refresh:refreshD,getLogs:dLogs,getLock:getDLock,getState:dState,saveState:saveDState,verifyLockIntegrity};
+})();
+
+/* Unified rebuild controls for A / B / C / L.
+   This is a UI coordination layer only. Existing generation, locks and scoring stay unchanged. */
+(function(){
+  'use strict';
+  const byId=id=>document.getElementById(id);
+
+  function target(){try{return Number(targetId)}catch{return NaN}}
+  function abcLock(){try{return typeof getLock==='function'?getLock(target()):null}catch{return null}}
+  function lLock(){try{return typeof getLearningLock==='function'?getLearningLock(target()):null}catch{return null}}
+  function known(){try{return typeof knownTargetResult==='function'&&knownTargetResult(target())}catch{return false}}
+  function toast(msg,type='warn'){try{if(typeof showToast==='function')showToast(msg,type)}catch{}}
+
+  async function rebuildA(){
+    const id=target();if(!Number.isFinite(id))return;
+    if(abcLock()){syncButtons();return}
+    if(known()){toast(`Kỳ ${typeof drawLabel==='function'?drawLabel(id):id} đã có kết quả. Bộ A chỉ xem lại, không tạo mới sau kết quả.`);syncButtons();return}
+    const btn=byId('rebuildGeoBtn');if(btn){btn.disabled=true;btn.textContent='⏳ Đang tạo lại A...'}
+    try{
+      if(typeof buildIncidence!=='function'||typeof renderGeo!=='function')throw new Error('Track A chưa sẵn sàng.');
+      geo=buildIncidence(id);
+      renderGeo();
+      if(typeof renderState==='function')renderState();
+      if(typeof buildHybridPortfolio==='function')await Promise.resolve(buildHybridPortfolio());
+      toast('Đã tạo lại bộ A. Bộ C cũng được đồng bộ lại theo A mới.','good');
+    }catch(e){console.error('Rebuild A failed',e);toast('Không tạo lại được A: '+String(e?.message||e),'bad')}
+    finally{syncButtons()}
+  }
+
+  function ensureAButton(){
+    let btn=byId('rebuildGeoBtn');if(btn)return btn;
+    const copy=byId('copyGeoBtn'),actions=copy?.parentElement;if(!copy||!actions)return null;
+    btn=document.createElement('button');btn.id='rebuildGeoBtn';btn.type='button';btn.textContent='Tạo lại bộ A';btn.disabled=true;
+    btn.addEventListener('click',rebuildA);actions.insertBefore(btn,copy);return btn;
+  }
+
+  function syncButtons(){
+    const id=target(),locked=!!abcLock(),hasResult=known(),learnLocked=!!lLock();
+    const a=ensureAButton(),b=byId('regenLegacyBtn'),c=byId('rebuildHybridBtn'),l=byId('buildLearningPortfolioBtn');
+    if(a){
+      if(locked){a.disabled=true;a.textContent='✓ Bộ A đã khóa'}
+      else if(hasResult){a.disabled=true;a.textContent='Kỳ đã có kết quả • chỉ xem lại'}
+      else{a.disabled=!(typeof geo!=='undefined'&&geo?.tickets?.length===20);a.textContent='Tạo lại bộ A'}
+    }
+    if(b){
+      if(locked){b.disabled=true;b.textContent='✓ Bộ B đã khóa'}
+      else if(hasResult){b.disabled=true;b.textContent='Kỳ đã có kết quả • chỉ xem lại'}
+      else if(!legacyBuilding)b.textContent='Tạo lại bộ B';
+    }
+    if(c){
+      if(locked){c.disabled=true;c.textContent='✓ Bộ C đã khóa'}
+      else if(hasResult){c.disabled=true;c.textContent='Kỳ đã có kết quả • chỉ xem lại'}
+      else if(!hybridBuilding)c.textContent='Tạo lại bộ C';
+    }
+    if(l){
+      if(learnLocked){l.disabled=true;l.textContent='✓ Bộ L đã khóa'}
+      else if(!hasResult&&typeof learningPortfolio!=='undefined'&&learningPortfolio?.length===20&&!learningPortfolioBuilding){l.textContent='Tạo lại bộ L'}
+    }
+  }
+
+  window.PowerAIUnifiedRebuild={sync:syncButtons,rebuildA};
+  window.addEventListener('load',()=>{syncButtons();setTimeout(syncButtons,1200)},{once:true});
+  window.addEventListener('powerai-auth-changed',()=>setTimeout(syncButtons,200));
+  byId('targetSelect')?.addEventListener('change',()=>setTimeout(syncButtons,250));
+  byId('lockBothBtn')?.addEventListener('click',()=>setTimeout(syncButtons,250));
+  byId('lockLearningBtn')?.addEventListener('click',()=>setTimeout(syncButtons,250));
+  setInterval(syncButtons,800);
+  syncButtons();
 })();
