@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MegaAI 6/45 – Phân tích & mô phỏng Vietlott Mega 6/45</title>
+<meta name="description" content="MegaAI 6/45 hỗ trợ nghiên cứu dữ liệu lịch sử, mô phỏng A/B/C, replay và Jackpot Economics cho Vietlott Mega 6/45. Điểm số không phải xác suất trúng thưởng.">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0b1220">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css?v=9.7">
+<link rel="stylesheet" href="/mega.css?v=1.1">
+</head>
+<body class="megaBody">
+<header class="topbar megaTopbar">
+  <div class="brandWrap">
+    <div class="logoMark">M</div>
+    <div>
+      <div class="brand">MegaAI <b>6/45</b></div>
+      <div class="brandSub">V1 PREVIEW • DATA + ENGINE FOUNDATION</div>
+    </div>
+  </div>
+  <div class="topbarRight">
+    <a class="megaBack" href="/">← Power 6/55</a>
+    <span class="versionPill">MEGA • V1</span>
+    <div id="megaStatus" class="badge statusBadge"><i class="statusDot"></i>Đang tải dữ liệu...</div>
+  </div>
+</header>
+
+<main class="megaMain">
+<section class="hero megaHero">
+  <div class="heroMain">
+    <div class="eyebrow">MEGAAI 6/45 • NGHIÊN CỨU, KHÔNG PHẢI DỰ ĐOÁN CHẮC CHẮN</div>
+    <h1>MegaAI <span>6/45</span></h1>
+    <p>A dùng cấu trúc cân bằng không nhìn lịch sử; B dùng tín hiệu lịch sử trước kỳ mục tiêu; C kết hợp tín hiệu lịch sử với cấu trúc cân bằng. Kết quả xổ số là ngẫu nhiên, mọi điểm số chỉ là heuristic nội bộ.</p>
+  </div>
+  <div class="heroActions megaTargetBox">
+    <label for="megaTargetSelect">Kỳ đang xem</label>
+    <select id="megaTargetSelect"></select>
+    <button id="megaReloadBtn" class="ghostBtn">↻ Cập nhật dữ liệu</button>
+  </div>
+</section>
+
+<section class="grid4 kpiGrid megaKpis">
+  <div class="card kpiCard"><div class="kpiIcon">◷</div><div><span>Kỳ mới nhất</span><b id="megaLatestId">—</b><small id="megaLatestDate">—</small></div></div>
+  <div class="card kpiCard focus"><div class="kpiIcon">◎</div><div><span>Kỳ mục tiêu</span><b id="megaTargetId">—</b><small id="megaTargetMode">—</small></div></div>
+  <div class="card kpiCard"><div class="kpiIcon">⌁</div><div><span>Dữ liệu dùng đến</span><b id="megaCutoffId">—</b><small>luôn trước kỳ mục tiêu</small></div></div>
+  <div class="card kpiCard"><div class="kpiIcon">#</div><div><span>Không gian</span><b>8.145.060</b><small>C(45,6) tổ hợp</small></div></div>
+</section>
+
+<section id="megaResultDock" class="panel megaResultDock">
+  <div class="head megaResultHead">
+    <div><div class="sectionKicker">KẾT QUẢ / REPLAY</div><h2 id="megaResultTitle">Kỳ chưa có kết quả</h2><p id="megaResultNote">Khi xem kỳ lịch sử, MegaAI dùng đúng dữ liệu trước kỳ đó rồi mới đối chiếu kết quả.</p></div>
+    <div class="actions megaResultActions">
+      <div class="resultInputWrap"><span>Kết quả</span><input id="megaManualResult" placeholder="01 13 23 25 26 28" inputmode="numeric" autocomplete="off"></div>
+      <button id="megaManualBtn">Nhập kết quả</button>
+      <button id="megaClearManualBtn" class="ghostBtn" hidden>Xóa nhập tay</button>
+      <button id="megaPrevBtn" class="ghostBtn">← Xem kỳ trước</button>
+      <button id="megaNextBtn" class="ghostBtn">→ Kỳ sau</button>
+    </div>
+  </div>
+  <div id="megaOfficialResult" class="megaOfficialResult"></div>
+  <div id="megaPrizeSummary" class="megaPrizeSummary"></div>
+</section>
+
+<nav class="megaNav" aria-label="MegaAI navigation">
+  <button class="megaNavBtn active" data-view="tickets"><b>01</b><span>Chọn vé</span><small>A / B / C</small></button>
+  <button class="megaNavBtn" data-view="analysis"><b>02</b><span>Phân tích</span><small>01–45</small></button>
+  <button class="megaNavBtn" data-view="economics"><b>03</b><span>Jackpot Economics</span><small>mô phỏng kinh tế</small></button>
+</nav>
+
+<section class="megaView active" data-pane="tickets">
+  <div class="megaTrackTabs">
+    <button class="megaTrackBtn active" data-track="A">A • Cấu trúc</button>
+    <button class="megaTrackBtn" data-track="B">B • Lịch sử</button>
+    <button class="megaTrackBtn" data-track="C">C • Kết hợp</button>
+  </div>
+
+  <section class="panel megaTrackPane active" data-track-pane="A">
+    <div class="head"><div><div class="sectionKicker">TRACK A</div><h2>Cấu trúc cân bằng • history-blind</h2><p>20 vé × 6 số. A phân bổ exposure 2–3 lần/số và tối ưu giảm lặp cặp số; lịch sử không ảnh hưởng thứ hạng A.</p></div></div>
+    <div id="megaAAudit" class="metrics megaMetrics"></div>
+    <div id="megaATickets" class="ticketGrid megaTicketGrid"></div>
+  </section>
+
+  <section class="panel megaTrackPane" data-track-pane="B">
+    <div class="head"><div><div class="sectionKicker">TRACK B</div><h2>Historical Heuristic</h2><p>Tần suất ngắn/dài, gap, cấu trúc chẵn-lẻ/thấp-cao, tổng và pair co-occurrence; chỉ dùng draw có id nhỏ hơn kỳ mục tiêu.</p></div></div>
+    <div id="megaBMeta" class="notice"></div>
+    <div id="megaBTickets" class="ticketGrid megaTicketGrid"></div>
+  </section>
+
+  <section class="panel megaTrackPane" data-track-pane="C">
+    <div class="head"><div><div class="sectionKicker">TRACK C</div><h2>Balanced Hybrid</h2><p>Giữ exposure 2–3 như A nhưng dùng tín hiệu B để chọn nhóm 30 số được xuất hiện 3 lần. Đây vẫn là heuristic, không phải xác suất trúng.</p></div></div>
+    <div id="megaCMeta" class="notice"></div>
+    <div id="megaCTickets" class="ticketGrid megaTicketGrid"></div>
+  </section>
+</section>
+
+<section class="megaView" data-pane="analysis">
+  <section class="panel">
+    <div class="head"><div><div class="sectionKicker">NUMBER INTELLIGENCE 01–45</div><h2>Thống kê mô tả trước kỳ mục tiêu</h2><p>Frequency 30/120 kỳ, gap hiện tại và signal B. Không dùng kết quả của kỳ đang replay.</p></div></div>
+    <div class="megaIntelSummary"><div><span>Hot 30 kỳ</span><b id="megaHotNums">—</b></div><div><span>Gap cao</span><b id="megaOverdueNums">—</b></div></div>
+    <div id="megaNumberGrid" class="megaNumberGrid"></div>
+    <div id="megaNumberDetail" class="megaNumberDetail">Chọn một số để xem chi tiết.</div>
+  </section>
+</section>
+
+<section class="megaView" data-pane="economics">
+  <section class="panel megaEconomics">
+    <div class="head"><div><div class="sectionKicker">JACKPOT ECONOMICS</div><h2>Mô phỏng phủ toàn bộ 8.145.060 tổ hợp</h2><p>Chỉ là bài toán kinh tế trước thuế và trước rủi ro vận hành. Không phải khuyến nghị mua vé.</p></div></div>
+    <div class="megaEconomicsInputs">
+      <label>Jackpot hiện tại (tỷ đồng)<input id="megaJackpotInput" type="number" min="0" step="0.1" value="121"></label>
+      <label>Giá 1 bộ số (đồng)<input id="megaTicketPrice" type="number" min="1" step="1000" value="10000"></label>
+      <label>Số người khác cùng trúng Jackpot<input id="megaOtherWinners" type="number" min="0" step="1" value="0"></label>
+    </div>
+    <div id="megaEconomicsCards" class="megaEconomicsCards"></div>
+    <div class="notice megaEconomicsNote">Khi phủ đủ mọi tổ hợp, về mặt tổ hợp sẽ có đúng 1 vé 6/6, 234 vé 5/6, 11.115 vé 4/6 và 182.780 vé 3/6 cho một kết quả 6 số cố định. Mô phỏng này chưa trừ thuế, chi phí vận hành, giới hạn phát hành/bán vé hoặc sai sót thực tế.</div>
+  </section>
+</section>
+
+<footer class="megaFooter">MegaAI 6/45 v1 preview • Dữ liệu lịch sử chỉ phục vụ nghiên cứu • Không có mô hình nào bảo đảm dự đoán kết quả ngẫu nhiên.</footer>
+</main>
+
+<script src="/mega.js?v=1.1"></script>
+</body>
+</html>

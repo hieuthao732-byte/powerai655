@@ -11,6 +11,9 @@ const files = [
   'adaptive-d.css',
   'auth.js',
   'style.css',
+  'mega.html',
+  'mega.js',
+  'mega.css',
   'favicon.svg',
   'google933e1c79e6843890.html',
   'robots.txt',
@@ -24,4 +27,4 @@ for (const file of files) {
   if (!existsSync(file)) throw new Error(`Missing required static file: ${file}`);
   copyFileSync(file, join('dist', file));
 }
-console.log('Stable build complete — source copied to dist without post-build mutation.');
+console.log('Stable build complete — PowerAI + MegaAI source copied to dist without post-build mutation.');
