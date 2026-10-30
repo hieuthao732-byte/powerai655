@@ -16,6 +16,6 @@ P.registerProvider({id:"D",status:"shadow",propose:()=>Array.from({length:35},(_
  await assert.rejects(()=>P.build({targetDrawId:3,draws,providerIds:["D"]}),/SHADOW_PROVIDER_MODE_REQUIRED/);
  const shadow=await P.build({targetDrawId:3,draws,providerIds:["A","D"],mode:"shadow",count:10});
  assert.deepEqual(shadow.portfolio.provenance.providerIds,["A","D"]);
- assert.equal(shadow.portfolio.selectionPolicy.id,"ONE_UNIFIED_CONSTRAINED_GREEDY_V1");
+ assert.equal(shadow.portfolio.selectionPolicy.id,"ONE_BOUNDED_FEASIBILITY_BEAM_V1");
  console.log("PowerAI ONE pipeline tests: PASS");
 })().catch(e=>{console.error(e);process.exitCode=1});
