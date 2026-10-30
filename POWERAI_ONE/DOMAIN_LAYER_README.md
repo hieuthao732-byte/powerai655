@@ -19,3 +19,12 @@ Do not add domain.js to index.html or change existing app.js call paths until le
 - portfolio-service.test.js: mock-engine tests for cutoff, provenance, unknown engine rejection and shadow-lane isolation.
 
 Register a real legacy engine only after its input/output mapping is documented and golden fixtures are captured. The service intentionally has no default engine and never silently falls back.
+
+## Unified final portfolio architecture
+A/B/C/L/D are candidate providers, not independent final ticket selectors. The intended ONE runtime calls `unified-portfolio-pipeline.js` once; the pipeline gathers candidates and calls `unified-selector.js` exactly once for the final portfolio. Provider-specific hard validity checks remain in each adapter. Source scores are ranked within their own source group before aggregation, so raw scores from unrelated engines are never directly compared.
+
+Files:
+- unified-selector.js / unified-selector.test.js
+- unified-portfolio-pipeline.js / unified-portfolio-pipeline.test.js
+
+The pipeline remains isolated from the live app until legacy parity fixtures and prospective walk-forward tests justify integration.
