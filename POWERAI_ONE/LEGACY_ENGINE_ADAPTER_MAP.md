@@ -37,7 +37,7 @@ Status: source-inspected integration map. No legacy engine code has been changed
 - D lock and official prospective integration live in adaptive-d-ui.js.
 - Challenger lifecycle lives in adaptive-d-cycle.js.
 - Retrospective-only validation lives in adaptive-d-validation.js.
-- Extraction requirement: adapt canonical Draw.main to D's expected result array without adding special to the main numbers. Keep official, shadow and retrospective storage/evaluation lanes separate.
+- Extraction status: `adaptive-d.js` now exposes pure `generateCandidates(model)` using its frozen weighted sampler and ticket score without invoking D legacy portfolio selection. `track-d-adapter.js` builds the model from canonical pre-target history and `track-d-provider.js` sends the candidate pool to ONE as shadow-only. Existing D locks, official logs, challenger cycle and retrospective validation remain isolated. See `TRACK_D_EXTRACTION.md`.
 
 ## Integration order
 1. Capture golden fixtures for A, B, C, L and D from the current production-compatible branch.
