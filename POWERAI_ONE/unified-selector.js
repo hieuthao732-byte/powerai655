@@ -118,13 +118,20 @@
               if(overlap(t,pool[prevIndex].ticket)>maxOverlap){invalid=true;break;}
             }
             if(invalid){rejected.overlap++;continue;}
-            const pairs=pairKeys(t);
-            const nextRepeatedPairCount=state.repeatedPairCount+pairs.filter(pk=>(state.pairCounts[pk]||0)===1).length;
-            if(nextRepeatedPairCount>maxRepeatedPairs){rejected.repeatedPairs++;continue;}
+            // Pair accounting is expensive and unnecessary when no pair cap is active.
+            // Keep the hot path allocation-light for providers such as B that only
+            // request overlap/exposure constraints.
+            let nextRepeatedPairCount=state.repeatedPairCount;
+            let pairCounts=state.pairCounts;
+            if(Number.isFinite(maxRepeatedPairs)){
+              const pairs=pairKeys(t);
+              nextRepeatedPairCount+=pairs.filter(pk=>(state.pairCounts[pk]||0)===1).length;
+              if(nextRepeatedPairCount>maxRepeatedPairs){rejected.repeatedPairs++;continue;}
+              pairCounts={...state.pairCounts};
+              pairs.forEach(pk=>pairCounts[pk]=(pairCounts[pk]||0)+1);
+            }
             const exposure=state.exposure.slice();
             t.main.forEach(n=>exposure[n]++);
-            const pairCounts={...state.pairCounts};
-            pairs.forEach(pk=>pairCounts[pk]=(pairCounts[pk]||0)+1);
             const indices=state.indices.concat(ci);
             const sourceSet=state.sourceSet.includes(candidate.source)?state.sourceSet:state.sourceSet.concat(candidate.source);
             const coverage=exposure.slice(1).filter(Boolean).length;
