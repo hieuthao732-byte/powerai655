@@ -1,0 +1,39 @@
+name: PowerAI ONE domain tests
+
+on:
+  push:
+    branches:
+      - feature/powerai-one
+    paths:
+      - "POWERAI_ONE/**"
+      - ".github/workflows/powerai-one-tests.yml"
+  pull_request:
+    paths:
+      - "POWERAI_ONE/**"
+      - ".github/workflows/powerai-one-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  domain-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run domain tests
+        run: node POWERAI_ONE/domain.test.js
+      - name: Run portfolio service tests
+        run: node POWERAI_ONE/portfolio-service.test.js
+      - name: Run unified selector tests
+        run: node POWERAI_ONE/unified-selector.test.js
+      - name: Run unified pipeline tests
+        run: node POWERAI_ONE/unified-portfolio-pipeline.test.js
+      - name: Run Track A adapter tests
+        run: node POWERAI_ONE/track-a-adapter.test.js
+      - name: Run Track A unified provider tests
+        run: node POWERAI_ONE/track-a-provider.test.js
