@@ -18,7 +18,7 @@ const candidates=Array.from({length:90},(_,i)=>({
 const out=selector.select(candidates,{count:20,maxOverlap:5});
 assert.equal(out.tickets.length,20);
 assert.equal(new Set(out.tickets.map(t=>t.main.join("-"))).size,20);
-assert.equal(out.policy.id,"ONE_UNIFIED_GREEDY_V1");
+assert.equal(out.policy.id,"ONE_UNIFIED_CONSTRAINED_GREEDY_V1");
 assert.equal(out.audit.ticketCount,20);
 assert.ok(out.ranked.every((x,i)=>x.rank===i+1));
 assert.ok(out.ranked.every(x=>x.rankScore>=0&&x.rankScore<=1));
