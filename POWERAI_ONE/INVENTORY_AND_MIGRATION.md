@@ -143,3 +143,60 @@ Persistence
 3. Read complete auth bridge and map cloud schema fields without changing them.
 4. Inspect `adaptive-d.js` and document Track D inputs/outputs and shadow-mode constraints.
 5. Identify exact DOM IDs and event listeners that form the current UI contract.
+
+
+## 9. Extended runtime inventory (confirmed from source)
+
+### Loaded runtime and presentation assets
+
+The current HTML loads:
+- `auth.js?v=9.7`
+- `app.js?v=9.7`
+- `adaptive-d.js?v=0.2`
+- `adaptive-d-ui.js?v=0.2`
+- `adaptive-d-cycle.js?v=0.3`
+- `adaptive-d-validation.js?v=0.1`
+- `style.css?v=9.7`
+- `adaptive-d.css?v=0.2`
+- `site.webmanifest` and `favicon.svg`
+
+No duplicate HTML IDs were detected in the current index file (136 IDs inspected).
+
+### Size / coupling snapshot
+
+- `index.html`: 29,928 characters; large single-page shell.
+- `app.js`: 135,574 characters; 184 named function declarations detected.
+- `style.css`: 77,087 characters; 30 media-query blocks.
+- `auth.js`: 21,448 characters.
+- `adaptive-d.js`: 18,157 characters.
+- `adaptive-d-ui.js`: 31,089 characters.
+- `adaptive-d-cycle.js`: 24,628 characters.
+- `adaptive-d-validation.js`: 33,994 characters.
+- `adaptive-d.css`: 8,990 characters.
+
+These are source-size observations, not a claim that every function is active or duplicated. Dead-code classification still requires call-graph and event-binding review.
+
+### Track D separation
+
+Track D is not one monolithic feature; it is split into four loaded files:
+- Core `adaptive-d.js`: D1 residual pair expert, D2 gap-transition expert, D3 shape-conditional expert, D4 spectral residual expert; multi-horizon aggregation; portfolio generation; deterministic model/portfolio hashes and audit.
+- `adaptive-d-ui.js`: application integration, D lock snapshots, portfolio integrity checks, prospective official-feed logs; manual/replay results are excluded from official D learning/performance.
+- `adaptive-d-cycle.js`: shadow challenger lifecycle (drift, candidate generation, stress gate, promotion/rejection); official feed-only evidence.
+- `adaptive-d-validation.js`: retrospective walk-forward validation lab; explicitly does not update official D logs, champion weights or challenger promotion.
+
+Migration rule: preserve the separation between core generation, prospective UI/logging, shadow lifecycle and retrospective validation. D remains a research/challenger lane by default.
+
+### Authentication and persistence observations
+
+- Auth bridge stores its session under `powerai_auth_session_v1`.
+- Main app stores user-scoped application keys under prefix `powerai_rc6_`.
+- Cloud state uses Supabase `user_app_state` with `local_state`, active/locked draw identifiers, A/B/C and L lock flags/snapshots.
+- Role lookup reads `user_roles`; admin operations are exposed through the auth/admin layer and must be checked server-side.
+- Guest mode sets the main app to inert/read-only; logout clears the local PowerAI cache.
+- Track D uses additional `powerai_rc6_d_*` keys, including lock, log, shadow-log and cycle metadata state.
+
+No auth schema, Supabase policy, database row or user data was changed during this audit.
+
+### Release-label inconsistency to resolve carefully
+
+The current source contains several historical release labels and patch comments (RC5, RC6, RC7, RC8, RC9.0–RC9.7). The visible header says RC9.7 while some page copy still describes earlier A architecture. Do not bulk-replace labels until the feature-to-version mapping and actual behavior are verified.
