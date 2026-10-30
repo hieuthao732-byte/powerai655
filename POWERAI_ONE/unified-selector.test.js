@@ -22,6 +22,15 @@ assert.equal(out.policy.id,"ONE_BOUNDED_FEASIBILITY_BEAM_V1");
 assert.equal(out.audit.ticketCount,20);
 assert.ok(out.ranked.every((x,i)=>x.rank===i+1));
 assert.ok(out.ranked.every(x=>x.rankScore>=0&&x.rankScore<=1));
+const repeat=selector.select(candidates,{count:20,maxOverlap:5});
+assert.equal(repeat.hash,out.hash,"bounded search must be deterministic");
+assert.equal(out.policy.search.algorithm,"bounded-beam");
+assert.ok(out.policy.search.expanded>0);
+assert.throws(
+  ()=>selector.select(candidates,{count:10,maxOverlap:5,candidateLimit:90,beamWidth:8,searchNodeBudget:1000}),
+  /SELECTION_SEARCH_BUDGET_EXHAUSTED/
+);
+
 
 const merged=selector.normalizeCandidates([
  {ticket:[1,2,3,4,5,6],source:"A",score:20},
