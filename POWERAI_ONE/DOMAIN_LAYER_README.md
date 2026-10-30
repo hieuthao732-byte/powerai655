@@ -28,3 +28,9 @@ Files:
 - unified-portfolio-pipeline.js / unified-portfolio-pipeline.test.js
 
 The pipeline remains isolated from the live app until legacy parity fixtures and prospective walk-forward tests justify integration.
+
+## Track A extracted
+- `track-a-adapter.js` contains the frozen A7 algorithm extracted from the legacy app.
+- `track-a-provider.js` registers A7 as a candidate provider for the single ONE pipeline.
+- A7 does not choose the final 20 tickets once other providers are added; the ONE selector owns final selection.
+- The adapter's invariant checks ensure that a pure A7 portfolio retains full coverage, pair uniqueness, exposure 2–3, and max overlap 1.
