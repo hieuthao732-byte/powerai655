@@ -10,7 +10,6 @@
       throw new TypeError("PowerAIDomain is required");
     }
 
-    const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
     const finite=x=>Number.isFinite(Number(x))?Number(x):null;
     const key=t=>t.main.join("-");
     const overlap=(a,b)=>{const s=new Set(a.main);return b.main.reduce((n,x)=>n+(s.has(x)?1:0),0)};
@@ -25,19 +24,22 @@
           ticket:parsed.ticket,
           source:String(raw.source ?? raw.engineId ?? "unspecified"),
           rawScore:score,
+          sourceScores:{},
           components:raw.components && typeof raw.components==="object"?{...raw.components}:{},
           tags:Array.isArray(raw.tags)?raw.tags.slice():[],
           metadata:raw.metadata ?? null
         };
+        if(score!==null)candidate.sourceScores[candidate.source]=score;
         const k=key(candidate.ticket),old=byKey.get(k);
         if(!old){byKey.set(k,candidate);return;}
-        // Duplicate tickets merge source provenance; keep the strongest raw score only
-        // within the same source. Cross-engine scores are never compared directly.
+        // Keep raw scores isolated by source. A's score is never compared to B's.
         if(!old.sources)old.sources=[old.source];
         if(!old.sources.includes(candidate.source))old.sources.push(candidate.source);
-        if(candidate.rawScore!==null && (old.rawScore===null || candidate.rawScore>old.rawScore)){
-          old.rawScore=candidate.rawScore;old.components=candidate.components;
+        if(score!==null){
+          const previous=old.sourceScores[candidate.source];
+          if(previous===undefined || score>previous)old.sourceScores[candidate.source]=score;
         }
+        if(!old.components || Object.keys(old.components).length===0)old.components=candidate.components;
       });
       return {candidates:[...byKey.values()],errors};
     }
@@ -45,17 +47,22 @@
     function percentileScores(candidates){
       const groups=new Map();
       candidates.forEach(c=>{
-        if(c.rawScore===null)return;
-        if(!groups.has(c.source))groups.set(c.source,[]);
-        groups.get(c.source).push(c);
+        for(const [source,score] of Object.entries(c.sourceScores||{})){
+          if(!groups.has(source))groups.set(source,[]);
+          groups.get(source).push(score);
+        }
       });
-      for(const c of candidates){
-        const group=groups.get(c.source)||[];
-        if(c.rawScore===null || group.length<2){c.rankScore=.5;continue;}
-        const sorted=group.map(x=>x.rawScore).sort((a,b)=>a-b);
+      const rank=(score,values)=>{
+        if(values.length<2)return .5;
+        const sorted=values.slice().sort((a,b)=>a-b);
         let below=0,equal=0;
-        for(const x of sorted){if(x<c.rawScore)below++;else if(x===c.rawScore)equal++;}
-        c.rankScore=(below+Math.max(0,equal-1)/2)/Math.max(1,sorted.length-1);
+        for(const x of sorted){if(x<score)below++;else if(x===score)equal++;}
+        return (below+Math.max(0,equal-1)/2)/Math.max(1,sorted.length-1);
+      };
+      for(const c of candidates){
+        const ranks=Object.entries(c.sourceScores||{}).map(([source,score])=>rank(score,groups.get(source)||[]));
+        c.rankScore=ranks.length?Math.max(...ranks):.5;
+        c.sourceRankScores=Object.fromEntries(Object.entries(c.sourceScores||{}).map(([source,score])=>[source,rank(score,groups.get(source)||[])]));
       }
       return candidates;
     }
@@ -71,8 +78,9 @@
       const maxPerNumber=options.maxPerNumber==null?Infinity:Number(options.maxPerNumber);
       const scoreWeight=Number(options.scoreWeight ?? .7);
       const diversityWeight=Number(options.diversityWeight ?? .3);
-      if(!Number.isFinite(maxOverlap)||maxOverlap<0||maxOverlap>6)throw new Error("INVALID_MAX_OVERLAP");
-      if(!(scoreWeight>=0&&diversityWeight>=0&&scoreWeight+diversityWeight>0))throw new Error("INVALID_WEIGHTS");
+      if(!Number.isInteger(maxOverlap)||maxOverlap<0||maxOverlap>6)throw new Error("INVALID_MAX_OVERLAP");
+      if(!(maxPerNumber===Infinity||(Number.isInteger(maxPerNumber)&&maxPerNumber>=1)))throw new Error("INVALID_MAX_EXPOSURE");
+      if(!(scoreWeight>=0&&diversityWeight>=0&&Number.isFinite(scoreWeight)&&Number.isFinite(diversityWeight)&&scoreWeight+diversityWeight>0))throw new Error("INVALID_WEIGHTS");
 
       const exposure=Array(56).fill(0),selected=[],remaining=candidates.slice();
       const rejected={overlap:0,exposure:0};
@@ -108,7 +116,7 @@
         tickets,
         ranked:selected.map(x=>({
           main:x.ticket.main,rank:x.rank,source:x.source,sources:x.sources||[x.source],
-          rawScore:x.rawScore,rankScore:x.rankScore,selectionScore:x.selectionScore,
+          rawScore:x.rawScore,sourceScores:x.sourceScores,sourceRankScores:x.sourceRankScores,rankScore:x.rankScore,selectionScore:x.selectionScore,
           components:x.components,tags:x.tags
         })),
         audit,
