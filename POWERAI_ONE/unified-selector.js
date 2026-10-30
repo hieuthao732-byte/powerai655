@@ -75,15 +75,21 @@
       if(candidates.length<count)throw new Error("INSUFFICIENT_UNIQUE_CANDIDATES");
 
       const maxOverlap=Number(options.maxOverlap ?? 4);
-      const maxPerNumber=options.maxPerNumber==null?Infinity:Number(options.maxPerNumber);
+      const constraints=options.constraints||{};
+      const maxPerNumber=options.maxPerNumber==null?(constraints.maxExposure==null?Infinity:Number(constraints.maxExposure)):Number(options.maxPerNumber);
+      const minExposure=constraints.minExposure==null?0:Number(constraints.minExposure);
+      const requireCoverage=constraints.requireCoverage===true;
+      const maxRepeatedPairs=constraints.maxRepeatedPairs==null?Infinity:Number(constraints.maxRepeatedPairs);
       const scoreWeight=Number(options.scoreWeight ?? .7);
       const diversityWeight=Number(options.diversityWeight ?? .3);
       if(!Number.isInteger(maxOverlap)||maxOverlap<0||maxOverlap>6)throw new Error("INVALID_MAX_OVERLAP");
       if(!(maxPerNumber===Infinity||(Number.isInteger(maxPerNumber)&&maxPerNumber>=1)))throw new Error("INVALID_MAX_EXPOSURE");
+      if(!Number.isInteger(minExposure)||minExposure<0||minExposure>count)throw new Error("INVALID_MIN_EXPOSURE");
+      if(!(maxRepeatedPairs===Infinity||(Number.isInteger(maxRepeatedPairs)&&maxRepeatedPairs>=0)))throw new Error("INVALID_MAX_REPEATED_PAIRS");
       if(!(scoreWeight>=0&&diversityWeight>=0&&Number.isFinite(scoreWeight)&&Number.isFinite(diversityWeight)&&scoreWeight+diversityWeight>0))throw new Error("INVALID_WEIGHTS");
 
-      const exposure=Array(56).fill(0),selected=[],remaining=candidates.slice();
-      const rejected={overlap:0,exposure:0};
+      const exposure=Array(56).fill(0),selected=[],remaining=candidates.slice(),pairCounts=new Map();
+      const rejected={overlap:0,exposure:0,repeatedPairs:0};
       while(selected.length<count){
         let bestIndex=-1,bestValue=-Infinity;
         for(let i=0;i<remaining.length;i++){
@@ -92,6 +98,12 @@
           const overlaps=selected.map(s=>overlap(t,s.ticket));
           const maxOv=overlaps.length?Math.max(...overlaps):0;
           if(maxOv>maxOverlap){rejected.overlap++;continue;}
+          let pairViolation=false;
+          for(let a=0;a<6&&!pairViolation;a++)for(let b=a+1;b<6;b++){
+            const x=t.main[a],y=t.main[b],pk=x+"-"+y;
+            if((pairCounts.get(pk)||0)>=1){pairViolation=true;break;}
+          }
+          if(pairViolation&&maxRepeatedPairs===0){rejected.repeatedPairs++;continue;}
           const meanOv=overlaps.length?overlaps.reduce((a,b)=>a+b,0)/overlaps.length:0;
           const novelty=t.main.reduce((n,x)=>n+(exposure[x]===0?1:0),0)/6;
           const sourceSpread=selected.length && !selected.some(s=>s.sources?.includes(c.source)||s.source===c.source)?1:0;
@@ -106,10 +118,18 @@
         chosen.rank=selected.length+1;
         selected.push(chosen);
         chosen.ticket.main.forEach(n=>exposure[n]++);
+        for(let a=0;a<6;a++)for(let b=a+1;b<6;b++){
+          const x=chosen.ticket.main[a],y=chosen.ticket.main[b],pk=x+"-"+y;
+          pairCounts.set(pk,(pairCounts.get(pk)||0)+1);
+        }
       }
 
       const tickets=selected.map(x=>x.ticket);
       const audit=domain.auditPortfolio(tickets);
+      if(requireCoverage&&audit.coverage!==55)throw new Error("HARD_CONSTRAINT_COVERAGE_FAILED");
+      if(minExposure>0&&audit.minExposure<minExposure)throw new Error("HARD_CONSTRAINT_MIN_EXPOSURE_FAILED");
+      if(Number.isFinite(maxPerNumber)&&audit.maxExposure>maxPerNumber)throw new Error("HARD_CONSTRAINT_MAX_EXPOSURE_FAILED");
+      if(Number.isFinite(maxRepeatedPairs)&&audit.repeatedPairs>maxRepeatedPairs)throw new Error("HARD_CONSTRAINT_REPEATED_PAIRS_FAILED");
       const sources={};
       selected.forEach(x=>(x.sources||[x.source]).forEach(s=>sources[s]=(sources[s]||0)+1));
       return {
@@ -123,7 +143,7 @@
         sourceDistribution:sources,
         rejectedCandidates:normalized.errors.length,
         rejectedByConstraints:rejected,
-        policy:{id:"ONE_UNIFIED_GREEDY_V1",count,maxOverlap,maxPerNumber,scoreWeight,diversityWeight},
+        policy:{id:"ONE_UNIFIED_CONSTRAINED_GREEDY_V1",count,maxOverlap,maxPerNumber,scoreWeight,diversityWeight,constraints:{requireCoverage,minExposure,maxExposure:maxPerNumber,maxRepeatedPairs}},
         hash:domain.stableHash(tickets.map(t=>t.main))
       };
     }
