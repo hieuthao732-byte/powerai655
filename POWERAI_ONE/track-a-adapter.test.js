@@ -1,0 +1,17 @@
+"use strict";
+const assert=require("node:assert/strict");
+const A=require("./track-a-adapter.js");
+const D=require("./domain.js");
+const target=1418;
+const first=A.generate(target),second=A.generate(target);
+assert.equal(first.tickets.length,20);
+assert.deepEqual(first.tickets,second.tickets,"A7 must be deterministic for a fixed target");
+const parsed=first.tickets.map(t=>D.normalizeTicket(t));
+assert.ok(parsed.every(x=>x.ok));
+assert.equal(first.audit.coverage,55);
+assert.equal(first.audit.repeatedPairs,0);
+assert.ok(first.audit.maxOverlap<=1);
+assert.equal(first.audit.minExp,2);
+assert.equal(first.audit.maxExp,3);
+assert.equal(first.seed,first.analysis?first.seed:null);
+console.log("PowerAI ONE Track A adapter tests: PASS",first.seed,first.audit.coverage,first.audit.repeatedPairs,first.audit.maxOverlap);
