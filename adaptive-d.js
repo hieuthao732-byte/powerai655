@@ -214,6 +214,12 @@
     return{tickets,ranked:selected.map((x,i)=>({rank:i+1,a:x.a,score:x.base})),audit,hash:hashPortfolio(tickets),seed:seed==null?((model.targetId*2654435761)>>>0):seed,engineId:model.engineId,modelHash:model.modelHash};
   }
 
+  function generateCandidates(model,{candidates=3200,seed=null}={}){
+    const rnd=seeded(seed==null?((model.targetId*2654435761)>>>0):seed),map=new Map();
+    for(let i=0;i<candidates;i++){const t=weightedTicket(model,rnd),k=t.join('-');if(!map.has(k))map.set(k,{ticket:t,score:baseTicketScore(t,model),source:'D',components:{base:baseTicketScore(t,model)}})}
+    return [...map.values()].sort((a,b)=>b.score-a.score);
+  }
+
   function auditPortfolio(P){
     const exp=Array(N+1).fill(0),pairs=new Map();let maxOverlap=0;
     for(let i=0;i<P.length;i++){for(const n of P[i])exp[n]++;for(let a=0;a<PICK;a++)for(let b=a+1;b<PICK;b++){const k=edgeKey(P[i][a],P[i][b]);pairs.set(k,(pairs.get(k)||0)+1)}for(let j=0;j<i;j++)maxOverlap=Math.max(maxOverlap,overlap(P[i],P[j]))}
@@ -272,6 +278,6 @@
   }
   function retireEngine(state,entry){const s=newResearchState(state);s.memory.push({...entry,status:'RETIRED',retiredAt:new Date().toISOString()});return s}
 
-  const API={VERSION,N,PICK,DEFAULT_HORIZONS,DEFAULT_WEIGHTS,normalizeHistory,drawShape,shapeDistance,frequencyExpert,residualPairExpert,gapTransitionExpert,shapeConditionalExpert,spectralResidualExpert,normalizeWeights,updateWeights,buildModel,buildPortfolio,auditPortfolio,scorePortfolio,matchedNullBenchmark,evaluateDrift,promotionDecision,confidenceGate,newResearchState,registerHypothesis,retireEngine,hashPortfolio};
+  const API={VERSION,N,PICK,DEFAULT_HORIZONS,DEFAULT_WEIGHTS,normalizeHistory,drawShape,shapeDistance,frequencyExpert,residualPairExpert,gapTransitionExpert,shapeConditionalExpert,spectralResidualExpert,normalizeWeights,updateWeights,buildModel,buildPortfolio,generateCandidates,auditPortfolio,scorePortfolio,matchedNullBenchmark,evaluateDrift,promotionDecision,confidenceGate,newResearchState,registerHypothesis,retireEngine,hashPortfolio};
   root.PowerAIAdaptiveD=API;
 })(typeof window!=='undefined'?window:globalThis);
