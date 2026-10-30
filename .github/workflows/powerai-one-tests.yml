@@ -6,6 +6,7 @@ on:
       - feature/powerai-one
     paths:
       - "POWERAI_ONE/**"
+      - "package.json"
       - ".github/workflows/powerai-one-tests.yml"
   pull_request:
     paths:
