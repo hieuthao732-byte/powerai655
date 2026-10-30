@@ -81,3 +81,35 @@ The existing window.PowerAIAuth is the initial compatibility adapter. Its powera
 - Confirm whether cloud state includes D locks/logs or only A/B/C/L fields.
 - Document expired session, refresh failure, disabled account and cross-device conflict behavior.
 - Verify backend RLS/RPC policies separately; source code alone cannot prove them.
+
+
+## 8. Confirmed sync behavior and high-risk migration detail
+
+The current app.js defines POWERAI_PREFIX as powerai_rc6_. captureLocalState serializes every localStorage key with that prefix, not a hand-maintained list. hydrateLocalState first removes every key with that prefix and then restores the remote string values. applyCloudUser invokes this when switching to a signed-in account; when the active user logs out, it clears every powerai_rc6_ key before reloading the app. The auth session key powerai_auth_session_v1 is outside this prefix and is managed separately by auth.js.
+
+This is an important existing behavior, not a change proposed for ONE. It means:
+- Account switching can replace the local cache wholesale with that account's cloud snapshot.
+- A cloud snapshot restore can remove locally cached keys that are absent remotely.
+- Logout intentionally clears the signed-in user's local app cache and returns to guest/read-only state.
+- Any ONE migration that changes the prefix, key family, or hydration order can cause data loss or cross-account leakage if not tested.
+
+Required before touching this path:
+1. Test user A → logout → guest → user B, proving no A state remains visible.
+2. Test remote snapshot missing a local key and document whether removal is expected.
+3. Test cloud read failure: local state must not be destroyed by a failed hydration.
+4. Test remote state restore followed by reload and verify locks/logs exactly.
+5. Keep auth session handling separate from app-state hydration.
+6. Preserve the current prefix contract until a versioned migration and rollback are approved.
+
+## 9. Confirmed exact legacy keys from app.js
+
+- A/B/C combined lock: powerai_rc6_lock_<drawId>.
+- Learning lock: powerai_rc6_learning_lock_<drawId>.
+- Per-target log: powerai_rc6_log_<drawId>.
+- Learning report: powerai_rc6_learning_report_v1.
+- Main target: powerai_rc6_active_target.
+- Track selection: powerai_rc6_ui_tab.
+- Main view: powerai_rc93_main_view.
+- Performance subview: powerai_rc97_perf_tab.
+
+Track D's separate files define powerai_rc6_d_lock_<drawId>, powerai_rc6_d_logs, powerai_rc6_d_state, powerai_rc6_d_shadow_logs and powerai_rc6_d_cycle_meta.
