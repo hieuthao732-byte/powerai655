@@ -7,6 +7,7 @@
   let busy=false;
   let mode='login';
   let role='user';
+  let recoveryToken=null;
 
   const $=id=>document.getElementById(id);
   function setMessage(msg,type=''){
@@ -15,9 +16,11 @@
   }
   function setBusy(on,label=''){
     busy=!!on;
-    const login=$('authLoginBtn'), signup=$('authSignupBtn');
+    const login=$('authLoginBtn'), signup=$('authSignupBtn'), forgot=$('authForgotBtn'), reset=$('authResetPasswordBtn');
     if(login){login.disabled=on; login.textContent=on&&label==='login'?'Đang đăng nhập…':'Đăng nhập'}
     if(signup){signup.disabled=on; signup.textContent=on&&label==='signup'?'Đang tạo tài khoản…':'Tạo tài khoản'}
+    if(forgot)forgot.disabled=on;
+    if(reset){reset.disabled=on;reset.textContent=on&&label==='reset'?'Đang cập nhật…':'Đặt lại mật khẩu'}
   }
   function saveSession(next){
     session=next||null;
@@ -105,7 +108,8 @@
   }
   function setMode(next,{focus=true}={}){
     mode=next==='signup'?'signup':'login';
-    const loginPanel=$('authLoginPanel'), signupPanel=$('authSignupPanel');
+    const loginPanel=$('authLoginPanel'), signupPanel=$('authSignupPanel'), recoveryPanel=$('authRecoveryPanel');
+    if(recoveryPanel)recoveryPanel.hidden=true;
     const loginTab=$('authModeLogin'), signupTab=$('authModeSignup');
     if(loginPanel)loginPanel.hidden=mode!=='login';
     if(signupPanel)signupPanel.hidden=mode!=='signup';
@@ -145,6 +149,46 @@
       saveSession(next);await loadRole();updateUI();setMessage('Đăng nhập thành công.','good');closeModal();emit();
     }catch(e){setMessage(e.message||'Đăng nhập thất bại.','bad')}
     finally{setBusy(false)}
+  }
+  async function sendPasswordReset(){
+    if(busy)return;
+    const email=$('authLoginEmail')?.value.trim()||'';
+    if(!email){setMessage('Nhập email tài khoản trước khi yêu cầu đặt lại mật khẩu.','bad');$('authLoginEmail')?.focus();return}
+    setMessage('Đang gửi email khôi phục…');setBusy(true,'forgot');
+    try{
+      await request('/auth/v1/recover?redirect_to='+encodeURIComponent('https://powerai655.vercel.app/'),{method:'POST',body:{email},auth:false});
+      setMessage('Nếu email này có tài khoản PowerAI, hướng dẫn đặt lại mật khẩu sẽ được gửi tới hộp thư. Hãy kiểm tra cả mục Spam/Quảng cáo.','good');
+    }catch(e){setMessage(e.message||'Chưa gửi được email khôi phục. Hãy thử lại.','bad')}
+    finally{setBusy(false)}
+  }
+  async function completePasswordReset(){
+    if(busy||!recoveryToken)return;
+    const password=$('authResetPassword')?.value||'', confirm=$('authResetConfirm')?.value||'';
+    if(password.length<6){setMessage('Mật khẩu mới phải có tối thiểu 6 ký tự.','bad');return}
+    if(password!==confirm){setMessage('Hai mật khẩu mới chưa trùng khớp.','bad');return}
+    setMessage('Đang cập nhật mật khẩu…');setBusy(true,'reset');
+    try{
+      const res=await fetch(SUPABASE_URL+'/auth/v1/user',{method:'PUT',headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+recoveryToken,'Content-Type':'application/json'},body:JSON.stringify({password})});
+      const raw=await res.text();let data=null;if(raw){try{data=JSON.parse(raw)}catch{data={message:raw}}}
+      if(!res.ok)throw new Error(parseError(data,res.status));
+      recoveryToken=null;
+      try{history.replaceState(null,'',location.pathname+location.search)}catch{}
+      $('authResetPassword').value='';$('authResetConfirm').value='';
+      setMode('login',{focus:false});
+      setMessage('Đặt lại mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.','good');
+    }catch(e){setMessage(e.message||'Không thể cập nhật mật khẩu. Hãy yêu cầu email khôi phục mới.','bad')}
+    finally{setBusy(false)}
+  }
+  function showRecoveryFromLink(){
+    const params=new URLSearchParams((location.hash||'').replace(/^#/,'').replace(/^\\?/,' '));
+    const token=params.get('access_token');
+    if(params.get('type')!=='recovery'||!token)return;
+    recoveryToken=token;
+    const modal=$('authModal');if(modal)modal.hidden=false;
+    $('authLoginPanel').hidden=true;$('authSignupPanel').hidden=true;
+    $('authRecoveryPanel').hidden=false;
+    setMessage('Tạo mật khẩu mới cho tài khoản PowerAI của bạn.');
+    setTimeout(()=>$('authResetPassword')?.focus(),0);
   }
   async function signup(){
     if(busy)return;
@@ -265,6 +309,9 @@
     $('authGoSignup')?.addEventListener('click',()=>setMode('signup'));
     $('authGoLogin')?.addEventListener('click',()=>setMode('login'));
     $('authLoginBtn')?.addEventListener('click',login);
+    $('authForgotBtn')?.addEventListener('click',sendPasswordReset);
+    $('authResetPasswordBtn')?.addEventListener('click',completePasswordReset);
+    $('authRecoveryBackBtn')?.addEventListener('click',()=>{recoveryToken=null;setMode('login')});
     $('authSignupBtn')?.addEventListener('click',signup);
     $('authLogoutBtn')?.addEventListener('click',logout);
     $('accountBtn')?.addEventListener('click',openAccount);
@@ -274,6 +321,7 @@
     $('adminCloseBtn')?.addEventListener('click',closeAdmin);
     $('adminRefreshBtn')?.addEventListener('click',loadAdminDashboard);
     $('authLoginPassword')?.addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+    $('authResetConfirm')?.addEventListener('keydown',e=>{if(e.key==='Enter')completePasswordReset()});
     $('authSignupConfirm')?.addEventListener('keydown',e=>{if(e.key==='Enter')signup()});
     $('authSignupPassword')?.addEventListener('input',updatePasswordMatch);
     $('authSignupConfirm')?.addEventListener('input',updatePasswordMatch);
@@ -281,6 +329,7 @@
     $('accountModal')?.addEventListener('click',e=>{if(e.target?.id==='accountModal')closeAccount()});
     $('adminModal')?.addEventListener('click',e=>{if(e.target?.id==='adminModal')closeAdmin()});
     setMode('login',{focus:false});
+    showRecoveryFromLink();
     restore().catch(e=>{console.error('Auth restore failed',e);saveSession(null);updateUI();emit()});
   }
   window.PowerAIAuth={request,getSession:()=>session,getUser:()=>currentUser(),getRole:()=>currentRole(),login,signup,logout,openModal,closeModal,openAccount,openAdmin,loadAdminDashboard,deleteMyAccount,refreshSession,setMode};
