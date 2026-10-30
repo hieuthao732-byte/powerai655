@@ -180,7 +180,7 @@
     finally{setBusy(false)}
   }
   function showRecoveryFromLink(){
-    const params=new URLSearchParams((location.hash||'').replace(/^#/,'').replace(/^\\?/,' '));
+    const params=new URLSearchParams((location.hash||'').slice(1));
     const token=params.get('access_token');
     if(params.get('type')!=='recovery'||!token)return;
     recoveryToken=token;
