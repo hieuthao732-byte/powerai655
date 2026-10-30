@@ -15,7 +15,7 @@ function register(pipeline,engine= root.PowerAIOneA){
      score:Number(stat.topCredit)||0,
      components:{topCredit:Number(stat.topCredit)||0,uniqueBest:Number(stat.uniqueBest)||0,ge3:Number(stat.ge3)||0,marginal:Number(stat.marginal)||0},
      tags:["A7_GEOMETRY"],
-     metadata:{seed:result.seed,audit:result.audit,analysis:result.analysis}
+     metadata:{seed:result.seed,audit:result.audit}
     };
    });
   },
