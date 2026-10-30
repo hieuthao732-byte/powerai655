@@ -17,7 +17,7 @@ Status: source-inspected integration map. No legacy engine code has been changed
 - Scoring: legacyComponents(a, model).
 - Portfolio selection: portfolioSelect(ranked, 20).
 - Current UI orchestration: async buildLegacyPortfolio(), which performs official-history readiness checks, progress updates, global state mutation, and then renders.
-- Extraction requirement: move the pure model/pool/score/select functions behind a B adapter. Preserve the existing 50,000-candidate setting, seed formula, filtering rules, sorting and exact output parity. Readiness checks stay in a service/policy layer, not the engine.
+- Extraction status: `track-b-adapter.js` extracts the frozen pure model, validity filter, scoring and seeded 50,000-candidate generator. `track-b-provider.js` maps B1.3 candidates into the ONE pipeline; legacy `portfolioSelect` is deliberately not called because ONE owns the only final selection. Provider defaults to the legacy 50,000 candidate count and preserves the original target seed formula. UI readiness gates remain in service/policy.
 
 ## C — Geometry-Constrained Matrix Hybrid
 - Signals: buildConstrainedSignals(ds, A, B).
