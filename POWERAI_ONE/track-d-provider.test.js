@@ -14,6 +14,6 @@ for(let id=1;id<=100;id++){const s=new Set();let k=0;while(s.size<6)s.add(((id*2
  assert.equal(out.portfolio.tickets.length,20);
  assert.equal(out.portfolio.provenance.providerIds[0],"D_ADAPTIVE");
  assert.equal(out.portfolio.provenance.providerStats[0].generated,500);
- assert.equal(out.portfolio.selectionPolicy.id,"ONE_UNIFIED_GREEDY_V1");
+ assert.equal(out.portfolio.selectionPolicy.id,"ONE_BOUNDED_FEASIBILITY_BEAM_V1");
  console.log("PowerAI ONE Track D → unified pipeline tests: PASS");
 })().catch(e=>{console.error(e);process.exitCode=1});
