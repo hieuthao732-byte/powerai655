@@ -119,7 +119,8 @@
             }
             if(invalid){rejected.overlap++;continue;}
             const pairs=pairKeys(t);
-            const nextRepeatedPairCount=state.repeatedPairCount+pairs.filter(pk=>(state.pairCounts[pk]||0)===1).length;\n            if(nextRepeatedPairCount>maxRepeatedPairs){rejected.repeatedPairs++;continue;}
+            const nextRepeatedPairCount=state.repeatedPairCount+pairs.filter(pk=>(state.pairCounts[pk]||0)===1).length;
+            if(nextRepeatedPairCount>maxRepeatedPairs){rejected.repeatedPairs++;continue;}
             const exposure=state.exposure.slice();
             t.main.forEach(n=>exposure[n]++);
             const pairCounts={...state.pairCounts};
