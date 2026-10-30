@@ -142,3 +142,11 @@ No lane writes into another lane. Promotion requires independent evidence and ex
 - [ ] Ticket and portfolio hashes remain stable.
 - [ ] Official/manual/replay/shadow lanes remain isolated.
 - [ ] Guest read-only and per-user ownership remain intact.
+
+
+## ONE unified selection rule
+- A/B/C/L/D adapters expose candidate tickets and optional source-local ranking signals; they do not publish a competing final 20-ticket portfolio.
+- The ONE pipeline is the only final portfolio entry point.
+- Unified selection first deduplicates tickets and preserves provider provenance, then normalizes scores within each provider, then performs one constrained selection pass balancing within-source rank, number coverage and overlap.
+- Structural invariants that are essential to an engine's validity must be expressed as adapter eligibility checks or explicit portfolio constraints. They must not be silently discarded during candidate conversion.
+- Main numbers and the special number remain separate in the domain and evaluation contracts.
