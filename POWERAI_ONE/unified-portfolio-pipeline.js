@@ -61,6 +61,7 @@
       const selection=selector.select(candidates,{
         count:request.count??20,maxOverlap:request.maxOverlap??4,
         maxPerNumber:request.maxPerNumber,
+        constraints:request.constraints||{},
         scoreWeight:request.scoreWeight??.7,diversityWeight:request.diversityWeight??.3
       });
       const portfolio={
