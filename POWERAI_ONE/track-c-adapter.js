@@ -47,7 +47,7 @@ function auditGeo(P){
 }
 function buildSignals(draws,B,legacy){
  const models=[];
- for(const w of WINDOWS){const cut=draws.slice(Math.max(0,draws.length-w)),lm=legacy.buildLegacyModel(cut),mm=buildMatrixModel(cut,lm);models.push({w,lm,mm,freq:rankNorm55(lm.f),gap:rankNorm55(lm.over),heat:rankNorm55(lm.heat),matrix:rankNorm55(mm.central)})}
+ for(const w of WINDOWS){const cut=draws.slice(Math.max(0,draws.length-w)),lm=legacy.buildLegacyModel(cut.map(d=>({id:d.id,result:d.main}))),mm=buildMatrixModel(cut,lm);models.push({w,lm,mm,freq:rankNorm55(lm.f),gap:rankNorm55(lm.over),heat:rankNorm55(lm.heat),matrix:rankNorm55(mm.central)})}
  const freq=Array(56).fill(0),gap=Array(56).fill(0),heat=Array(56).fill(0),matrix=Array(56).fill(0);
  for(let n=1;n<=55;n++){freq[n]=median(models.map(x=>x.freq[n]));gap[n]=median(models.map(x=>x.gap[n]));heat[n]=median(models.map(x=>x.heat[n]));matrix[n]=median(models.map(x=>x.matrix[n]))}
  const bExp=Array(56).fill(0);B.forEach(p=>(p.ticket||p.a||p.main||p).forEach(n=>bExp[n]++));const bRank=rankNorm55(bExp);
