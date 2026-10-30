@@ -29,3 +29,7 @@ jobs:
         run: node POWERAI_ONE/domain.test.js
       - name: Run portfolio service tests
         run: node POWERAI_ONE/portfolio-service.test.js
+      - name: Run unified selector tests
+        run: node POWERAI_ONE/unified-selector.test.js
+      - name: Run unified pipeline tests
+        run: node POWERAI_ONE/unified-portfolio-pipeline.test.js
