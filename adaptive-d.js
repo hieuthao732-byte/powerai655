@@ -280,4 +280,5 @@
 
   const API={VERSION,N,PICK,DEFAULT_HORIZONS,DEFAULT_WEIGHTS,normalizeHistory,drawShape,shapeDistance,frequencyExpert,residualPairExpert,gapTransitionExpert,shapeConditionalExpert,spectralResidualExpert,normalizeWeights,updateWeights,buildModel,buildPortfolio,generateCandidates,auditPortfolio,scorePortfolio,matchedNullBenchmark,evaluateDrift,promotionDecision,confidenceGate,newResearchState,registerHypothesis,retireEngine,hashPortfolio};
   root.PowerAIAdaptiveD=API;
+  if(typeof module!=='undefined'&&module.exports)module.exports=API;
 })(typeof window!=='undefined'?window:globalThis);
