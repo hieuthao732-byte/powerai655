@@ -9,6 +9,7 @@
   const MIN = 1, MAX = 55, PICK = 6;
 
   function asInt(value){
+    if(value === null || value === undefined || value === "") return null;
     const n = Number(value);
     return Number.isInteger(n) ? n : null;
   }
