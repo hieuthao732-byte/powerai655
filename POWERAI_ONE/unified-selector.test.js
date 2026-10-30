@@ -33,4 +33,18 @@ assert.equal(merged.candidates[0].sourceScores.A,20);
 assert.equal(merged.candidates[0].sourceScores.B,999);
 assert.throws(()=>selector.select([{ticket:[1,2,3,4,5,6]}],{count:2}),/INSUFFICIENT_UNIQUE_CANDIDATES/);
 assert.throws(()=>selector.select(candidates,{count:20,maxOverlap:7}),/INVALID_MAX_OVERLAP/);
+
+// Full-portfolio geometry is treated as a hard constraint, not a soft score.
+const A=require("./track-a-adapter.js");
+const aPortfolio=A.generate(1418);
+const constrained=selector.select(aPortfolio.tickets.map((x,i)=>({ticket:x.main,source:"A7",score:20-i})),{
+  count:20,maxOverlap:1,constraints:{requireCoverage:true,minExposure:2,maxExposure:3,maxRepeatedPairs:0}
+});
+assert.equal(constrained.audit.coverage,55);
+assert.equal(constrained.audit.minExposure,2);
+assert.equal(constrained.audit.maxExposure,3);
+assert.equal(constrained.audit.repeatedPairs,0);
+assert.equal(constrained.audit.maxOverlap,1);
+assert.equal(constrained.policy.id,"ONE_UNIFIED_CONSTRAINED_GREEDY_V1");
+assert.throws(()=>selector.select(candidates,{count:20,constraints:{requireCoverage:true,maxExposure:1}}),/SELECTION_CONSTRAINTS_INFEASIBLE|HARD_CONSTRAINT/);
 console.log("PowerAI ONE unified selector tests: PASS");
