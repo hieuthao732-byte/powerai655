@@ -32,7 +32,7 @@ function generate(draws,targetDrawId,{candidateCount=50000,seed=null}={}){
  const model=buildLegacyModel(legacyDraws);
  const actualSeed=seed==null?((target*104729+130013)>>>0):seed;
  const pool=randomValidPool(candidateCount,actualSeed);
- const candidates=pool.map((p,index)=>({ticket:p.a,score:legacyComponents(p.a,model).score,source:"B",components:legacyComponents(p.a,model),metadata:{candidateIndex:index}}));
+ const candidates=pool.map((p,index)=>{const components=legacyComponents(p.a,model);return {ticket:p.a,score:components.score,source:"B",components,metadata:{candidateIndex:index}}});
  return {engineId:"B",engineVersion:"legacy-B1.3-extracted-1",targetDrawId:target,cutoffDrawId:legacyDraws.length?Number(legacyDraws[legacyDraws.length-1].id):null,candidates,seed:actualSeed,candidateCount:candidates.length};
 }
 const API=Object.freeze({generate,buildLegacyModel,validLegacy,legacyComponents,randomValidPool});
