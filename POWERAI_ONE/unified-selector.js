@@ -96,7 +96,7 @@
       const pool=candidates.slice().sort((a,b)=>b.rankScore-a.rankScore||key(a.ticket).localeCompare(key(b.ticket))).slice(0,candidateLimit);
       const rejected={overlap:0,exposure:0,repeatedPairs:0};
       const pairKeys=t=>{const out=[];for(let a=0;a<6;a++)for(let b=a+1;b<6;b++)out.push(t.main[a]+"-"+t.main[b]);return out;};
-      const initial={indices:[],exposure:Array(56).fill(0),pairCounts:Object.create(null),score:0,coverage:0,sourceSet:[]};
+      const initial={indices:[],exposure:Array(56).fill(0),pairCounts:Object.create(null),repeatedPairCount:0,score:0,coverage:0,sourceSet:[]};
       let beam=[initial],expanded=0,budgetHit=false;
       const partialValue=(candidate,state)=>{
         const t=candidate.ticket;
@@ -119,7 +119,7 @@
             }
             if(invalid){rejected.overlap++;continue;}
             const pairs=pairKeys(t);
-            if(pairs.some(pk=>(state.pairCounts[pk]||0)>maxRepeatedPairs)){rejected.repeatedPairs++;continue;}
+            const nextRepeatedPairCount=state.repeatedPairCount+pairs.filter(pk=>(state.pairCounts[pk]||0)===1).length;\n            if(nextRepeatedPairCount>maxRepeatedPairs){rejected.repeatedPairs++;continue;}
             const exposure=state.exposure.slice();
             t.main.forEach(n=>exposure[n]++);
             const pairCounts={...state.pairCounts};
@@ -131,7 +131,7 @@
             const signature=indices.slice().sort((a,b)=>a-b).join(",");
             if(seen.has(signature))continue;
             seen.add(signature);
-            const nextState={indices,exposure,pairCounts,score,coverage,sourceSet};
+            const nextState={indices,exposure,pairCounts,repeatedPairCount:nextRepeatedPairCount,score,coverage,sourceSet};
             // Keep only the best bounded set; tie-break deterministically.
             let pos=next.findIndex(x=>x.score<score);
             if(pos<0)pos=next.length;
