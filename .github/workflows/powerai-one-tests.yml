@@ -38,3 +38,5 @@ jobs:
 
       - name: Run Track B unified provider tests
         run: node POWERAI_ONE/track-b-provider.test.js
+      - name: Run Track C constrained adapter tests
+        run: node POWERAI_ONE/track-c-adapter.test.js
