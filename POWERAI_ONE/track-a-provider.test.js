@@ -1,0 +1,22 @@
+"use strict";
+const assert=require("node:assert/strict");
+const D=require("./domain.js");
+const S=require("./unified-selector.js").create(D);
+const P=require("./unified-portfolio-pipeline.js").create(D,S);
+const A=require("./track-a-adapter.js");
+const Provider=require("./track-a-provider.js");
+Provider.register(P,A);
+assert.deepEqual(P.listProviders(),[{id:"A7",version:"legacy-A7-extracted-1",status:"enabled"}]);
+(async()=>{
+ const draws=[{id:1416,result:[1,2,3,4,5,6,7]},{id:1417,result:[2,3,4,5,6,7,8]}];
+ const out=await P.build({targetDrawId:1418,draws,providerIds:["A7"],count:20,maxOverlap:1});
+ assert.equal(out.portfolio.tickets.length,20);
+ assert.equal(out.portfolio.provenance.providerIds[0],"A7");
+ assert.equal(out.portfolio.selectionPolicy.id,"ONE_UNIFIED_GREEDY_V1");
+ assert.equal(out.portfolio.audit.coverage,55);
+ assert.equal(out.portfolio.audit.repeatedPairs,0);
+ assert.ok(out.portfolio.audit.maxOverlap<=1);
+ assert.equal(out.portfolio.audit.minExposure,2);
+ assert.equal(out.portfolio.audit.maxExposure,3);
+ console.log("PowerAI ONE Track A → unified pipeline tests: PASS");
+})().catch(e=>{console.error(e);process.exitCode=1});
