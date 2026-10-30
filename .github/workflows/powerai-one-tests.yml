@@ -1,5 +1,9 @@
 name: PowerAI ONE domain tests
 
+concurrency:
+  group: powerai-one-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
