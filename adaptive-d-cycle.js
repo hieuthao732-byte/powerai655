@@ -82,7 +82,7 @@
   function diagnose(logs,state){
     const drift=D.evaluateDrift(logs,{lastChangeTarget:Number(state.lastChangeTarget)||0});
     if(!drift.trigger)return{problem:'NONE',drift};
-    const recent=logs.slice(-12),dis=recent.map(r=>Number(r?.confidence?.disagreement||r?.D?.confidence?.disagreement)).filter(Number.isFinite);
+    const recent=logs.slice(-10),dis=recent.map(r=>Number(r?.confidence?.disagreement||r?.D?.confidence?.disagreement)).filter(Number.isFinite);
     if(dis.length&&mean(dis)>.32)return{problem:'EXPERT_DISAGREEMENT',drift};
     const deltas=recent.map(r=>Number(r?.D?.best)-Number(r?.D?.null?.bestMean)).filter(Number.isFinite);
     if(deltas.length&&mean(deltas)<=0)return{problem:'NULL_UNDERPERFORM',drift};
