@@ -15,6 +15,6 @@ const report={n:20,signals:[{name:"Heat",strength:.4,stability:.8},{name:"Pair",
  assert.equal(out.portfolio.tickets.length,20);
  assert.equal(out.portfolio.provenance.providerIds[0],"L_LEARNING");
  assert.equal(out.portfolio.provenance.providerStats[0].generated,500);
- assert.equal(out.portfolio.selectionPolicy.id,"ONE_UNIFIED_GREEDY_V1");
+ assert.equal(out.portfolio.selectionPolicy.id,"ONE_BOUNDED_FEASIBILITY_BEAM_V1");
  console.log("PowerAI ONE Track L → unified pipeline tests: PASS");
 })().catch(e=>{console.error(e);process.exitCode=1});
