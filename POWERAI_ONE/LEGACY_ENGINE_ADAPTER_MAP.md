@@ -23,7 +23,7 @@ Status: source-inspected integration map. No legacy engine code has been changed
 - Signals: buildConstrainedSignals(ds, A, B).
 - Mapping optimizer: optimizeConstrainedMapping(A, signals, target).
 - Portfolio orchestration: buildHybridPortfolio(), currently depends on global geo, legacy, targetId, readiness state and UI.
-- Extraction requirement: adapter input includes canonical history and explicit A/B portfolios. Preserve four windows [30,60,120,250], median rank consensus, five restarts, 4,500 iterations, and all frozen geometry invariants. Do not tune weights during extraction.
+- Extraction status: `track-c-adapter.js` extracts the RC6 rank-fusion, matrix affinity and constrained mapping optimizer. `track-c-provider.js` registers it as `shadow`; it consumes A geometry and B top-20 score-ranked candidates as support, then emits C-ranked candidates for ONE. It preserves windows [30,60,120,250], median rank consensus, five restarts × 4,500 iterations, and audits the 55-number / 300-pair geometry. The B support approximation differs from the old B-selected portfolio and is documented in `TRACK_C_EXTRACTION.md`; C is not eligible for prospective champion use until parity and portfolio-level constraints are solved.
 
 ## L — Learning
 - Historical source logs: learningSourceLogs().
