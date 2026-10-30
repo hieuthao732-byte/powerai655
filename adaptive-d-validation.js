@@ -41,8 +41,12 @@
     return (draws||[]).map(d=>({id:Number(d?.id),result:drawNums(d)})).filter(d=>Number.isFinite(d.id)&&d.result.length===6).sort((a,b)=>a.id-b.id);
   }
 
+  // Retrospective validation must not reuse today's adaptive weights or horizons:
+  // those may have been updated using draws that occur AFTER an old validation target.
+  // Keep a frozen, pre-registered baseline so every historical target is evaluated
+  // using only information available before that target.
   function championConfig(state={}){
-    return{kind:'CHAMPION',engineId:state.engineId||'D-AR1',horizons:Array.isArray(state.horizons)&&state.horizons.length?state.horizons:[...D.DEFAULT_HORIZONS],weights:D.normalizeWeights(state.weights||D.DEFAULT_WEIGHTS)};
+    return{kind:'FROZEN_EQUAL_WEIGHT_BASELINE',engineId:'D-AR1-FROZEN',horizons:[30,60,120,250],weights:{D1:.25,D2:.25,D3:.25,D4:.25}};
   }
 
   function fallbackCandidates(startTarget=0){
@@ -116,8 +120,8 @@
     if(typeof document==='undefined'||document.getElementById('dValidationPanel'))return;
     const pane=document.getElementById('adaptiveDTab');if(!pane)return;
     const panel=document.createElement('section');panel.id='dValidationPanel';panel.className='panel dValidationPanel';panel.innerHTML=`
-      <div class="head"><div><div class="sectionKicker dText">VALIDATION LAB</div><h2>🧪 Walk-forward & Counterfactual</h2><p>Retrospective riêng để kiểm tra D. Không ghi vào official log, không tự promote challenger.</p></div><div class="actions"><select id="dValidationLookback"><option value="12">12 kỳ</option><option value="24" selected>24 kỳ</option><option value="36">36 kỳ</option></select><button id="dValidationRunBtn">Chạy validation</button></div></div>
-      <div class="dStatusGrid"><div class="dStat"><span>Trạng thái</span><b id="dValidationState">CHƯA CHẠY</b><small id="dValidationProgress">retrospective only</small></div><div class="dStat"><span>Champion Δ null</span><b id="dValidationNull">—</b><small>best-hit so matched random</small></div><div class="dStat"><span>Change-point</span><b id="dValidationShift">—</b><small id="dValidationShiftNote">—</small></div><div class="dStat"><span>Novelty hiện tại</span><b id="dValidationNovelty">—</b><small>so A/B/C/L nếu có lock</small></div></div>
+      <div class="head"><div><div class="sectionKicker dText">VALIDATION LAB</div><h2>🧪 Walk-forward không rò rỉ dữ liệu</h2><p>Dùng trọng số/horizon cố định khi replay quá khứ; không lấy trạng thái thích nghi hiện tại để tránh rò rỉ tương lai. Chỉ là nghiên cứu hồi cứu, không ghi official log.</p></div><div class="actions"><select id="dValidationLookback"><option value="12">12 kỳ</option><option value="24" selected>24 kỳ</option><option value="36">36 kỳ</option></select><button id="dValidationRunBtn">Chạy validation</button></div></div>
+      <div class="dStatusGrid"><div class="dStat"><span>Trạng thái</span><b id="dValidationState">CHƯA CHẠY</b><small id="dValidationProgress">retrospective only</small></div><div class="dStat"><span>D frozen Δ null</span><b id="dValidationNull">—</b><small>best-hit so matched-random portfolio</small></div><div class="dStat"><span>Change-point</span><b id="dValidationShift">—</b><small id="dValidationShiftNote">—</small></div><div class="dStat"><span>Novelty hiện tại</span><b id="dValidationNovelty">—</b><small>so A/B/C/L nếu có lock</small></div></div>
       <div id="dValidationResults" class="dHistory"><div class="notice">Bấm “Chạy validation” để replay walk-forward nhiều kỳ. Kết quả này không được tính là dự đoán prospective.</div></div>`;
     const anchor=document.getElementById('dCyclePanel')||pane.querySelector('.dHero');anchor?.insertAdjacentElement('afterend',panel);
     document.getElementById('dValidationRunBtn')?.addEventListener('click',runUI);
@@ -131,7 +135,7 @@
 
   function resultCard(r,cmp=null){
     const s=r.summary,ev=cmp?.best?.probPositive;
-    return`<div class="dHistoryRow"><span>${esc(r.config.engineId)}</span><b>Best TB ${fmt(s.avgBest,2)}/6</b><small>Δ null ${s.deltaBest>=0?'+':''}${fmt(s.deltaBest)}</small><small>≥3: ${s.ge3}/${s.n}</small><small>≥4: ${s.ge4}/${s.n}</small>${cmp?`<small>Evidence > Champion: ${fmt((ev||0)*100,1)}%</small>`:'<small>Champion hiện tại</small>'}</div>`;
+    return`<div class="dHistoryRow"><span>${esc(r.config.engineId)}</span><b>Best TB ${fmt(s.avgBest,2)}/6</b><small>Δ null ${s.deltaBest>=0?'+':''}${fmt(s.deltaBest)}</small><small>≥3: ${s.ge3}/${s.n}</small><small>≥4: ${s.ge4}/${s.n}</small>${cmp?`<small>Evidence > D frozen: ${fmt((ev||0)*100,1)}%</small>`:'<small>D baseline cố định • không dùng trọng số học từ tương lai</small>'}</div>`;
   }
 
   async function runUI(){
@@ -142,7 +146,7 @@
       stateEl.textContent='XONG';prog.textContent=`${lab.lookback} kỳ × ${lab.results.length} cấu hình • không ghi official`;
       document.getElementById('dValidationNull').textContent=`${champ.summary.deltaBest>=0?'+':''}${fmt(champ.summary.deltaBest)}`;
       document.getElementById('dValidationShift').textContent=cp.state;document.getElementById('dValidationShiftNote').textContent=`effect ${fmt(cp.effect)} • Δ ${fmt(cp.delta)}`;
-      box.innerHTML=lab.results.map((r,i)=>resultCard(r,i?lab.comparisons[i-1]:null)).join('')+'<div class="notice"><b>Không tự promote:</b> Validation Lab chỉ dùng để kiểm tra kiến trúc. Quyết định D thật vẫn cần prospective lock + feed official.</div>';
+      box.innerHTML=lab.results.map((r,i)=>resultCard(r,i?lab.comparisons[i-1]:null)).join('')+'<div class="notice"><b>Không tự promote:</b> Validation Lab chỉ dùng để kiểm tra kiến trúc; D frozen không đại diện cho trọng số adaptive đang chạy. Quyết định D thật vẫn cần prospective lock + feed official.</div>';
       renderNovelty();
     }catch(e){console.error(e);stateEl.textContent='LỖI';prog.textContent=e.message;box.innerHTML=`<div class="notice">${esc(e.message)}</div>`}finally{btn.disabled=false}
   }
