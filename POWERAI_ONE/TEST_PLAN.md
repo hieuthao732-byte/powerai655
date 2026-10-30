@@ -78,3 +78,12 @@ Do not merge to main or deploy production until:
 - Existing storage-key inventory is not yet exhaustive.
 - A test harness/build pipeline has not yet been established.
 - UI/architecture tests do not demonstrate predictive edge in a lottery.
+
+
+## Unified selector gates
+- [ ] Every engine adapter emits candidate tickets, not a separately competing final portfolio.
+- [ ] A single ONE pipeline invokes the unified selector exactly once per portfolio build.
+- [ ] Candidate provenance and provider-local score normalization are retained.
+- [ ] Required A/C structural invariants are represented as eligibility constraints before selection.
+- [ ] Compare unified policy against each legacy baseline in walk-forward evaluation; do not promote based on in-sample score.
+- [ ] Confirm special-number scoring remains separate from main-number hits.
