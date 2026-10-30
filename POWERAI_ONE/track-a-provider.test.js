@@ -12,7 +12,7 @@ assert.deepEqual(P.listProviders(),[{id:"A7",version:"legacy-A7-extracted-1",sta
  const out=await P.build({targetDrawId:1418,draws,providerIds:["A7"],count:20,maxOverlap:1});
  assert.equal(out.portfolio.tickets.length,20);
  assert.equal(out.portfolio.provenance.providerIds[0],"A7");
- assert.equal(out.portfolio.selectionPolicy.id,"ONE_UNIFIED_GREEDY_V1");
+ assert.equal(out.portfolio.selectionPolicy.id,"ONE_BOUNDED_FEASIBILITY_BEAM_V1");
  assert.equal(out.portfolio.audit.coverage,55);
  assert.equal(out.portfolio.audit.repeatedPairs,0);
  assert.ok(out.portfolio.audit.maxOverlap<=1);
