@@ -29,7 +29,7 @@ Status: source-inspected integration map. No legacy engine code has been changed
 - Historical source logs: learningSourceLogs().
 - Model/portfolio path: buildLearningPortfolio(report) with preparation in prepareAndBuildLearningPortfolio().
 - Lock: lockLearningPortfolio(); learning snapshots are stored under powerai_rc6_learning_lock_<drawId>.
-- Extraction requirement: separate the pure signal/report/portfolio calculations from localStorage, UI, readiness checks and lock writes. The adapter must receive an explicit report and eligible official logs. Preserve current maturity and eligibility thresholds. Manual/replay logs must not silently enter training.
+- Extraction status: `track-l-adapter.js` contains pure bounded learned-weight calculation, maturity gates, challenger proposal and candidate generation using B frozen model/components. `track-l-provider.js` is shadow-only and forwards candidates to ONE; it does not call legacy `portfolioSelect`. It accepts an explicit precomputed `learningReport`; only verified feed logs pass its pure log filter. Full report parity from locked A/B/C snapshots, historical signal-correlation recomputation and prospective lock behavior remain open; see `TRACK_L_EXTRACTION.md`. Do not promote until these are ported and walk-forward validated.
 
 ## D — Adaptive Research
 - Pure core API: window.PowerAIAdaptiveD exposes normalizeHistory, buildModel, buildPortfolio, auditPortfolio, scorePortfolio, matchedNullBenchmark, evaluateDrift, promotionDecision, confidenceGate, and research-state helpers.
