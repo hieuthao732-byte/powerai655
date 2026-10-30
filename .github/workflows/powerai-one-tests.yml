@@ -42,3 +42,5 @@ jobs:
         run: node POWERAI_ONE/track-c-adapter.test.js
       - name: Run Track L learned candidate tests
         run: node POWERAI_ONE/track-l-adapter.test.js
+      - name: Run Track L unified provider tests
+        run: node POWERAI_ONE/track-l-provider.test.js
