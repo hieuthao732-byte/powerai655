@@ -40,3 +40,5 @@ jobs:
         run: node POWERAI_ONE/track-b-provider.test.js
       - name: Run Track C constrained adapter tests
         run: node POWERAI_ONE/track-c-adapter.test.js
+      - name: Run Track L learned candidate tests
+        run: node POWERAI_ONE/track-l-adapter.test.js
