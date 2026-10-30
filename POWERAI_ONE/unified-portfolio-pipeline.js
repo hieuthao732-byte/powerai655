@@ -37,7 +37,7 @@
 
       const ctx=Object.freeze({
         targetDrawId:target,cutoffDrawId:history.cutoffDrawId,
-        draws:history.draws,config:request.config||{},seed:request.seed??null,mode
+        draws:history.draws,config:request.config||{},seed:request.seed??null,mode,learningReport:request.learningReport??null
       });
       const outputs=await Promise.all(selectedProviders.map(async p=>{
         const raw=await p.propose(ctx);
