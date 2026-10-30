@@ -88,42 +88,83 @@
       if(!(maxRepeatedPairs===Infinity||(Number.isInteger(maxRepeatedPairs)&&maxRepeatedPairs>=0)))throw new Error("INVALID_MAX_REPEATED_PAIRS");
       if(!(scoreWeight>=0&&diversityWeight>=0&&Number.isFinite(scoreWeight)&&Number.isFinite(diversityWeight)&&scoreWeight+diversityWeight>0))throw new Error("INVALID_WEIGHTS");
 
-      const exposure=Array(56).fill(0),selected=[],remaining=candidates.slice(),pairCounts=new Map();
+      // Bounded beam search: ONE remains the only final selector, but now
+      // explores alternative partial portfolios instead of committing greedily.
+      const beamWidth=Math.max(8,Math.min(256,Number(options.beamWidth??96)));
+      const candidateLimit=Math.max(count,Math.min(1200,Number(options.candidateLimit??300)));
+      const nodeBudget=Math.max(1000,Number(options.searchNodeBudget??180000));
+      const pool=candidates.slice().sort((a,b)=>b.rankScore-a.rankScore||key(a.ticket).localeCompare(key(b.ticket))).slice(0,candidateLimit);
       const rejected={overlap:0,exposure:0,repeatedPairs:0};
-      while(selected.length<count){
-        let bestIndex=-1,bestValue=-Infinity;
-        for(let i=0;i<remaining.length;i++){
-          const c=remaining[i],t=c.ticket;
-          if(t.main.some(n=>exposure[n]>=maxPerNumber)){rejected.exposure++;continue;}
-          const overlaps=selected.map(s=>overlap(t,s.ticket));
-          const maxOv=overlaps.length?Math.max(...overlaps):0;
-          if(maxOv>maxOverlap){rejected.overlap++;continue;}
-          let pairViolation=false;
-          for(let a=0;a<6&&!pairViolation;a++)for(let b=a+1;b<6;b++){
-            const x=t.main[a],y=t.main[b],pk=x+"-"+y;
-            if((pairCounts.get(pk)||0)>=1){pairViolation=true;break;}
+      const pairKeys=t=>{const out=[];for(let a=0;a<6;a++)for(let b=a+1;b<6;b++)out.push(t.main[a]+"-"+t.main[b]);return out;};
+      const initial={indices:[],exposure:Array(56).fill(0),pairCounts:Object.create(null),score:0,coverage:0,sourceSet:[]};
+      let beam=[initial],expanded=0,budgetHit=false;
+      const partialValue=(candidate,state)=>{
+        const t=candidate.ticket;
+        const novel=t.main.reduce((n,x)=>n+(state.exposure[x]===0?1:0),0);
+        const meanExposure=t.main.reduce((n,x)=>n+state.exposure[x],0)/6;
+        const sourceSpread=state.sourceSet.includes(candidate.source)?0:1;
+        return scoreWeight*candidate.rankScore+diversityWeight*(.70*novel/6+.20/(1+meanExposure)+.10*sourceSpread);
+      };
+      for(let depth=0;depth<count;depth++){
+        const next=[],seen=new Set();
+        for(const state of beam){
+          for(let ci=0;ci<pool.length;ci++){
+            if(state.indices.includes(ci))continue;
+            if(++expanded>nodeBudget){budgetHit=true;break;}
+            const candidate=pool[ci],t=candidate.ticket;
+            if(t.main.some(n=>state.exposure[n]>=maxPerNumber)){rejected.exposure++;continue;}
+            let invalid=false;
+            for(const prevIndex of state.indices){
+              if(overlap(t,pool[prevIndex].ticket)>maxOverlap){invalid=true;break;}
+            }
+            if(invalid){rejected.overlap++;continue;}
+            const pairs=pairKeys(t);
+            if(pairs.some(pk=>(state.pairCounts[pk]||0)>maxRepeatedPairs)){rejected.repeatedPairs++;continue;}
+            const exposure=state.exposure.slice();
+            t.main.forEach(n=>exposure[n]++);
+            const pairCounts={...state.pairCounts};
+            pairs.forEach(pk=>pairCounts[pk]=(pairCounts[pk]||0)+1);
+            const indices=state.indices.concat(ci);
+            const sourceSet=state.sourceSet.includes(candidate.source)?state.sourceSet:state.sourceSet.concat(candidate.source);
+            const coverage=exposure.slice(1).filter(Boolean).length;
+            const score=state.score+partialValue(candidate,state)+(requireCoverage?coverage*.0005:0)+(minExposure>0?exposure.slice(1).filter(x=>x>=minExposure).length*.0002:0);
+            const signature=indices.slice().sort((a,b)=>a-b).join(",");
+            if(seen.has(signature))continue;
+            seen.add(signature);
+            const nextState={indices,exposure,pairCounts,score,coverage,sourceSet};
+            // Keep only the best bounded set; tie-break deterministically.
+            let pos=next.findIndex(x=>x.score<score);
+            if(pos<0)pos=next.length;
+            next.splice(pos,0,nextState);
+            if(next.length>beamWidth)next.pop();
           }
-          if(pairViolation&&maxRepeatedPairs===0){rejected.repeatedPairs++;continue;}
-          const meanOv=overlaps.length?overlaps.reduce((a,b)=>a+b,0)/overlaps.length:0;
-          const novelty=t.main.reduce((n,x)=>n+(exposure[x]===0?1:0),0)/6;
-          const sourceSpread=selected.length && !selected.some(s=>s.sources?.includes(c.source)||s.source===c.source)?1:0;
-          const value=scoreWeight*c.rankScore + diversityWeight*(.65*novelty+.25*(1-meanOv/6)+.10*sourceSpread);
-          if(value>bestValue || (value===bestValue && key(t)<key(remaining[bestIndex]?.ticket||{main:[56]}))){
-            bestValue=value;bestIndex=i;
-          }
+          if(budgetHit)break;
         }
-        if(bestIndex<0)throw new Error("SELECTION_CONSTRAINTS_INFEASIBLE");
-        const chosen=remaining.splice(bestIndex,1)[0];
-        chosen.selectionScore=bestValue;
-        chosen.rank=selected.length+1;
-        selected.push(chosen);
-        chosen.ticket.main.forEach(n=>exposure[n]++);
-        for(let a=0;a<6;a++)for(let b=a+1;b<6;b++){
-          const x=chosen.ticket.main[a],y=chosen.ticket.main[b],pk=x+"-"+y;
-          pairCounts.set(pk,(pairCounts.get(pk)||0)+1);
+        if(!next.length){
+          if(budgetHit)throw new Error("SELECTION_SEARCH_BUDGET_EXHAUSTED");
+          throw new Error("SELECTION_CONSTRAINTS_INFEASIBLE");
         }
+        beam=next;
+        if(budgetHit)break;
       }
-
+      if(budgetHit && !beam.some(s=>s.indices.length===count))throw new Error("SELECTION_SEARCH_BUDGET_EXHAUSTED");
+      const feasible=beam.filter(state=>{
+        if(state.indices.length!==count)return false;
+        const audit=domain.auditPortfolio(state.indices.map(i=>pool[i].ticket));
+        return (!requireCoverage||audit.coverage===55)&&audit.minExposure>=minExposure&&
+          (!Number.isFinite(maxPerNumber)||audit.maxExposure<=maxPerNumber)&&
+          (!Number.isFinite(maxRepeatedPairs)||audit.repeatedPairs<=maxRepeatedPairs)&&audit.maxOverlap<=maxOverlap;
+      });
+      if(!feasible.length)throw new Error(budgetHit?"SELECTION_SEARCH_BUDGET_EXHAUSTED":"SELECTION_CONSTRAINTS_INFEASIBLE");
+      feasible.sort((a,b)=>b.score-a.score||a.indices.join(",").localeCompare(b.indices.join(",")));
+      const winner=feasible[0];
+      const selected=winner.indices.map((ci,index)=>{
+        const item=pool[ci];
+        item.selectionScore=winner.score;
+        item.rank=index+1;
+        return item;
+      });
+      const exposure=winner.exposure;
       const tickets=selected.map(x=>x.ticket);
       const audit=domain.auditPortfolio(tickets);
       if(requireCoverage&&audit.coverage!==55)throw new Error("HARD_CONSTRAINT_COVERAGE_FAILED");
@@ -143,7 +184,7 @@
         sourceDistribution:sources,
         rejectedCandidates:normalized.errors.length,
         rejectedByConstraints:rejected,
-        policy:{id:"ONE_UNIFIED_CONSTRAINED_GREEDY_V1",count,maxOverlap,maxPerNumber,scoreWeight,diversityWeight,constraints:{requireCoverage,minExposure,maxExposure:maxPerNumber,maxRepeatedPairs}},
+        policy:{id:"ONE_BOUNDED_FEASIBILITY_BEAM_V1",search:{algorithm:"bounded-beam",beamWidth,candidateLimit,nodeBudget,expanded,budgetHit},count,maxOverlap,maxPerNumber,scoreWeight,diversityWeight,constraints:{requireCoverage,minExposure,maxExposure:maxPerNumber,maxRepeatedPairs}},
         hash:domain.stableHash(tickets.map(t=>t.main))
       };
     }
