@@ -90,9 +90,9 @@
 
       // Bounded beam search: ONE remains the only final selector, but now
       // explores alternative partial portfolios instead of committing greedily.
-      const beamWidth=Math.max(8,Math.min(256,Number(options.beamWidth??96)));
-      const candidateLimit=Math.max(count,Math.min(1200,Number(options.candidateLimit??300)));
-      const nodeBudget=Math.max(1000,Number(options.searchNodeBudget??180000));
+      const beamWidth=Math.max(8,Math.min(256,Number(options.beamWidth??48)));
+      const candidateLimit=Math.max(count,Math.min(1200,Number(options.candidateLimit??160)));
+      const nodeBudget=Math.max(1000,Number(options.searchNodeBudget??800000));
       const pool=candidates.slice().sort((a,b)=>b.rankScore-a.rankScore||key(a.ticket).localeCompare(key(b.ticket))).slice(0,candidateLimit);
       const rejected={overlap:0,exposure:0,repeatedPairs:0};
       const pairKeys=t=>{const out=[];for(let a=0;a<6;a++)for(let b=a+1;b<6;b++)out.push(t.main[a]+"-"+t.main[b]);return out;};
