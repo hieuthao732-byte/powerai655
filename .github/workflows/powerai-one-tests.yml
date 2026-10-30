@@ -35,3 +35,6 @@ jobs:
         run: node POWERAI_ONE/unified-portfolio-pipeline.test.js
       - name: Run Track A adapter tests
         run: node POWERAI_ONE/track-a-adapter.test.js
+
+      - name: Run Track B unified provider tests
+        run: node POWERAI_ONE/track-b-provider.test.js
