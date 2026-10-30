@@ -8,7 +8,7 @@ Status: source-inspected integration map. No legacy engine code has been changed
 - Invariant audit: auditGeo(P).
 - Display / simulation analysis: simulateGeometry(P, samples, detail), geometryStructureStats(P), ensureGeoAnalysis().
 - Runtime state: global geo object; targetId and draws are global.
-- Extraction status: `track-a-adapter.js` wraps the exact frozen A7 algorithm block (`seeded` through `auditGeo`) and exposes `generate(targetDrawId)`, returning canonical main-number tickets plus original audit, seed and analysis metadata. A does not consume historical draws; its adapter intentionally accepts only target ID. `track-a-adapter.test.js` checks repeatability and all core A geometry invariants. DOM rendering and progress UI are excluded.
+- Extraction status: `track-a-adapter.js` wraps the exact frozen A7 algorithm block (`seeded` through `auditGeo`) and exposes `generate(targetDrawId)`, returning canonical main-number tickets plus original audit, seed and analysis metadata. `track-a-provider.js` maps A7 into the ONE candidate-provider contract; ONE performs the only final selection. A does not consume historical draws; its adapter intentionally accepts only target ID. Tests cover repeatability, geometry invariants, and the full A7→ONE pipeline. DOM rendering and progress UI are excluded.
 
 ## B — Legacy Analytics V1.3
 - Historical model: buildLegacyModel(ds).
