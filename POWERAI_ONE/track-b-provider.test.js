@@ -21,7 +21,7 @@ for(let id=1;id<=30;id++){
  const out=await P.build({targetDrawId:31,draws,providerIds:["B1.3"],count:20,seed:12345});
  assert.equal(out.portfolio.tickets.length,20);
  assert.equal(out.portfolio.provenance.providerIds[0],"B1.3");
- assert.equal(out.portfolio.selectionPolicy.id,"ONE_UNIFIED_GREEDY_V1");
+ assert.equal(out.portfolio.selectionPolicy.id,"ONE_BOUNDED_FEASIBILITY_BEAM_V1");
  assert.ok(out.portfolio.audit.maxOverlap<=4);
  console.log("PowerAI ONE Track B → unified pipeline tests: PASS");
 })().catch(e=>{console.error(e);process.exitCode=1});
