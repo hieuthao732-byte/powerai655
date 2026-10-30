@@ -235,16 +235,14 @@
   }
 
   function officialDLogs(logs){return (logs||[]).filter(x=>x&&x.source==='feed'&&x.D&&Number.isFinite(Number(x.D.best))).sort((a,b)=>Number(a.targetId)-Number(b.targetId))}
-  function evaluateDrift(logs,{window=12,cooldown=8,lastChangeTarget=0}={}){
+  function evaluateDrift(logs,{window=10,cooldown=8,lastChangeTarget=0}={}){
     const rows=officialDLogs(logs),recent=rows.slice(-window),lastId=rows.length?Number(rows.at(-1).targetId):0;
-    if(recent.length<window)return{trigger:false,state:'WARMUP',reason:`${recent.length}/${window} kỳ official`,sample:recent.length};
-    if(lastChangeTarget&&lastId-lastChangeTarget<cooldown)return{trigger:false,state:'COOLDOWN',reason:`${lastId-lastChangeTarget}/${cooldown} kỳ từ lần đổi engine`,sample:recent.length};
+    if(recent.length<window)return{trigger:false,state:'WARMUP',reason:`${recent.length}/${window} kỳ official`,sample:recent.length,streak:0};
+    if(lastChangeTarget&&lastId-lastChangeTarget<cooldown)return{trigger:false,state:'COOLDOWN',reason:`${lastId-lastChangeTarget}/${cooldown} kỳ từ lần đổi engine`,sample:recent.length,streak:recent.filter(x=>Number(x.D.best)<4).length};
     const avgBest=mean(recent.map(x=>Number(x.D.best)||0)),high=recent.filter(x=>Number(x.D.best)>=4).length;
-    const nullBest=mean(recent.map(x=>Number(x.D?.null?.bestMean)).filter(Number.isFinite));
-    const prev=rows.slice(-(window*2),-window),prevAvg=prev.length===window?mean(prev.map(x=>Number(x.D.best)||0)):null;
-    const belowNull=Number.isFinite(nullBest)?avgBest<=nullBest+.05:false,stagnant=prevAvg==null?true:avgBest<=prevAvg+.05,noHigh=high===0;
-    const trigger=belowNull&&stagnant&&noHigh;
-    return{trigger,state:trigger?'CHALLENGER_TEST':'STABLE',reason:trigger?'Rolling performance không vượt matched-null và không cải thiện.':'Chưa đủ bằng chứng để đổi architecture.',sample:recent.length,avgBest,nullBest:Number.isFinite(nullBest)?nullBest:null,prevAvg,high};
+    const noHighStreak=recent.every(x=>Number(x.D.best)<4);
+    const trigger=noHighStreak;
+    return{trigger,state:trigger?'CHALLENGER_TEST':'STABLE',reason:trigger?'10 kỳ official liên tiếp không có vé nào trúng từ 4 số trở lên: tự mở vòng nghiên cứu challenger.':'Đã có ít nhất một vé trúng từ 4 số trong cửa sổ 10 kỳ.',sample:recent.length,avgBest,high,streak:noHighStreak?window:0,threshold:4};
   }
 
   function composite(rows,key){
