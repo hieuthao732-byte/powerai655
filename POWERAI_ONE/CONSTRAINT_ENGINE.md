@@ -39,7 +39,7 @@ The selector rejects a candidate before selection when it violates the configure
 
 ## Important limitation
 
-This is a constrained greedy selector, not a complete combinatorial solver. It can report infeasible when a valid portfolio exists but the greedy path cannot construct it. It does not guarantee that arbitrary mixed A/B/C/L/D candidate pools can reproduce A7/C's complete 20-ticket geometry. Until a portfolio-level bundle/constraint solver is implemented and tested, A7/C geometry should be evaluated with their complete candidate sets and explicit hard constraints; mixed-source selection must not be described as preserving those invariants unless its final audit proves it.
+This is a constrained bounded beam search selector, not a complete combinatorial solver. It can report infeasible when a valid portfolio exists but the bounded beam search path cannot construct it. It does not guarantee that arbitrary mixed A/B/C/L/D candidate pools can reproduce A7/C's complete 20-ticket geometry. Until a portfolio-level bundle/constraint solver is implemented and tested, A7/C geometry should be evaluated with their complete candidate sets and explicit hard constraints; mixed-source selection must not be described as preserving those invariants unless its final audit proves it.
 
 ## Current status
 
