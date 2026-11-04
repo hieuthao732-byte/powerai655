@@ -21,6 +21,10 @@ assert.equal(out.events.length,0,"unverified draws must never trigger adaptation
 out=G.evaluate([row(1),{...row(2),lockedAt:"2026-01-01T12:00:00Z"}]);
 assert.equal(out.acceptedDraws,1);
 assert.equal(out.rejected.length,1);
+out=G.evaluate([...Array.from({length:9},(_,i)=>row(i+1)),row(11)]);
+assert.equal(out.events.length,0,"a missing draw ID breaks a consecutive streak");
+out=G.evaluate([{...row(1),result:{...row(1).result,id:2}}]);
+assert.equal(out.acceptedDraws,0,"target and official result IDs must match");
 assert.throws(()=>G.evaluate([], {threshold:1}),/INVALID_STREAK_THRESHOLD/);
 assert.throws(()=>G.evaluate(null),/RECORDS_MUST_BE_ARRAY/);
 console.log("PowerAI ONE adaptive governor tests: PASS");
