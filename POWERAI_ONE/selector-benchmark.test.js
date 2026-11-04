@@ -27,7 +27,7 @@ for(let i=0;i<sizes.length;i++){
   let result=null,error=null;
   try{
     result=selector.select(pool,{
-      count:20,maxOverlap:5,candidateLimit:size,beamWidth:32,
+      count:20,maxOverlap:5,candidateLimit:160,beamWidth:32,
       searchNodeBudget:150000
     });
   }catch(e){error=e.message;}
@@ -46,7 +46,7 @@ for(let i=0;i<sizes.length;i++){
     pool:size,runtimeMs:Number(runtimeMs.toFixed(2)),
     outcome:result?"selected":error,
     expanded:result?.policy.search.expanded??null,
-    beamWidth:32,nodeBudget:150000
+    candidateLimit:160,beamWidth:32,nodeBudget:150000
   });
 }
 console.log("PowerAI ONE selector scaling benchmark: PASS");
