@@ -4,8 +4,9 @@
  */
 (function(root){
  "use strict";
- function create(domain,governor){
+ function create(domain,governor,challengerGate=null){
   if(!domain||typeof domain.normalizeDraw!=="function"||typeof domain.scoreTicket!=="function"||typeof governor?.evaluate!=="function")throw new TypeError("Domain and adaptive governor are required");
+  if(challengerGate!==null&&typeof challengerGate.evaluate!=="function")throw new TypeError("Challenger evidence gate must expose evaluate(records)");
   function ticketsOf(output){
    const raw=Array.isArray(output)?output:(output?.tickets??output?.portfolio?.tickets);
    if(!Array.isArray(raw)||!raw.length)throw new Error("ADAPTIVE_RUNNER_NO_TICKETS");
@@ -71,6 +72,7 @@
     evaluatedDraws:records.length,challengerEvaluatedDraws:paired,
     triggerEvents:governorEvents,records:records.map((r,i)=>({targetDrawId:r.targetDrawId,maxMainHits:r.maxMainHits,governorEvent:governorEvents.some(e=>e.targetDrawId===r.targetDrawId),challenger:challengerRecords.find(c=>c.targetDrawId===r.targetDrawId)||null})),
     pairedComparison:{draws:paired,activePortfolioAtLeast3:paired?active3/paired:0,challengerPortfolioAtLeast3:paired?challenger3/paired:0,activeSuccesses:active3,challengerSuccesses:challenger3},
+    challengerEvidence:challengerGate?challengerGate.evaluate(challengerRecords):null,
     rejectedRows:rejected.length,policy:"SHADOW_ONLY_REQUIRES_HUMAN_REVIEW"
    };
   }
