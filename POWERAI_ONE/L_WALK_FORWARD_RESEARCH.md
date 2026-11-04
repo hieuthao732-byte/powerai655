@@ -28,6 +28,32 @@ The aggregate hit distributions are identical for L and B in this 50-target wind
 
 The exact ticket-level overlap between selected L and B portfolios was not recorded in this first report, so identical hit distributions must not be misread as proof that L selected identical tickets.
 
+
+## Expanded live comparison — 200 targets
+
+- Snapshot: 1,419 valid draws, IDs 00001–01419; zero rejected rows.
+- Source and dataset SHA-256 match the 50-target report above.
+- Targets: 200 most recent valid target draws, IDs 01220–01419.
+- Candidate pool: 3,000 tickets per target, with exact L/B candidate-pool parity.
+- Calibration: 20 prior target events and 500 calibration candidates; strict chronological cutoff.
+- ONE selector: 20 tickets, max overlap 4, candidate limit 120, beam width 24, node budget 200,000.
+
+| Metric | L learned weights | B1.3 frozen |
+|---|---:|---:|
+| Targets / portfolios | 200 | 200 |
+| Tickets | 4,000 | 4,000 |
+| Portfolio with 3+ main hits | 28.5% (57/200) | 27.0% (54/200) |
+| Portfolio with 4+ main hits | 2.5% (5/200) | 2.5% (5/200) |
+| Ticket rate, 3+ main hits | 1.55% (62/4,000) | 1.45% (58/4,000) |
+| Ticket rate, 4+ main hits | 0.15% (6/4,000) | 0.15% (6/4,000) |
+| Special-number hits | 400 | 403 |
+
+### Interpretation
+
+Across this 200-target retrospective window, L is ahead by 1.5 percentage points for portfolios with 3+ main hits and by 0.10 percentage points for individual tickets with 3+ hits. At 4+ portfolio hits and 4+ ticket hits, the rates are tied. L has three fewer special-number hits. The observed differences are small and descriptive; no statistical significance or prospective advantage is established. L remains shadow/research only.
+
+A separate diagnostic run is measuring exact ticket overlap between L and B portfolios. This is needed because similar hit rates do not imply that the selected ticket sets are the same.
+
 ## Methodology and guardrails
 
 - L estimates component signal strengths using only historical candidate pools and the subsequent historical draw available at each calibration step; every calibration event has its own earlier cutoff.
