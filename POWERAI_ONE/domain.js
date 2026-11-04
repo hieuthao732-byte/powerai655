@@ -54,6 +54,7 @@
       main,
       special,
       source,
+      verified: raw.verified === true,
       sourceRef: raw.sourceRef ?? raw.source_ref ?? null,
       validated: true
     };
