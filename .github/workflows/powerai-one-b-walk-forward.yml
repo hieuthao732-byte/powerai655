@@ -1,0 +1,56 @@
+name: PowerAI ONE B1.3 live walk-forward research
+
+on:
+  push:
+    branches:
+      - feature/powerai-one
+    paths:
+      - "POWERAI_ONE/run-live-walk-forward-b.js"
+      - "POWERAI_ONE/walk-forward-track-b.test.js"
+      - ".github/workflows/powerai-one-b-walk-forward.yml"
+  workflow_dispatch:
+    inputs:
+      window:
+        description: "Number of most recent target draws to evaluate (5-200)"
+        required: false
+        default: "50"
+        type: string
+      candidate_count:
+        description: "B candidate pool size per target (500-20000)"
+        required: false
+        default: "3000"
+        type: string
+      baseline_trials:
+        description: "Random rankings per target (1-20)"
+        required: false
+        default: "5"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  b-walk-forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Test B walk-forward integration
+        run: node POWERAI_ONE/walk-forward-track-b.test.js
+      - name: Run B1.3 vs random-rank walk-forward
+        env:
+          WF_WINDOW: ${{ inputs.window }}
+          WF_B_CANDIDATES: ${{ inputs.candidate_count }}
+          WF_BASELINE_TRIALS: ${{ inputs.baseline_trials }}
+        run: node POWERAI_ONE/run-live-walk-forward-b.js
+      - name: Upload B research report
+        uses: actions/upload-artifact@v4
+        with:
+          name: powerai-one-b-walk-forward-report
+          path: artifacts/powerai-one-b-walk-forward-report.json
+          if-no-files-found: error
