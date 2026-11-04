@@ -48,6 +48,8 @@
       if(typeof generate!=="function")throw new TypeError("A portfolio generator callback is required");
       const baseline=options.baselineGenerator??null;
       if(baseline!==null&&typeof baseline!=="function")throw new TypeError("baselineGenerator must be a function");
+      const baselineTrials=baseline?Number(options.baselineTrials??1):0;
+      if(baseline&&(!Number.isInteger(baselineTrials)||baselineTrials<1||baselineTrials>100))throw new Error("INVALID_BASELINE_TRIALS");
       const minHistory=Number(options.minHistory??30);
       if(!Number.isInteger(minHistory)||minHistory<1)throw new Error("INVALID_MIN_HISTORY");
       const normalized=[],seen=new Set(),rejected=[];
@@ -82,27 +84,70 @@
           specialHitTickets:scored.filter(x=>x.specialHit).length
         };
         if(baseline){
-          const baseTickets=readTickets(await baseline(ctx));
-          const baseScores=baseTickets.map(ticket=>domain.scoreTicket(ticket,target));
-          if(baseScores.some(x=>!x.ok))throw new Error("WALK_FORWARD_BASELINE_SCORING_FAILED");
+          const trials=[];
+          for(let trial=0;trial<baselineTrials;trial++){
+            const baseTickets=readTickets(await baseline(ctx,trial));
+            const baseScores=baseTickets.map(ticket=>domain.scoreTicket(ticket,target));
+            if(baseScores.some(x=>!x.ok))throw new Error("WALK_FORWARD_BASELINE_SCORING_FAILED");
+            const distribution=Array(7).fill(0);
+            baseScores.forEach(x=>distribution[x.mainHits]++);
+            trials.push({
+              ticketCount:baseScores.length,
+              maxMainHits:Math.max(...baseScores.map(x=>x.mainHits)),
+              atLeast3:baseScores.filter(x=>x.mainHits>=3).length,
+              atLeast4:baseScores.filter(x=>x.mainHits>=4).length,
+              atLeast5:baseScores.filter(x=>x.mainHits>=5).length,
+              six:baseScores.filter(x=>x.mainHits===6).length,
+              mainHitDistribution:distribution,
+              specialHitTickets:baseScores.filter(x=>x.specialHit).length
+            });
+          }
+          const distribution=Array(7).fill(0);
+          trials.forEach(t=>t.mainHitDistribution.forEach((n,h)=>distribution[h]+=n));
           row.baseline={
-            ticketCount:baseScores.length,
-            maxMainHits:Math.max(...baseScores.map(x=>x.mainHits)),
-            atLeast3:baseScores.filter(x=>x.mainHits>=3).length,
-            atLeast4:baseScores.filter(x=>x.mainHits>=4).length,
-            specialHitTickets:baseScores.filter(x=>x.specialHit).length
+            trials:trials.length,
+            ticketCount:trials.reduce((n,t)=>n+t.ticketCount,0),
+            ticketCountPerPortfolio:trials[0].ticketCount,
+            maxMainHits:Math.max(...trials.map(t=>t.maxMainHits)),
+            portfoliosAtLeast3:trials.filter(t=>t.maxMainHits>=3).length,
+            portfoliosAtLeast4:trials.filter(t=>t.maxMainHits>=4).length,
+            portfoliosAtLeast5:trials.filter(t=>t.maxMainHits>=5).length,
+            portfoliosSix:trials.filter(t=>t.maxMainHits===6).length,
+            mainHitDistribution:distribution,
+            specialHitTickets:trials.reduce((n,t)=>n+t.specialHitTickets,0)
           };
         }
         records.push(row);
       }
       const summary=summarize(records);
+      const baselineRows=baseline?records.map(r=>r.baseline):[];
+      const baselineDistribution=Array(7).fill(0);
+      baselineRows.forEach(r=>r.mainHitDistribution.forEach((n,h)=>baselineDistribution[h]+=n));
+      const baselineTrialCount=baselineRows.reduce((n,r)=>n+r.trials,0);
+      const baselineTicketCount=baselineRows.reduce((n,r)=>n+r.ticketCount,0);
+      const baselineAtLeast=n=>baselineDistribution.slice(n).reduce((a,b)=>a+b,0);
       const baselineSummary=baseline?{
-        draws:records.length,
-        portfoliosAtLeast3:records.filter(r=>r.baseline.maxMainHits>=3).length,
-        portfoliosAtLeast4:records.filter(r=>r.baseline.maxMainHits>=4).length,
-        portfoliosAtLeast5:records.filter(r=>r.baseline.maxMainHits>=5).length,
-        portfoliosSix:records.filter(r=>r.baseline.maxMainHits===6).length,
-        specialHitTickets:records.reduce((sum,r)=>sum+r.baseline.specialHitTickets,0)
+        draws:records.length,trials:baselineTrialCount,tickets:baselineTicketCount,
+        ticketCountPerPortfolio:baselineRows[0]?.ticketCountPerPortfolio??0,
+        mainHitDistribution:baselineDistribution.map((tickets,hits)=>({hits,tickets})),
+        ticketHitRates:{
+          atLeast2:baselineTicketCount?baselineAtLeast(2)/baselineTicketCount:0,
+          atLeast3:baselineTicketCount?baselineAtLeast(3)/baselineTicketCount:0,
+          atLeast4:baselineTicketCount?baselineAtLeast(4)/baselineTicketCount:0,
+          atLeast5:baselineTicketCount?baselineAtLeast(5)/baselineTicketCount:0,
+          six:baselineTicketCount?baselineDistribution[6]/baselineTicketCount:0
+        },
+        portfoliosAtLeast3:baselineRows.reduce((n,r)=>n+r.portfoliosAtLeast3,0),
+        portfoliosAtLeast4:baselineRows.reduce((n,r)=>n+r.portfoliosAtLeast4,0),
+        portfoliosAtLeast5:baselineRows.reduce((n,r)=>n+r.portfoliosAtLeast5,0),
+        portfoliosSix:baselineRows.reduce((n,r)=>n+r.portfoliosSix,0),
+        portfolioHitRates:{
+          atLeast3:baselineTrialCount?baselineRows.reduce((n,r)=>n+r.portfoliosAtLeast3,0)/baselineTrialCount:0,
+          atLeast4:baselineTrialCount?baselineRows.reduce((n,r)=>n+r.portfoliosAtLeast4,0)/baselineTrialCount:0,
+          atLeast5:baselineTrialCount?baselineRows.reduce((n,r)=>n+r.portfoliosAtLeast5,0)/baselineTrialCount:0,
+          six:baselineTrialCount?baselineRows.reduce((n,r)=>n+r.portfoliosSix,0)/baselineTrialCount:0
+        },
+        specialHitTickets:baselineRows.reduce((sum,r)=>sum+r.specialHitTickets,0)
       }:null;
       return {
         reportType:"POWERAI_ONE_WALK_FORWARD_RESEARCH",
