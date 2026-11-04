@@ -1,0 +1,55 @@
+name: PowerAI ONE Track L learned-weight walk-forward research
+
+on:
+  push:
+    branches:
+      - feature/powerai-one
+    paths:
+      - "POWERAI_ONE/track-l-walk-forward.js"
+      - "POWERAI_ONE/track-l-walk-forward.test.js"
+      - "POWERAI_ONE/run-live-walk-forward-l.js"
+      - ".github/workflows/powerai-one-l-walk-forward.yml"
+  workflow_dispatch:
+    inputs:
+      window:
+        description: "Target draws to evaluate (5-100)"
+        required: false
+        default: "50"
+        type: string
+      training_window:
+        description: "Past draws used to calibrate L (5-30)"
+        required: false
+        default: "20"
+        type: string
+
+concurrency:
+  group: powerai-one-l-walk-forward-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  l-walk-forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Test Track L prequential calibration
+        run: node POWERAI_ONE/track-l-walk-forward.test.js
+      - name: Run L learned weights versus B1.3 baseline
+        env:
+          WF_L_WINDOW: ${{ inputs.window || '50' }}
+          WF_L_TRAINING_WINDOW: ${{ inputs.training_window || '20' }}
+        run: node POWERAI_ONE/run-live-walk-forward-l.js
+      - name: Upload L research report
+        uses: actions/upload-artifact@v4
+        with:
+          name: powerai-one-l-walk-forward-report
+          path: artifacts/powerai-one-l-walk-forward-report.json
+          if-no-files-found: error
