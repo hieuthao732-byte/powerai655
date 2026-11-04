@@ -45,6 +45,7 @@
         const number=i+1,positions=gapByNumber[number],last=positions.length?positions[positions.length-1]:null;
         return {number,mainCount:main[number],mainZ:mainExpected?((main[number]-mainExpected)/Math.sqrt(mainExpected*(1-6/55))):0,
           specialCount:special[number],lastSeenDrawIndex:last===null?null:last,
+          lastSeenDrawId:last===null?null:valid[last].id,
           drawsSinceLast:last===null?n:n-1-last};
       });
       const topPairs=[...pairs.entries()].map(([pair,count])=>({pair:pair.split("-").map(Number),count}))
