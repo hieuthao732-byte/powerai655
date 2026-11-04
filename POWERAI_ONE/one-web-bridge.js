@@ -7,10 +7,10 @@
  const $=id=>document.getElementById(id);
  function status(message,bad=false){
   const el=$("oneStatus");
-  if(el){el.textContent=message;el.className=bad?"notice bad":"notice";}
+  if(el){el.textContent=message;el.className=bad?"one-status-message bad":"one-status-message";}
  }
  function init(){
-  const btn=$("oneBuildBtn");if(!btn)return;
+  const btn=$("oneBuildBtn");if(!btn)return;\n  const targetLabel=$("targetIdOne");const currentTarget=$("targetId");if(targetLabel&&currentTarget)targetLabel.textContent=currentTarget.textContent||"—";
   const required=["PowerAIDomain","PowerAIUnifiedSelector","PowerAIOnePipeline","PowerAIOneAdaptiveGovernor","PowerAIOneAfterDrawEvaluation","PowerAIOneAdaptiveShadowRunner","PowerAIOneChallengerGate","PowerAIOneRuntime","PowerAIOneA","PowerAIOneB","PowerAIOneAProvider","PowerAIOneBProvider"];
   const missing=required.filter(k=>!root[k]);
   if(missing.length){status("ONE chưa khởi tạo đủ thành phần: "+missing.join(", "),true);btn.disabled=true;return;}
@@ -46,7 +46,7 @@
    const portfolio=result?.portfolio;
    if(!portfolio||!Array.isArray(portfolio.tickets)||portfolio.tickets.length!==20)throw new Error("ONE không trả về đủ 20 vé.");
    if(Number(portfolio.targetDrawId)!==target||Number(portfolio.cutoffDrawId)>=target)throw new Error("Sai kỳ mục tiêu hoặc dữ liệu vượt thời điểm khóa.");
-   const grid=$("oneTickets");grid.replaceChildren();
+   const grid=$("oneTickets");grid.replaceChildren();\n   const countLabel=$("oneTicketCount");if(countLabel)countLabel.textContent=String(portfolio.tickets.length);
    portfolio.tickets.forEach((ticket,index)=>{
     const card=document.createElement("div");card.className="ticketCard";
     const head=document.createElement("div");head.className="ticketHead";
