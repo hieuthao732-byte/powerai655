@@ -131,9 +131,19 @@
         });
       }
       const pool=shortlist;
+      // Estimate how many future candidates remain compatible with each choice.
+      // This is a search-order heuristic only; final feasibility is always audited.
+      pool.forEach((candidate,index)=>{
+        candidate.futureCompatibility=pool.reduce((total,other,otherIndex)=>{
+          if(index===otherIndex)return total;
+          if(overlap(candidate.ticket,other.ticket)>maxOverlap)return total;
+          if(candidate.ticket.main.some(n=>other.ticket.main.includes(n)) && maxPerNumber<2)return total;
+          return total+1;
+        },0);
+      });
       const rejected={overlap:0,exposure:0,repeatedPairs:0};
       const pairKeys=t=>{const out=[];for(let a=0;a<6;a++)for(let b=a+1;b<6;b++)out.push(t.main[a]+"-"+t.main[b]);return out;};
-      const initial={indices:[],exposure:Array(56).fill(0),pairCounts:Object.create(null),repeatedPairCount:0,score:0,coverage:0,sourceSet:[]};
+      const initial={indices:[],exposure:Array(56).fill(0),pairCounts:Object.create(null),repeatedPairCount:0,score:0,priorityScore:0,coverage:0,sourceSet:[]};
       let beam=[initial],expanded=0,budgetHit=false;
       const partialValue=(candidate,state)=>{
         const t=candidate.ticket;
@@ -174,7 +184,7 @@
             const candidateSources=candidate.sources||Object.keys(candidate.sourceScores||{}).concat(candidate.source);
             const sourceSet=[...new Set(state.sourceSet.concat(candidateSources))];
             const coverage=exposure.slice(1).filter(Boolean).length;
-            const score=state.score+partialValue(candidate,state)+(requireCoverage?coverage*.0005:0)+(minExposure>0?exposure.slice(1).filter(x=>x>=minExposure).length*.0002:0);
+            const score=state.score+partialValue(candidate,state)+(requireCoverage?coverage*.0005:0)+(minExposure>0?exposure.slice(1).filter(x=>x>=minExposure).length*.0002:0);\n            // Preserve branches with room to complete. This bonus affects beam pruning,\n            // not the final portfolio objective or any hard constraint.\n            const priorityScore=score+1.25*(candidate.futureCompatibility/Math.max(1,pool.length-1));
             const signature=indices.slice().sort((a,b)=>a-b).join(",");
             if(seen.has(signature))continue;
             seen.add(signature);
