@@ -171,7 +171,8 @@
             const exposure=state.exposure.slice();
             t.main.forEach(n=>exposure[n]++);
             const indices=state.indices.concat(ci);
-            const candidateSources=candidate.sources||Object.keys(candidate.sourceScores||{}).concat(candidate.source);\n            const sourceSet=[...new Set(state.sourceSet.concat(candidateSources))];
+            const candidateSources=candidate.sources||Object.keys(candidate.sourceScores||{}).concat(candidate.source);
+            const sourceSet=[...new Set(state.sourceSet.concat(candidateSources))];
             const coverage=exposure.slice(1).filter(Boolean).length;
             const score=state.score+partialValue(candidate,state)+(requireCoverage?coverage*.0005:0)+(minExposure>0?exposure.slice(1).filter(x=>x>=minExposure).length*.0002:0);
             const signature=indices.slice().sort((a,b)=>a-b).join(",");
