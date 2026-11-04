@@ -1,6 +1,14 @@
 name: PowerAI ONE live walk-forward research
 
 on:
+  push:
+    branches:
+      - feature/powerai-one
+    paths:
+      - "POWERAI_ONE/random-portfolio-baseline.js"
+      - "POWERAI_ONE/random-portfolio-baseline.test.js"
+      - "POWERAI_ONE/run-live-walk-forward.js"
+      - ".github/workflows/powerai-one-walk-forward.yml"
   workflow_dispatch:
     inputs:
       window:
