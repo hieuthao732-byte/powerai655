@@ -33,6 +33,7 @@
    let challengerActive=false;
    for(let i=minHistory;i<normalized.length;i++){
     const target=normalized[i],prior=normalized.slice(0,i);
+    const challengerWasActive=challengerActive;
     const ctx=Object.freeze({targetDrawId:target.id,cutoffDrawId:prior[prior.length-1].id,draws:Object.freeze(prior.slice()),historyCount:prior.length,mode:"shadow"});
     const active=await options.generateActive(ctx);
     const activeTickets=ticketsOf(active);
@@ -42,10 +43,6 @@
     if(scores.some(s=>!s.ok))throw new Error("ADAPTIVE_ACTIVE_SCORING_FAILED");
     const maxMainHits=Math.max(...scores.map(s=>s.mainHits));
     const official=target.source==="official"&&target.verified===true;
-    const event=governor.evaluate([{
-     targetDrawId:target.id,lockedAt,resultAvailableAt,
-     portfolio:{tickets:activeTickets},result:{id:target.id,main:target.main,source:target.source,verified:target.verified,date:target.date}
-    }],{threshold});
     // Evaluate the complete accumulated record history to enforce a true consecutive streak.
     records.push({targetDrawId:target.id,lockedAt,resultAvailableAt,portfolio:{tickets:activeTickets},result:{id:target.id,main:target.main,source:target.source,verified:target.verified,date:target.date}});
     const cumulative=governor.evaluate(records,{threshold});
@@ -53,7 +50,7 @@
     governorEvents.push(...newlyTriggered);
     if(newlyTriggered.length)challengerActive=true;
     const row={targetDrawId:target.id,cutoffDrawId:ctx.cutoffDrawId,maxMainHits,activeMiss:maxMainHits<3,officialVerified:official};
-    if(challengerActive){
+    if(challengerWasActive){
      const challenger=await options.generateChallenger(ctx);
      const challengerTickets=ticketsOf(challenger);
      const challengerScores=challengerTickets.map(t=>domain.scoreTicket(t,target));
