@@ -9,8 +9,15 @@
   const m=Math.min(k,n-k);
   let logChoose=0;
   for(let i=1;i<=m;i++)logChoose+=Math.log(n-m+i)-Math.log(i);
-  let p=Math.exp(logChoose-n*Math.LN2);
-  let sum=p;
+  if(k<=n/2){
+   let p=Math.exp(logChoose-n*Math.LN2),sum=p;
+   for(let j=k-1;j>0;j--){
+    p*=j/(n-j+1);
+    sum+=p;
+   }
+   return Math.max(0,Math.min(1,1-sum));
+  }
+  let p=Math.exp(logChoose-n*Math.LN2),sum=p;
   for(let j=k;j<n;j++){
    p*=((n-j)/(j+1));
    sum+=p;
