@@ -27,7 +27,7 @@
   if(!runtime||typeof draws==="undefined"||!Array.isArray(draws)||!draws.length){status("Chưa có dữ liệu lịch sử hợp lệ.",true);return;}
   const auth=root.PowerAIAuth;
   if(!auth||typeof auth.getUser!=="function"||!auth.getUser()){status("Cần đăng nhập để sử dụng chức năng tạo bộ vé.",true);return;}
-  const target=Number(targetId);
+  const target=Number(targetId);\n  const targetLabel=$("targetIdOne");if(targetLabel)targetLabel.textContent=String(target||"—");
   if(!Number.isInteger(target)||target<1){status("Chưa xác định được kỳ mục tiêu.",true);return;}
   const latestId=Math.max(...draws.map(d=>Number(d.id)||0));
   if(target<=latestId){status("ONE chỉ tạo bộ vé prospective trước kỳ quay. Kỳ đã có kết quả không được tạo vé mới.",true);return;}
