@@ -48,7 +48,6 @@ jobs:
           WF_WINDOW: ${{ inputs.window }}
           WF_MIN_HISTORY: ${{ inputs.min_history }}
           WF_BASELINE_TRIALS: ${{ inputs.baseline_trials }}
-          WF_BASELINE_TRIALS: ${{ inputs.baseline_trials }}
         run: node POWERAI_ONE/run-live-walk-forward.js
       - name: Upload research report
         uses: actions/upload-artifact@v4
