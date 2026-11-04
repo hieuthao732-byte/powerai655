@@ -43,6 +43,16 @@ assert.equal(merged.candidates[0].sourceScores.B,999);
 assert.throws(()=>selector.select([{ticket:[1,2,3,4,5,6]}],{count:2}),/INSUFFICIENT_UNIQUE_CANDIDATES/);
 assert.throws(()=>selector.select(candidates,{count:20,maxOverlap:7}),/INVALID_MAX_OVERLAP/);
 
+// A dominant provider must not crowd smaller providers out of the bounded shortlist.
+const imbalanced=[
+  ...Array.from({length:24},(_,i)=>({ticket:ticketAt(i+100),source:"A",score:1000-i})),
+  ...Array.from({length:3},(_,i)=>({ticket:ticketAt(i+200),source:"B",score:30-i})),
+  ...Array.from({length:3},(_,i)=>({ticket:ticketAt(i+300),source:"D",score:30-i}))
+];
+const balanced=selector.select(imbalanced,{count:4,candidateLimit:6,maxOverlap:6});
+assert.ok(balanced.ranked.some(x=>x.sources.includes("B")),"B should survive source-balanced shortlist");
+assert.ok(balanced.ranked.some(x=>x.sources.includes("D")),"D should survive source-balanced shortlist");
+
 // Full-portfolio geometry is treated as a hard constraint, not a soft score.
 const A=require("./track-a-adapter.js");
 const aPortfolio=A.generate(1418);
