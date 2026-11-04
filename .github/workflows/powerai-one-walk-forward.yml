@@ -1,0 +1,43 @@
+name: PowerAI ONE live walk-forward research
+
+on:
+  workflow_dispatch:
+    inputs:
+      window:
+        description: "Number of most recent target draws to evaluate (5-200)"
+        required: false
+        default: "30"
+        type: string
+      min_history:
+        description: "Minimum prior draws available before each target"
+        required: false
+        default: "100"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  live-walk-forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate constrained random baseline
+        run: node POWERAI_ONE/random-portfolio-baseline.test.js
+      - name: Run A7 vs constrained random walk-forward
+        env:
+          WF_WINDOW: ${{ inputs.window }}
+          WF_MIN_HISTORY: ${{ inputs.min_history }}
+        run: node POWERAI_ONE/run-live-walk-forward.js
+      - name: Upload research report
+        uses: actions/upload-artifact@v4
+        with:
+          name: powerai-one-walk-forward-report
+          path: artifacts/powerai-one-walk-forward-report.json
+          if-no-files-found: error
