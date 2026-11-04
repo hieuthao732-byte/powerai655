@@ -14,7 +14,7 @@ const draws=[
 ];
 (async()=>{
   const calls=[];
-  const report=await evaluator.evaluate([...draws,{id:7,main:[1,2,3,4,5,6],special:8},{id:8,main:[1,2,3,4,5,55],special:1}],{
+  const report=await evaluator.evaluate([...draws,{id:7,main:[1,2,3,4,5,6],special:8},{id:8,main:[1,2,3,4,5,55],special:12}],{
     minHistory:2,
     generate:ctx=>{
       calls.push({target:ctx.targetDrawId,ids:ctx.draws.map(d=>d.id)});
