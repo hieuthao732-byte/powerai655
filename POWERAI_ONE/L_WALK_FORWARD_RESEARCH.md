@@ -64,6 +64,26 @@ A separate diagnostic run is measuring exact ticket overlap between L and B port
 - These retrospective tests do not establish predictive advantage or change the mathematical odds of a future draw.
 - Ranking scores are not probabilities of winning. L remains shadow/research only.
 
+
+## Exact selected-ticket overlap — 200 targets
+
+- Diagnostic workflow: run `41814988041`, completed successfully.
+- Report artifact: `powerai-one-l-walk-forward-report`.
+- Same 200 target draws (01220–01419), same 3,000-ticket candidate pool per target, and same ONE selector constraints as the expanded comparison above.
+- Exact ticket identity was compared after canonical sorting of each ticket's six main numbers.
+
+| Overlap metric | Result |
+|---|---:|
+| Target portfolios compared | 200 |
+| Mean exact tickets shared per 20-ticket portfolio | 0 |
+| Mean Jaccard similarity | 0 |
+| Portfolios identical | 0 / 200 |
+| Portfolios with zero shared exact tickets | 200 / 200 |
+
+### Interpretation
+
+L and B selected **different exact ticket sets in all 200 target portfolios**. This confirms the learned-weight path is not simply returning B's selected tickets under a different label. It does not, by itself, establish that L's tickets are better: the observed hit-rate differences remain small, retrospective, and not statistically tested. The source candidate pool is shared, but ranking and selection differ. Keep L in shadow/research status.
+
 ## Next test
 
-Expand L vs B1.3 to 200 target draws with the same candidate-pool parity and ONE selector constraints. Compare portfolio 3+ and 4+ rates, ticket hit distributions, special hits, and whether the selected portfolios actually differ. Do not promote L unless a repeatable improvement is demonstrated prospectively.
+Run a pre-registered prospective shadow evaluation on future draws: freeze L and B weights before each target, record candidate-pool hashes and selected ticket sets, and score only after the official result is available. Keep the third-party mirror separate from official verification. Do not promote L unless improvement repeats across a sufficiently large prospective sample.
