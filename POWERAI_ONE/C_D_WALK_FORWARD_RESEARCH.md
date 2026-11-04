@@ -38,9 +38,39 @@ Comparison: D's ranking versus five random rankings over the exact same D candid
 
 D did not beat its random-ranking null on the 3+ portfolio metric. Its 4+ result is based on only two D portfolios and two null portfolios; it is highly unstable. Do not interpret this as a proven advantage.
 
-## Expanded validation
+## Expanded live validation — 2026-11-04
 
-The next workflow run expands C to 30 target draws with ten random null portfolios per target, and D to 200 target draws with five random rankings per target. This is still retrospective research, not prospective proof or a guarantee of future performance.
+The expanded workflow completed successfully on the 1,419-draw snapshot (same SHA-256 above).
+
+### C RC6 — 30 targets, 600 C tickets; 300 null portfolios
+
+C's mapped portfolio was compared with ten random relabelings of the same incidence geometry for each target.
+
+| Metric | C | Random relabeling |
+|---|---:|---:|
+| Portfolios with 3+ main hits | 30.0% (9/30) | 20.0% (60/300) |
+| Portfolios with 4+ main hits | 0% (0/30) | 6.67% (20/300) |
+| Ticket rate, 3+ main hits | 1.67% (10/600) | 1.00% (60/6,000) |
+| Ticket rate, 4+ main hits | 0% | 0.33% (20/6,000) |
+| Special-number hits | 65 | 650 |
+
+Interpretation: C shows a higher 3+ portfolio rate in this small window, but no 4+ portfolios while the null has 20. The result is mixed and the target count is only 30. This is not evidence to promote C.
+
+### D Adaptive — 200 targets, 4,000 D tickets; 1,000 null portfolios
+
+D ranking was compared with five random rankings over the exact same D candidate pool for each target, using the same ONE selector constraints.
+
+| Metric | D | Random ranking |
+|---|---:|---:|
+| Portfolios with 3+ main hits | 20.5% (41/200) | 24.1% (241/1,000) |
+| Portfolios with 4+ main hits | 3.5% (7/200) | 1.1% (11/1,000) |
+| Ticket rate, 3+ main hits | 1.425% (57/4,000) | 1.315% (263/20,000) |
+| Ticket rate, 4+ main hits | 0.20% (8/4,000) | 0.055% (11/20,000) |
+| Special-number hits | 427 | 2,183 |
+
+Interpretation: D loses on the primary 3+ portfolio metric (20.5% vs 24.1%) but has a higher 4+ portfolio rate (3.5% vs 1.1%). The 4+ counts are sparse, and five null portfolios per target are not independent target draws. This is mixed evidence, not a proven edge.
+
+## Interpretation rules
 
 ## Interpretation rules
 
