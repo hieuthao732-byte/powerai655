@@ -14,10 +14,10 @@ const asInt=x=>Number.isInteger(Number(x))?Number(x):null;
  rows.forEach((row,index)=>{const p=D.normalizeDraw(row);if(!p.ok){rejected.push({index,id:row?.id??null,errors:p.errors});return;}if(seen.has(p.draw.id)){rejected.push({index,id:p.draw.id,errors:["DUPLICATE_DRAW_ID"]});return;}seen.add(p.draw.id);valid.push(p.draw);});
  valid.sort((a,b)=>a.id-b.id);
  const minHistory=Math.max(100,asInt(process.env.WF_MIN_HISTORY)||100);
- const windowSize=Math.min(200,Math.max(5,asInt(process.env.WF_WINDOW)||30));
+ const windowSize=Math.min(200,Math.max(5,asInt(process.env.WF_WINDOW)||50));
  const startIndex=Math.max(minHistory,valid.length-windowSize);
  if(startIndex>=valid.length)throw new Error("INSUFFICIENT_HISTORY_FOR_REQUESTED_WINDOW");
- const evaluator=create(D);
+ const baselineTrials=Math.min(100,Math.max(1,asInt(process.env.WF_BASELINE_TRIALS)||20));\n const evaluator=create(D);
  const report=await evaluator.evaluate(valid,{
   minHistory,startIndex,
   generate:ctx=>{
@@ -40,13 +40,13 @@ const asInt=x=>Number.isInteger(Number(x))?Number(x):null;
   researchOnly:true,officialLogsWritten:false,learningUpdated:false,
   source:SOURCE,datasetSha256:crypto.createHash("sha256").update(raw).digest("hex"),
   dataset:{validDraws:valid.length,firstDrawId:valid[0]?.id,lastDrawId:valid.at(-1)?.id,rejectedRows:rejected.length},
-  config:{minHistory,requestedWindow:windowSize,actualWindow:report.summary.draws,firstTargetDrawId:report.targetRange.first,lastTargetDrawId:report.targetRange.last,ticketsPerPortfolio:20},
+  config:{minHistory,requestedWindow:windowSize,actualWindow:report.summary.draws,baselineTrialsPerDraw:baselineTrials,firstTargetDrawId:report.targetRange.first,lastTargetDrawId:report.targetRange.last,ticketsPerPortfolio:20},
   comparison:{
    A7:report.summary,
    constrainedRandom:report.baselineSummary,
-   portfolioAtLeast3Difference:report.summary.portfolioHitRates.atLeast3-(report.baselineSummary.portfolioHitRates?.atLeast3??report.baselineSummary.portfoliosAtLeast3/report.baselineSummary.draws),
-   portfolioAtLeast4Difference:report.summary.portfolioHitRates.atLeast4-(report.baselineSummary.portfolioHitRates?.atLeast4??report.baselineSummary.portfoliosAtLeast4/report.baselineSummary.draws),
-   equalTicketCount:baseTickets===report.summary.tickets
+   portfolioAtLeast3Difference:report.summary.portfolioHitRates.atLeast3-(report.baselineSummary.portfolioHitRates.atLeast3),
+   portfolioAtLeast4Difference:report.summary.portfolioHitRates.atLeast4-(report.baselineSummary.portfolioHitRates.atLeast4),
+   equalTicketCount:report.baselineSummary.ticketCountPerPortfolio===20&&report.summary.tickets===report.summary.draws*20
   },
   records:report.records.map(r=>({targetDrawId:r.targetDrawId,cutoffDrawId:r.cutoffDrawId,historyCount:r.historyCount,maxMainHits:r.maxMainHits,mainHitDistribution:r.tickets.reduce((a,t)=>{a[t.mainHits]++;return a;},Array(7).fill(0)),specialHitTickets:r.specialHitTickets,baseline:r.baseline})),
   rejectedRows:rejected
