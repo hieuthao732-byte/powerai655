@@ -21,6 +21,11 @@ on:
         required: false
         default: "100"
         type: string
+      baseline_trials:
+        description: "Independent constrained-random portfolios per target draw (1-100)"
+        required: false
+        default: "20"
+        type: string
 
 permissions:
   contents: read
@@ -41,7 +46,9 @@ jobs:
       - name: Run A7 vs constrained random walk-forward
         env:
           WF_WINDOW: ${{ inputs.window }}
-          WF_MIN_HISTORY: ${{ inputs.min_history }}\n          WF_BASELINE_TRIALS: ${{ inputs.baseline_trials }}
+          WF_MIN_HISTORY: ${{ inputs.min_history }}
+          WF_BASELINE_TRIALS: ${{ inputs.baseline_trials }}
+          WF_BASELINE_TRIALS: ${{ inputs.baseline_trials }}
         run: node POWERAI_ONE/run-live-walk-forward.js
       - name: Upload research report
         uses: actions/upload-artifact@v4
