@@ -58,6 +58,8 @@ jobs:
         run: node POWERAI_ONE/adaptive-shadow-runner.test.js
       - name: Run challenger evidence gate tests
         run: node POWERAI_ONE/challenger-evidence-gate.test.js
+      - name: Run post-draw evaluation tests
+        run: node POWERAI_ONE/after-draw-evaluation.test.js
       - name: Run Track A adapter tests
         run: node POWERAI_ONE/track-a-adapter.test.js
 
