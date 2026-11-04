@@ -56,7 +56,7 @@
      const challengerScores=challengerTickets.map(t=>domain.scoreTicket(t,target));
      if(challengerScores.some(s=>!s.ok))throw new Error("ADAPTIVE_CHALLENGER_SCORING_FAILED");
      const challengerMax=Math.max(...challengerScores.map(s=>s.mainHits));
-     challengerRecords.push({targetDrawId:target.id,cutoffDrawId:ctx.cutoffDrawId,activeMaxMainHits:maxMainHits,challengerMaxMainHits:challengerMax,activeAtLeast3:maxMainHits>=3,challengerAtLeast3:challengerMax>=3});
+     challengerRecords.push({targetDrawId:target.id,cutoffDrawId:ctx.cutoffDrawId,source:target.source,verified:target.verified===true,activeMaxMainHits:maxMainHits,challengerMaxMainHits:challengerMax,activeAtLeast3:maxMainHits>=3,challengerAtLeast3:challengerMax>=3,activeSpecialHit:activeScores.some(s=>s.specialHit),challengerSpecialHit:challengerScores.some(s=>s.specialHit)});
      row.challengerMaxMainHits=challengerMax;
     }
     row.governorEvent= newlyTriggered.length>0;
