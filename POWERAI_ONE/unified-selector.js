@@ -139,7 +139,8 @@
         const t=candidate.ticket;
         const novel=t.main.reduce((n,x)=>n+(state.exposure[x]===0?1:0),0);
         const meanExposure=t.main.reduce((n,x)=>n+state.exposure[x],0)/6;
-        const candidateSources=candidate.sources||Object.keys(candidate.sourceScores||{}).concat(candidate.source);\n        const sourceSpread=candidateSources.some(source=>state.sourceSet.includes(source))?0:1;
+        const candidateSources=candidate.sources||Object.keys(candidate.sourceScores||{}).concat(candidate.source);
+        const sourceSpread=candidateSources.some(source=>state.sourceSet.includes(source))?0:1;
         return scoreWeight*candidate.rankScore+diversityWeight*(.70*novel/6+.20/(1+meanExposure)+.10*sourceSpread);
       };
       for(let depth=0;depth<count;depth++){
