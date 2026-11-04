@@ -52,17 +52,25 @@
           groups.get(source).push(score);
         }
       });
-      const rank=(score,values)=>{
-        if(values.length<2)return .5;
-        const sorted=values.slice().sort((a,b)=>a-b);
-        let below=0,equal=0;
-        for(const x of sorted){if(x<score)below++;else if(x===score)equal++;}
+      // Sort each source once, then use binary search for O(log N) percentile lookup.
+      // The previous implementation sorted and scanned the full source pool for every
+      // candidate, making ranking O(N^2 log N) for large provider pools.
+      const sortedGroups=new Map();
+      for(const [source,values] of groups)sortedGroups.set(source,values.slice().sort((a,b)=>a-b));
+      const rank=(score,sorted)=>{
+        if(sorted.length<2)return .5;
+        let lo=0,hi=sorted.length;
+        while(lo<hi){const mid=(lo+hi)>>>1;if(sorted[mid]<score)lo=mid+1;else hi=mid;}
+        const below=lo;
+        lo=0;hi=sorted.length;
+        while(lo<hi){const mid=(lo+hi)>>>1;if(sorted[mid]<=score)lo=mid+1;else hi=mid;}
+        const equal=lo-below;
         return (below+Math.max(0,equal-1)/2)/Math.max(1,sorted.length-1);
       };
       for(const c of candidates){
-        const ranks=Object.entries(c.sourceScores||{}).map(([source,score])=>rank(score,groups.get(source)||[]));
+        const ranks=Object.entries(c.sourceScores||{}).map(([source,score])=>rank(score,sortedGroups.get(source)||[]));
         c.rankScore=ranks.length?Math.max(...ranks):.5;
-        c.sourceRankScores=Object.fromEntries(Object.entries(c.sourceScores||{}).map(([source,score])=>[source,rank(score,groups.get(source)||[])]));
+        c.sourceRankScores=Object.fromEntries(Object.entries(c.sourceScores||{}).map(([source,score])=>[source,rank(score,sortedGroups.get(source)||[])]));
       }
       return candidates;
     }
