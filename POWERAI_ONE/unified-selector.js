@@ -184,13 +184,16 @@
             const candidateSources=candidate.sources||Object.keys(candidate.sourceScores||{}).concat(candidate.source);
             const sourceSet=[...new Set(state.sourceSet.concat(candidateSources))];
             const coverage=exposure.slice(1).filter(Boolean).length;
-            const score=state.score+partialValue(candidate,state)+(requireCoverage?coverage*.0005:0)+(minExposure>0?exposure.slice(1).filter(x=>x>=minExposure).length*.0002:0);\n            // Preserve branches with room to complete. This bonus affects beam pruning,\n            // not the final portfolio objective or any hard constraint.\n            const priorityScore=score+1.25*(candidate.futureCompatibility/Math.max(1,pool.length-1));
+            const score=state.score+partialValue(candidate,state)+(requireCoverage?coverage*.0005:0)+(minExposure>0?exposure.slice(1).filter(x=>x>=minExposure).length*.0002:0);
+            // Preserve branches with room to complete. This bonus affects beam pruning,
+            // not the final portfolio objective or any hard constraint.
+            const priorityScore=score+1.25*(candidate.futureCompatibility/Math.max(1,pool.length-1));
             const signature=indices.slice().sort((a,b)=>a-b).join(",");
             if(seen.has(signature))continue;
             seen.add(signature);
-            const nextState={indices,exposure,pairCounts,repeatedPairCount:nextRepeatedPairCount,score,coverage,sourceSet};
+            const nextState={indices,exposure,pairCounts,repeatedPairCount:nextRepeatedPairCount,score,priorityScore,coverage,sourceSet};
             // Keep only the best bounded set; tie-break deterministically.
-            let pos=next.findIndex(x=>x.score<score);
+            let pos=next.findIndex(x=>x.priorityScore<priorityScore);
             if(pos<0)pos=next.length;
             next.splice(pos,0,nextState);
             if(next.length>beamWidth)next.pop();
