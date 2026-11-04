@@ -13,10 +13,10 @@ const draws=Array.from({length:16},(_,i)=>({id:i+1,date:new Date(Date.UTC(2026,0
  assert.equal(report.automaticPromotion,false);
  assert.equal(report.triggerEvents.length,1);
  assert.equal(report.triggerEvents[0].targetDrawId,5);
- assert.equal(report.challengerEvaluatedDraws,draws.length-4);
- assert.equal(challengerCalls,draws.length-4);
+ assert.equal(report.challengerEvaluatedDraws,draws.length-5);
+ assert.equal(challengerCalls,draws.length-5);
  assert.equal(activeCalls,draws.length-2);
- assert.equal(report.pairedComparison.challengerSuccesses,draws.length-4);
+ assert.equal(report.pairedComparison.challengerSuccesses,draws.length-5);
  assert.equal(report.pairedComparison.activeSuccesses,0);
  await assert.rejects(()=>R.run(draws,{minHistory:0,generateActive:()=>[],generateChallenger:()=>[]}),/INVALID_MIN_HISTORY/);
  await assert.rejects(()=>R.run(draws,{minHistory:2,generateActive:()=>[],generateChallenger:()=>[]}),/NO_TICKETS/);
