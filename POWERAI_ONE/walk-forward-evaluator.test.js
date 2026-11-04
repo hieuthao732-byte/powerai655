@@ -38,9 +38,9 @@ const draws=[
   assert.ok(report.summary.mainHitDistribution.reduce((s,x)=>s+x.tickets,0)===6);
   assert.ok(report.baselineSummary);
   assert.equal(report.baselineSummary.draws,6);
-  assert.throws(()=>evaluator.evaluate(draws,{minHistory:2,generate:()=>({cutoffDrawId:99,tickets:[draws[0].main]})}),/FUTURE_LEAKAGE_GENERATOR_CUTOFF/);
+  await assert.rejects(()=>evaluator.evaluate(draws,{minHistory:2,generate:()=>({cutoffDrawId:99,tickets:[draws[0].main]})}),/FUTURE_LEAKAGE_GENERATOR_CUTOFF/);
   await assert.rejects(()=>evaluator.evaluate(draws,{minHistory:2,generate:()=>[]}),/WALK_FORWARD_GENERATOR_RETURNED_NO_TICKETS/);
-  assert.throws(()=>evaluator.evaluate(draws,{minHistory:0,generate:()=>[]}),/INVALID_MIN_HISTORY/);
+  await assert.rejects(()=>evaluator.evaluate(draws,{minHistory:0,generate:()=>[]}),/INVALID_MIN_HISTORY/);
   console.log("PowerAI ONE walk-forward evaluator tests: PASS");
   console.log(JSON.stringify({
     evaluatedDraws:report.summary.draws,
