@@ -87,3 +87,12 @@ Do not merge to main or deploy production until:
 - [ ] Required A/C structural invariants are represented as eligibility constraints before selection.
 - [ ] Compare unified policy against each legacy baseline in walk-forward evaluation; do not promote based on in-sample score.
 - [ ] Confirm special-number scoring remains separate from main-number hits.
+
+## Walk-forward evaluation gate
+- `walk-forward-evaluator.js` accepts chronological draw rows and an injected portfolio generator; it never generates tickets itself.
+- For target draw T, the generator receives only valid draws with IDs strictly below T. Each result records the exact cutoff and history count.
+- The six main numbers are scored separately from the special number. Ticket-level and portfolio-level hit rates are both reported.
+- Optional baseline generation is injected so a comparison can use the same ticket count and portfolio constraints as the ONE selector.
+- Reports are marked research-only and explicitly declare that official logs and learning state were not written.
+- Synthetic tests verify cutoff isolation, malformed/duplicate draw rejection, special-number separation, baseline accounting and failure on a future cutoff.
+- A PASS on synthetic tests validates the evaluator, not the predictive value of any provider. Real-data evaluation must disclose draw range, minimum history, baseline construction, sample size and uncertainty.
