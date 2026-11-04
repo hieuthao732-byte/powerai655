@@ -1,0 +1,56 @@
+name: PowerAI ONE C RC6 and D Adaptive walk-forward research
+
+on:
+  push:
+    branches:
+      - feature/powerai-one
+    paths:
+      - "POWERAI_ONE/run-live-walk-forward-cd.js"
+      - "POWERAI_ONE/walk-forward-cd.test.js"
+      - ".github/workflows/powerai-one-cd-walk-forward.yml"
+  workflow_dispatch:
+    inputs:
+      c_window:
+        description: "C target draws (5-30)"
+        required: false
+        default: "10"
+        type: string
+      d_window:
+        description: "D target draws (5-200)"
+        required: false
+        default: "50"
+        type: string
+      d_baseline_trials:
+        description: "Random D rankings per target (1-20)"
+        required: false
+        default: "5"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  c-d-walk-forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Test C/D walk-forward integration
+        run: node POWERAI_ONE/walk-forward-cd.test.js
+      - name: Run C RC6 and D Adaptive live walk-forward
+        env:
+          WF_C_WINDOW: ${{ inputs.c_window }}
+          WF_D_WINDOW: ${{ inputs.d_window }}
+          WF_D_BASELINE_TRIALS: ${{ inputs.d_baseline_trials }}
+        run: node POWERAI_ONE/run-live-walk-forward-cd.js
+      - name: Upload C/D research report
+        uses: actions/upload-artifact@v4
+        with:
+          name: powerai-one-c-d-walk-forward-report
+          path: artifacts/powerai-one-c-d-walk-forward-report.json
+          if-no-files-found: error
