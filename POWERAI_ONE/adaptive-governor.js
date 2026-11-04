@@ -19,12 +19,13 @@
         streak=0;latched=false;previousId=Number.isInteger(id)?id:previousId;
         continue;
       }
+      if(previousId!==null&&id!==previousId+1)streak=0;
       seen.add(id);previousId=id;
       const result=row.result||{};
       const tickets=row.portfolio?.tickets;
       const lockTime=Date.parse(row.lockedAt??row.portfolio?.generatedAt??"");
       const resultTime=Date.parse(row.resultAvailableAt??result.availableAt??result.date??"");
-      const official=result.source==="official"&&result.verified===true;
+      const official=result.id===id&&result.source==="official"&&result.verified===true;
       const validMain=Array.isArray(result.main)&&result.main.length===6&&result.main.every(n=>Number.isInteger(n)&&n>=1&&n<=55)&&new Set(result.main).size===6;
       const validTickets=Array.isArray(tickets)&&tickets.length>0&&tickets.every(t=>{
         const a=Array.isArray(t)?t:t?.main;
