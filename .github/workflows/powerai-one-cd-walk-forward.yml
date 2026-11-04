@@ -26,6 +26,10 @@ on:
         default: "5"
         type: string
 
+concurrency:
+  group: powerai-one-c-d-walk-forward-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
