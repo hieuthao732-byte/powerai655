@@ -44,7 +44,7 @@ jobs:
         run: node POWERAI_ONE/track-l-walk-forward.test.js
       - name: Run L learned weights versus B1.3 baseline
         env:
-          WF_L_WINDOW: ${{ inputs.window || '50' }}
+          WF_L_WINDOW: ${{ inputs.window || '200' }}
           WF_L_TRAINING_WINDOW: ${{ inputs.training_window || '20' }}
         run: node POWERAI_ONE/run-live-walk-forward-l.js
       - name: Upload L research report
