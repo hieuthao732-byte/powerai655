@@ -14,7 +14,7 @@ const selectOptions={count:20,maxOverlap:4,candidateLimit:120,beamWidth:24,searc
  const valid=[],seen=new Set(),rejected=[];
  rows.forEach((row,index)=>{const p=D.normalizeDraw(row);if(!p.ok){rejected.push({index,id:row?.id??null,errors:p.errors});return;}if(seen.has(p.draw.id)){rejected.push({index,id:p.draw.id,errors:["DUPLICATE_DRAW_ID"]});return;}seen.add(p.draw.id);valid.push(p.draw)});
  valid.sort((a,b)=>a.id-b.id);
- const minHistory=100,windowSize=Math.min(100,Math.max(5,Number(process.env.WF_L_WINDOW)||50));
+ const minHistory=100,windowSize=Math.min(200,Math.max(5,Number(process.env.WF_L_WINDOW)||200));
  const targetCandidates=Math.min(10000,Math.max(500,Number(process.env.WF_L_CANDIDATES)||3000));
  const calibrationWindow=Math.min(30,Math.max(5,Number(process.env.WF_L_TRAINING_WINDOW)||20));
  const calibrationCandidates=Math.min(2000,Math.max(100,Number(process.env.WF_L_CALIBRATION_CANDIDATES)||500));
