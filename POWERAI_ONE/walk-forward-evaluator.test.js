@@ -22,7 +22,8 @@ const draws=[
       const last=ctx.draws[ctx.draws.length-1];
       return {cutoffDrawId:ctx.cutoffDrawId,tickets:[{main:last.main}]};
     },
-    baselineGenerator:(_ctx,trial)=>[{main:trial%2===0?[1,2,3,4,5,6]:[2,3,4,5,6,7]}],\n    baselineTrials:3
+    baselineGenerator:(_ctx,trial)=>[{main:trial%2===0?[1,2,3,4,5,6]:[2,3,4,5,6,7]}],
+    baselineTrials:3
   });
   assert.equal(report.reportType,"POWERAI_ONE_WALK_FORWARD_RESEARCH");
   assert.equal(report.researchOnly,true);
@@ -37,7 +38,11 @@ const draws=[
   assert.equal(report.records.length,calls.length);
   assert.ok(report.summary.mainHitDistribution.reduce((s,x)=>s+x.tickets,0)===6);
   assert.ok(report.baselineSummary);
-  assert.equal(report.baselineSummary.draws,6);\n  assert.equal(report.baselineSummary.trials,18);\n  assert.equal(report.baselineSummary.tickets,18);\n  assert.equal(report.baselineSummary.ticketCountPerPortfolio,1);\n  assert.ok(report.baselineSummary.portfolioHitRates.atLeast3>=0);
+  assert.equal(report.baselineSummary.draws,6);
+  assert.equal(report.baselineSummary.trials,18);
+  assert.equal(report.baselineSummary.tickets,18);
+  assert.equal(report.baselineSummary.ticketCountPerPortfolio,1);
+  assert.ok(report.baselineSummary.portfolioHitRates.atLeast3>=0);
   await assert.rejects(()=>evaluator.evaluate(draws,{minHistory:2,generate:()=>({cutoffDrawId:99,tickets:[draws[0].main]})}),/FUTURE_LEAKAGE_GENERATOR_CUTOFF/);
   await assert.rejects(()=>evaluator.evaluate(draws,{minHistory:2,generate:()=>[]}),/WALK_FORWARD_GENERATOR_RETURNED_NO_TICKETS/);
   await assert.rejects(()=>evaluator.evaluate(draws,{minHistory:0,generate:()=>[]}),/INVALID_MIN_HISTORY/);
@@ -46,7 +51,9 @@ const draws=[
     evaluatedDraws:report.summary.draws,
     mainHitDistribution:report.summary.mainHitDistribution,
     portfolioHitRates:report.summary.portfolioHitRates,
-    baselinePortfoliosAtLeast3:report.baselineSummary.portfoliosAtLeast3,\n    baselineTrials:report.baselineSummary.trials,\n    baselinePortfolioHitRates:report.baselineSummary.portfolioHitRates,
+    baselinePortfoliosAtLeast3:report.baselineSummary.portfoliosAtLeast3,
+    baselineTrials:report.baselineSummary.trials,
+    baselinePortfolioHitRates:report.baselineSummary.portfolioHitRates,
     rejectedRows:report.history.rejectedDraws
   },null,2));
 })().catch(error=>{console.error(error);process.exitCode=1;});
