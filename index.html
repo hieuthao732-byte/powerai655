@@ -34,7 +34,7 @@
 }
 </script>
 <link rel="stylesheet" href="style.css?v=9.7">
-<link rel="stylesheet" href="adaptive-d.css?v=0.2">
+<link rel="stylesheet" href="adaptive-d.css?v=0.2">\n<link rel="stylesheet" href="one-ui.css?v=1.0">
 <script type="application/ld+json">
 {
   "@context":"https://schema.org",
@@ -192,14 +192,28 @@
   </div>
 </section>
 
-<section class="panel" id="onePanel" style="margin:18px 0;padding:20px">
-  <div class="head" style="align-items:center">
-    <div><div class="sectionKicker">POWERAI ONE • UNIFIED ENGINE</div><h2>Một bộ vé cuối cùng</h2><p>A7 và B1.3 chỉ cung cấp ứng viên; ONE là bộ chọn duy nhất quyết định 20 vé cuối. Bản này đang ở chế độ thử nghiệm, chưa khóa vé hay lưu dữ liệu.</p></div>
-    <button id="oneBuildBtn" class="primary" type="button">Tạo bộ 20 vé ONE</button>
+<section class="one-shell" id="onePanel">
+  <div class="one-topline"><span class="one-brand-mark">⚡ POWERAI <b>ONE</b></span><span class="one-lab">UNIFIED SELECTION SYSTEM <i></i> PREVIEW</span></div>
+  <div class="one-hero">
+    <div class="one-copy">
+      <div class="one-kicker">MỘT HỆ THỐNG • MỘT BỘ VÉ CUỐI</div>
+      <h2>Chọn thông minh.<br><em>Kiểm chứng rõ ràng.</em></h2>
+      <p>A7 và B1.3 phân tích, tạo nguồn ứng viên. ONE hợp nhất tín hiệu, kiểm tra ràng buộc và chọn ra đúng 20 vé cuối cùng.</p>
+      <div class="one-pills"><span><i class="one-dot green"></i> Một bộ chọn duy nhất</span><span><i class="one-dot blue"></i> Có kiểm tra cấu trúc</span><span><i class="one-dot gold"></i> Chỉ xem trước</span></div>
+    </div>
+    <div class="one-action-card">
+      <div class="one-action-label">KỲ MỤC TIÊU</div>
+      <div class="one-target"><span>#</span><b id="targetIdOne">—</b></div>
+      <div class="one-action-meta">Dữ liệu chỉ lấy từ các kỳ trước mục tiêu</div>
+      <button id="oneBuildBtn" class="one-generate-btn" type="button"><span>✦</span> TẠO BỘ 20 VÉ ONE <b>→</b></button>
+      <div class="one-safe-note"><span>🔒</span> Chưa khóa vé · Chưa lưu cloud</div>
+    </div>
   </div>
-  <div id="oneStatus" class="notice" role="status" aria-live="polite">Sẵn sàng khi dữ liệu lịch sử đã tải và tài khoản được đăng nhập.</div>
-  <div id="oneTickets" class="ticketGrid" aria-live="polite"></div>
-  <div id="oneAudit" class="muted"></div>
+  <div class="one-status-row"><div class="one-status-indicator"><i></i><span>TRẠNG THÁI HỆ THỐNG</span></div><div id="oneStatus" class="one-status-message" role="status" aria-live="polite">Sẵn sàng khi dữ liệu lịch sử đã tải và tài khoản được đăng nhập.</div></div>
+  <div class="one-result-head"><div><span class="one-kicker">FINAL PORTFOLIO</span><h3>Bộ 20 vé được chọn</h3><p>Một danh sách cuối cùng — không chia thành nhiều phương án.</p></div><div class="one-count"><b id="oneTicketCount">20</b><span>VÉ</span></div></div>
+  <div id="oneTickets" class="one-ticket-grid" aria-live="polite"><div class="one-empty-state"><div class="one-empty-icon">✧</div><b>Chưa có bộ vé nào</b><span>Nhấn “Tạo bộ 20 vé ONE” để chạy hệ thống sau khi đăng nhập.</span></div></div>
+  <div class="one-audit-panel"><div class="one-audit-title"><span>⌁</span><b>KIỂM TOÁN BỘ VÉ</b><small>MINH BẠCH NGUỒN & RÀNG BUỘC</small></div><div id="oneAudit" class="one-audit-content">Các chỉ số kiểm tra sẽ xuất hiện sau khi ONE hoàn tất lựa chọn.</div></div>
+  <div class="one-disclaimer">POWERAI ONE là công cụ nghiên cứu và xếp hạng tổ hợp. Xổ số có tính ngẫu nhiên; điểm số và phân tích không phải xác suất trúng thưởng.</div>
 </section>
 
 <section class="grid4 kpiGrid">
