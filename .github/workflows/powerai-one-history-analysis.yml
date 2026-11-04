@@ -1,0 +1,28 @@
+name: PowerAI ONE live history audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/powerai-one
+    paths:
+      - "POWERAI_ONE/analyze-live-history.js"
+      - "POWERAI_ONE/historical-reverse-analysis.js"
+      - ".github/workflows/powerai-one-history-analysis.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  live-history-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Analyze current public Power 6/55 history feed
+        run: node POWERAI_ONE/analyze-live-history.js
