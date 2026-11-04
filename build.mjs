@@ -15,6 +15,19 @@ const files = [
   'google933e1c79e6843890.html',
   'robots.txt',
   'site.webmanifest',
+  'POWERAI_ONE/domain.js',
+  'POWERAI_ONE/unified-selector.js',
+  'POWERAI_ONE/unified-portfolio-pipeline.js',
+  'POWERAI_ONE/adaptive-governor.js',
+  'POWERAI_ONE/after-draw-evaluation.js',
+  'POWERAI_ONE/adaptive-shadow-runner.js',
+  'POWERAI_ONE/challenger-evidence-gate.js',
+  'POWERAI_ONE/track-a-adapter.js',
+  'POWERAI_ONE/track-b-adapter.js',
+  'POWERAI_ONE/track-a-provider.js',
+  'POWERAI_ONE/track-b-provider.js',
+  'POWERAI_ONE/one-runtime.js',
+  'POWERAI_ONE/one-web-bridge.js',
   'sitemap.xml'
 ];
 
