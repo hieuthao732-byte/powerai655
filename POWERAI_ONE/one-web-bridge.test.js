@@ -35,7 +35,7 @@ async function run(){
  assert.equal(els.oneStatus.textContent.includes("đã sẵn sàng"),true);
  await els.oneBuildBtn.listeners.click();
  assert.equal(buildRequest.mode,"prospective");
- assert.deepEqual(buildRequest.providerIds,["A7","B1.3"]);
+ assert.deepEqual([...buildRequest.providerIds],["A7","B1.3"]);
  assert.equal(els.oneTickets.children.length,20);
  assert.equal(els.oneStatus.textContent.includes("chưa khóa và chưa lưu"),true);
  // A past/current draw must never be generated as a fresh ticket set.
