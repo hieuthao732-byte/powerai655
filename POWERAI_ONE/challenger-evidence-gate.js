@@ -10,7 +10,7 @@
   let logChoose=0;
   for(let i=1;i<=m;i++)logChoose+=Math.log(n-m+i)-Math.log(i);
   if(k<=n/2){
-   let p=Math.exp(logChoose-n*Math.LN2),sum=p;
+   let p=Math.exp(logChoose-n*Math.LN2)*k/(n-k+1),sum=p;
    for(let j=k-1;j>0;j--){
     p*=j/(n-j+1);
     sum+=p;
