@@ -22,6 +22,6 @@ runtime.registerProvider({id:"A7",version:"test",propose:()=>Array.from({length:
  assert.equal(after.automaticPromotion,false);
  assert.equal(runtime.policy.singleFinalSelector,true);
  assert.equal(runtime.policy.productionMutation,false);
- assert.throws(()=>Runtime.create({}),/dependencies are incomplete/);
+ assert.throws(()=>Runtime.create({domain:{}}),/PowerAIDomain is required/);
  console.log("PowerAI ONE unified runtime tests: PASS");
 })().catch(e=>{console.error(e);process.exitCode=1;});
