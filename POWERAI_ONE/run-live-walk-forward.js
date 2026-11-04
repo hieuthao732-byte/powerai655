@@ -9,7 +9,8 @@ const asInt=x=>Number.isInteger(Number(x))?Number(x):null;
 (async()=>{
  const response=await fetch(SOURCE,{signal:AbortSignal.timeout(30000),headers:{"user-agent":"PowerAI-ONE-walk-forward-research"}});
  if(!response.ok)throw new Error("HISTORY_FEED_HTTP_"+response.status);
- const raw=await response.text(),rows=raw.split(/\r?\n/).filter(x=>x.trim()).map((line,i)=>{try{return JSON.parse(line);}catch(e){throw new Error("INVALID_JSONL_LINE_"+(i+1));}});
+ const raw=await response.text(),rows=raw.split(/\r?
+/).filter(x=>x.trim()).map((line,i)=>{try{return JSON.parse(line);}catch(e){throw new Error("INVALID_JSONL_LINE_"+(i+1));}});
  const valid=[],seen=new Set(),rejected=[];
  rows.forEach((row,index)=>{const p=D.normalizeDraw(row);if(!p.ok){rejected.push({index,id:row?.id??null,errors:p.errors});return;}if(seen.has(p.draw.id)){rejected.push({index,id:p.draw.id,errors:["DUPLICATE_DRAW_ID"]});return;}seen.add(p.draw.id);valid.push(p.draw);});
  valid.sort((a,b)=>a.id-b.id);
@@ -17,24 +18,23 @@ const asInt=x=>Number.isInteger(Number(x))?Number(x):null;
  const windowSize=Math.min(200,Math.max(5,asInt(process.env.WF_WINDOW)||50));
  const startIndex=Math.max(minHistory,valid.length-windowSize);
  if(startIndex>=valid.length)throw new Error("INSUFFICIENT_HISTORY_FOR_REQUESTED_WINDOW");
- const baselineTrials=Math.min(100,Math.max(1,asInt(process.env.WF_BASELINE_TRIALS)||20));\n const evaluator=create(D);
+ const baselineTrials=Math.min(100,Math.max(1,asInt(process.env.WF_BASELINE_TRIALS)||20));
+ const evaluator=create(D);
  const report=await evaluator.evaluate(valid,{
-  minHistory,startIndex,
+  minHistory,startIndex,baselineTrials,
   generate:ctx=>{
    const result=A.generate(ctx.targetDrawId);
    if(result.audit.coverage!==55||result.audit.minExp!==2||result.audit.maxExp!==3||result.audit.repeatedPairs!==0||result.audit.maxOverlap>1)
     throw new Error("A7_GEOMETRY_AUDIT_FAILED_AT_"+ctx.targetDrawId);
    return{cutoffDrawId:ctx.cutoffDrawId,tickets:result.tickets};
   },
-  baselineGenerator:ctx=>{
-   const result=B.generate(ctx.targetDrawId,0);
+  baselineGenerator:(ctx,trial)=>{
+   const result=B.generate(ctx.targetDrawId,trial);
    if(result.audit.coverage!==55||result.audit.minExposure!==2||result.audit.maxExposure!==3||result.audit.repeatedPairs!==0||result.audit.maxOverlap>1)
     throw new Error("RANDOM_BASELINE_GEOMETRY_AUDIT_FAILED_AT_"+ctx.targetDrawId);
    return result.tickets;
   }
  });
- const baseTickets=report.records.reduce((n,r)=>n+r.baseline.ticketCount,0);
- const baseDistribution=Array.from({length:7},(_,hits)=>({hits,tickets:report.records.reduce((n,r)=>n+r.baseline.ticketHitDistribution?.[hits]||n,0)}));
  const output={
   reportType:"POWERAI_ONE_A7_VS_CONSTRAINED_RANDOM_WALK_FORWARD",
   researchOnly:true,officialLogsWritten:false,learningUpdated:false,
