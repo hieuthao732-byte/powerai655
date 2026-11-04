@@ -14,6 +14,8 @@ function fixture(){
  }
  return rows;
 }
+assert.ok(Math.abs(Gate.binomialUpperTail(10,8)-0.0546875)<1e-12);
+assert.ok(Gate.binomialUpperTail(1000,1)>0.999999);
 const good=Gate.evaluate(fixture());
 assert.equal(good.decision,"RECOMMEND_HUMAN_REVIEW");
 assert.equal(good.automaticPromotion,false);
