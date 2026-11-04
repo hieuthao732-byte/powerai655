@@ -34,3 +34,9 @@ The pipeline remains isolated from the live app until legacy parity fixtures and
 - `track-a-provider.js` registers A7 as a candidate provider for the single ONE pipeline.
 - A7 does not choose the final 20 tickets once other providers are added; the ONE selector owns final selection.
 - The adapter's invariant checks ensure that a pure A7 portfolio retains full coverage, pair uniqueness, exposure 2–3, and max overlap 1.
+
+## Research evaluation and reverse analysis
+- `walk-forward-evaluator.js` evaluates injected ticket generators chronologically. For every target draw it passes only earlier valid draws, scores main hits and special hits separately, and keeps reports isolated from official learning/log state.
+- `historical-reverse-analysis.js` summarizes all six main numbers separately from the special number, plus pair co-occurrence, sum, parity, low/high, consecutive pairs and adjacent-draw overlap.
+- `analyze-live-history.js` fetches the current public JSONL mirror and prints a SHA-256-pinned analysis snapshot. The current observed mirror snapshot is recorded in `HISTORICAL_REVERSE_ANALYSIS.md`.
+- These tools are descriptive/research only. They do not establish predictive edge or change lottery odds.
