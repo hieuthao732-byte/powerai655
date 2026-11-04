@@ -11,6 +11,8 @@ on:
     paths:
       - "POWERAI_ONE/**"
       - "package.json"
+      - "build.mjs"
+      - "index.html"
       - ".github/workflows/powerai-one-tests.yml"
   pull_request:
     paths:
@@ -30,6 +32,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Build static website including ONE assets
+        run: npm run build
       - name: Run domain tests
         run: node POWERAI_ONE/domain.test.js
       - name: Run portfolio service tests
