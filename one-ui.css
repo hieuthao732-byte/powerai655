@@ -29,3 +29,117 @@
 .one-empty-state{border-color:rgba(255,110,110,.25);background:rgba(30,10,15,.42)}
 .one-audit-title b{color:#f2dfe2}
 @media(prefers-reduced-motion:no-preference){.one-generate-btn{transition:transform .18s,filter .18s,box-shadow .18s}.one-generate-btn:hover{box-shadow:0 10px 28px rgba(230,48,60,.32)}}
+
+
+/* POWERAI ONE — polished Vietlott red visual pass */
+.one-shell{
+  --one-red:#e92735;
+  --one-red-hot:#ff4b55;
+  --one-red-soft:#ff858b;
+  border:1px solid rgba(255,91,99,.38);
+  border-radius:28px;
+  background:
+    radial-gradient(ellipse at 88% 0%,rgba(225,31,47,.25),transparent 34%),
+    radial-gradient(ellipse at 4% 92%,rgba(119,12,27,.26),transparent 38%),
+    linear-gradient(145deg,#1c0c11 0%,#10080c 54%,#17090e 100%);
+  box-shadow:0 28px 80px rgba(0,0,0,.38),0 0 0 1px rgba(255,255,255,.018) inset;
+}
+.one-shell:after{
+  content:"";position:absolute;z-index:-1;pointer-events:none;
+  width:420px;height:420px;right:-190px;top:190px;border-radius:50%;
+  border:1px solid rgba(255,95,105,.10);
+  box-shadow:0 0 0 32px rgba(255,95,105,.018),0 0 0 68px rgba(255,95,105,.014);
+}
+.one-topline{border-bottom-color:rgba(255,116,124,.20)}
+.one-brand-mark{font-size:13px;letter-spacing:.15em}
+.one-brand-mark:before{
+  content:"";display:inline-block;width:8px;height:8px;margin:0 9px 1px 0;
+  border-radius:50%;background:#ff4b55;box-shadow:0 0 13px rgba(255,65,78,.9);
+}
+.one-brand-mark b{color:#ff5a64}
+.one-lab{color:#c18a91}
+.one-lab i{background:#ff505b;box-shadow:0 0 12px #ff505b}
+.one-kicker{color:#ff777e}
+.one-copy h2{letter-spacing:-.055em;text-shadow:0 5px 35px rgba(235,38,53,.13)}
+.one-copy h2 em{color:#ff626c}
+.one-copy>p{color:#c0a5aa}
+.one-pills span{border-color:rgba(255,120,128,.18);background:rgba(65,18,27,.48);color:#e4c9cd}
+.one-dot.green{background:#f2c46b}.one-dot.blue{background:#ff6670}.one-dot.gold{background:#f2c46b}
+.one-action-card{
+  position:relative;overflow:hidden;
+  border:1px solid rgba(255,105,113,.38);
+  background:linear-gradient(145deg,rgba(77,21,31,.96),rgba(35,12,19,.98));
+  box-shadow:0 20px 48px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05);
+}
+.one-action-card:before{
+  content:"";position:absolute;inset:0 0 auto;height:2px;
+  background:linear-gradient(90deg,transparent,#ff5c66,#ffb0a7,transparent);opacity:.9;
+}
+.one-action-label{color:#f0a1a5}
+.one-target b{font-size:clamp(42px,5vw,54px);text-shadow:0 5px 28px rgba(255,56,70,.17)}
+.one-target span{color:#ff747d}
+.one-action-meta{color:#c99ca3}
+.one-generate-btn{
+  min-height:52px;border:1px solid rgba(255,205,205,.4);border-radius:13px;
+  background:linear-gradient(105deg,#fa5661 0%,#d91f32 54%,#a90f28 100%);
+  color:#fff;font-size:11px;letter-spacing:.09em;
+  box-shadow:0 12px 28px rgba(196,24,44,.28),inset 0 1px 0 rgba(255,255,255,.24);
+}
+.one-generate-btn:hover{filter:brightness(1.1);box-shadow:0 15px 32px rgba(215,30,49,.38),inset 0 1px 0 rgba(255,255,255,.28)}
+.one-safe-note{color:#c59ba1}
+.one-status-row,.one-audit-panel{
+  border-color:rgba(255,115,123,.19);
+  background:linear-gradient(110deg,rgba(49,15,23,.68),rgba(24,10,15,.72));
+}
+.one-status-indicator{color:#ff9ba0}
+.one-status-indicator i{background:#ff5964;box-shadow:0 0 11px rgba(255,70,82,.7)}
+.one-status-message{color:#e0c3c7}
+.one-result-head{margin-top:32px}
+.one-result-head h3{font-size:21px;letter-spacing:-.025em}
+.one-count{border-color:rgba(255,105,113,.25);background:rgba(62,17,27,.58)}
+.one-count b{color:#ff727b}
+.one-ticket-grid{gap:11px}
+.one-ticket-grid .ticketCard{
+  position:relative;overflow:hidden;
+  border-color:rgba(255,112,120,.20);
+  border-radius:15px;
+  background:linear-gradient(135deg,rgba(59,19,28,.96),rgba(29,12,18,.98));
+  box-shadow:0 8px 22px rgba(0,0,0,.13),inset 0 1px 0 rgba(255,255,255,.035);
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.one-ticket-grid .ticketCard:after{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,#ff5661,rgba(255,86,97,.08));
+}
+.one-ticket-grid .ticketCard:hover{
+  transform:translateY(-3px);border-color:rgba(255,115,123,.42);
+  box-shadow:0 14px 30px rgba(0,0,0,.22),0 0 22px rgba(215,33,52,.07);
+}
+.one-ticket-grid .ticketHead b{color:#ff9aa0}
+.one-ticket-grid .ticketHead small{color:#bb9299}
+.one-ticket-grid .ball{
+  width:clamp(32px,4vw,40px);height:clamp(32px,4vw,40px);
+  border:1px solid rgba(255,177,177,.30);
+  background:linear-gradient(145deg,#f7dfe0 0%,#e7bfc3 48%,#c98b94 100%);
+  color:#57121d;font-size:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.72);
+}
+.one-empty-state{border-color:rgba(255,115,123,.27);background:rgba(48,13,22,.36)}
+.one-empty-state b{color:#f3dfe1}
+.one-empty-state span{color:#c19ba1}
+.one-audit-title>span{color:#ff737c}
+.one-audit-title b{color:#f2dfe2}
+.one-audit-title small{color:#b88d94}
+.one-audit-content{color:#c5a5aa}
+.one-disclaimer{color:#a9858c}
+@media(min-width:900px){
+  .one-ticket-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .one-ticket-grid .ticketCard{padding:15px 17px}
+}
+@media(max-width:700px){
+  .one-shell{border-radius:20px;padding:17px}
+  .one-copy h2{font-size:clamp(33px,9vw,39px)}
+  .one-action-card{border-radius:16px}
+  .one-result-head{align-items:flex-end}
+  .one-ticket-grid{gap:8px}
+}
