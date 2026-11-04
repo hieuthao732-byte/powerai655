@@ -1,5 +1,5 @@
 import { rmSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 
 const files = [
   'index.html',
@@ -22,6 +22,6 @@ rmSync('dist', { recursive: true, force: true });
 mkdirSync('dist', { recursive: true });
 for (const file of files) {
   if (!existsSync(file)) throw new Error(`Missing required static file: ${file}`);
-  copyFileSync(file, join('dist', file));
+  const destination = join('dist', file);\n  mkdirSync(dirname(destination), { recursive: true });\n  copyFileSync(file, destination);
 }
 console.log('Stable build complete — source copied to dist without post-build mutation.');
