@@ -32,16 +32,11 @@ for(let i=0;i<sizes.length;i++){
     });
   }catch(e){error=e.message;}
   const runtimeMs=Number(process.hrtime.bigint()-started)/1e6;
-  if(result){
-    assert.equal(result.tickets.length,20);
-    assert.equal(result.audit.ticketCount,20);
-    assert.ok(result.audit.maxOverlap<=5);
-    assert.ok(result.policy.search.expanded<=150001);
-  }else{
-    assert.ok(error==="SELECTION_SEARCH_BUDGET_EXHAUSTED" ||
-      error==="SELECTION_CONSTRAINTS_INFEASIBLE",
-      "unexpected benchmark failure: "+error);
-  }
+  assert.ok(result,"selector must complete with a 160-candidate shortlist for pool "+size+": "+error);
+  assert.equal(result.tickets.length,20);
+  assert.equal(result.audit.ticketCount,20);
+  assert.ok(result.audit.maxOverlap<=5);
+  assert.ok(result.policy.search.expanded<=150000);
   results.push({
     pool:size,runtimeMs:Number(runtimeMs.toFixed(2)),
     outcome:result?"selected":error,
