@@ -12,9 +12,9 @@ on:
   workflow_dispatch:
     inputs:
       window:
-        description: "Target draws to evaluate (5-100)"
+        description: "Target draws to evaluate (5-200)"
         required: false
-        default: "50"
+        default: "200"
         type: string
       training_window:
         description: "Past draws used to calibrate L (5-30)"
