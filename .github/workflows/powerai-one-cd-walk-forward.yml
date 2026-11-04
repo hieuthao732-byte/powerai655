@@ -44,8 +44,8 @@ jobs:
         run: node POWERAI_ONE/walk-forward-cd.test.js
       - name: Run C RC6 and D Adaptive live walk-forward
         env:
-          WF_C_WINDOW: ${{ inputs.c_window || '10' }}
-          WF_D_WINDOW: ${{ inputs.d_window || '50' }}
+          WF_C_WINDOW: ${{ inputs.c_window || '30' }}
+          WF_D_WINDOW: ${{ inputs.d_window || '200' }}
           WF_D_BASELINE_TRIALS: ${{ inputs.d_baseline_trials || '5' }}
         run: node POWERAI_ONE/run-live-walk-forward-cd.js
       - name: Upload C/D research report
