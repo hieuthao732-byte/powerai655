@@ -10,7 +10,7 @@ const draws=[];
 for(let id=1;id<=30;id++){
  const nums=[],seen=new Set();
  let n=1;
- while(seen.size<6){seen.add(((id*7+n++*11)%55)+1);}
+ while(seen.size<6){seen.add(((id*7+n++*13)%55)+1);}
  draws.push({id,main:[...seen].sort((a,b)=>a-b),special:null});
 }
 (async()=>{
