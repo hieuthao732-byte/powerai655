@@ -1,6 +1,6 @@
 "use strict";
 const assert=require("node:assert/strict");
-const D=require("./domain.js"),G=require("./adaptive-governor.js"),R=require("./adaptive-shadow-runner.js").create(D,G);
+const D=require("./domain.js"),G=require("./adaptive-governor.js"),Gate=require("./challenger-evidence-gate.js"),R=require("./adaptive-shadow-runner.js").create(D,G,Gate);
 const draws=Array.from({length:16},(_,i)=>({id:i+1,date:new Date(Date.UTC(2026,0,i+2,12)).toISOString(),source:"official",verified:true,main:[1,2,3,4,5,6],special:7}));
 (async()=>{
  let activeCalls=0,challengerCalls=0;
@@ -23,6 +23,8 @@ const draws=Array.from({length:16},(_,i)=>({id:i+1,date:new Date(Date.UTC(2026,0
  assert.equal(firstChallenger.source,"official");
  assert.equal(firstChallenger.verified,true);
  assert.equal(firstChallenger.challengerSpecialHit,false);
+ assert.equal(report.challengerEvidence.reason,"INSUFFICIENT_PAIRED_DRAWS");
+ assert.equal(report.challengerEvidence.automaticPromotion,false);
  await assert.rejects(()=>R.run(draws,{minHistory:0,generateActive:()=>[],generateChallenger:()=>[]}),/INVALID_MIN_HISTORY/);
  await assert.rejects(()=>R.run(draws,{minHistory:2,generateActive:()=>[],generateChallenger:()=>[]}),/NO_TICKETS/);
  console.log("PowerAI ONE adaptive shadow runner tests: PASS");
