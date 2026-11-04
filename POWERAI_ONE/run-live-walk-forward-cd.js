@@ -4,7 +4,7 @@ const D=require("./domain.js"),A=require("./track-a-adapter.js"),B=require("./tr
 const CoreD=require("../adaptive-d.js"),AdapterD=require("./track-d-adapter.js");
 const {create:selectorFactory}=require("./unified-selector.js"),{create:evaluatorFactory}=require("./walk-forward-evaluator.js");
 const SOURCE="https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power655.jsonl";
-const int=(v,d,min,max)=>Math.min(max,Math.max(min,Number.isInteger(Number(v))?Number(v):d));
+const int=(v,d,min,max)=>{if(v==null||String(v).trim()==="")return d;const n=Number(v);return Math.min(max,Math.max(min,Number.isInteger(n)?n:d));};
 const selector=selectorFactory(D),evaluator=evaluatorFactory(D),opts={count:20,maxOverlap:4,candidateLimit:120,beamWidth:24,searchNodeBudget:200000};
 function seeded(seed){let x=seed>>>0;return()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};}
 async function history(){
