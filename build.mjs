@@ -35,6 +35,8 @@ rmSync('dist', { recursive: true, force: true });
 mkdirSync('dist', { recursive: true });
 for (const file of files) {
   if (!existsSync(file)) throw new Error(`Missing required static file: ${file}`);
-  const destination = join('dist', file);\n  mkdirSync(dirname(destination), { recursive: true });\n  copyFileSync(file, destination);
+  const destination = join('dist', file);
+  mkdirSync(dirname(destination), { recursive: true });
+  copyFileSync(file, destination);
 }
 console.log('Stable build complete — source copied to dist without post-build mutation.');
