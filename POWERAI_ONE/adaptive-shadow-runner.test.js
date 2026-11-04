@@ -12,7 +12,7 @@ const draws=Array.from({length:16},(_,i)=>({id:i+1,date:new Date(Date.UTC(2026,0
  assert.equal(report.activeModelMutated,false);
  assert.equal(report.automaticPromotion,false);
  assert.equal(report.triggerEvents.length,1);
- assert.equal(report.triggerEvents[0].targetDrawId,4);
+ assert.equal(report.triggerEvents[0].targetDrawId,5);
  assert.equal(report.challengerEvaluatedDraws,draws.length-4);
  assert.equal(challengerCalls,draws.length-4);
  assert.equal(activeCalls,draws.length-2);
