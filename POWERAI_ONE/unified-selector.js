@@ -101,7 +101,36 @@
       const beamWidth=Math.max(8,Math.min(256,Number(options.beamWidth??48)));
       const candidateLimit=Math.max(count,Math.min(1200,Number(options.candidateLimit??160)));
       const nodeBudget=Math.max(1000,Number(options.searchNodeBudget??800000));
-      const pool=candidates.slice().sort((a,b)=>b.rankScore-a.rankScore||key(a.ticket).localeCompare(key(b.ticket))).slice(0,candidateLimit);
+      const globalOrder=(a,b)=>b.rankScore-a.rankScore||key(a.ticket).localeCompare(key(b.ticket));
+      // Build a source-balanced shortlist before global fill. This prevents a provider
+      // with a much larger candidate pool from crowding every other provider out.
+      const sourceNames=[...new Set(candidates.flatMap(c=>Object.keys(c.sourceScores||{}).length?Object.keys(c.sourceScores):[c.source]))].sort();
+      const sourceQueues=sourceNames.map(source=>({
+        source,
+        items:candidates.filter(c=>(c.sourceScores&&Object.prototype.hasOwnProperty.call(c.sourceScores,source)) || c.source===source)
+          .sort((a,b)=>(b.sourceRankScores?.[source]??b.rankScore)-(a.sourceRankScores?.[source]??a.rankScore)||globalOrder(a,b))
+      }));
+      const shortlist=[],shortlistKeys=new Set();
+      let queueIndex=0,added=true;
+      while(shortlist.length<candidateLimit && added){
+        added=false;
+        for(let step=0;step<sourceQueues.length && shortlist.length<candidateLimit;step++){
+          const q=sourceQueues[(queueIndex+step)%sourceQueues.length];
+          while(q.items.length){
+            const item=q.items.shift(),k=key(item.ticket);
+            if(shortlistKeys.has(k))continue;
+            shortlistKeys.add(k);shortlist.push(item);added=true;break;
+          }
+        }
+        queueIndex=(queueIndex+1)%Math.max(1,sourceQueues.length);
+      }
+      if(shortlist.length<candidateLimit){
+        candidates.slice().sort(globalOrder).forEach(c=>{
+          const k=key(c.ticket);
+          if(shortlist.length<candidateLimit&&!shortlistKeys.has(k)){shortlistKeys.add(k);shortlist.push(c);}
+        });
+      }
+      const pool=shortlist;
       const rejected={overlap:0,exposure:0,repeatedPairs:0};
       const pairKeys=t=>{const out=[];for(let a=0;a<6;a++)for(let b=a+1;b<6;b++)out.push(t.main[a]+"-"+t.main[b]);return out;};
       const initial={indices:[],exposure:Array(56).fill(0),pairCounts:Object.create(null),repeatedPairCount:0,score:0,coverage:0,sourceSet:[]};
@@ -110,7 +139,7 @@
         const t=candidate.ticket;
         const novel=t.main.reduce((n,x)=>n+(state.exposure[x]===0?1:0),0);
         const meanExposure=t.main.reduce((n,x)=>n+state.exposure[x],0)/6;
-        const sourceSpread=state.sourceSet.includes(candidate.source)?0:1;
+        const candidateSources=candidate.sources||Object.keys(candidate.sourceScores||{}).concat(candidate.source);\n        const sourceSpread=candidateSources.some(source=>state.sourceSet.includes(source))?0:1;
         return scoreWeight*candidate.rankScore+diversityWeight*(.70*novel/6+.20/(1+meanExposure)+.10*sourceSpread);
       };
       for(let depth=0;depth<count;depth++){
@@ -141,7 +170,7 @@
             const exposure=state.exposure.slice();
             t.main.forEach(n=>exposure[n]++);
             const indices=state.indices.concat(ci);
-            const sourceSet=state.sourceSet.includes(candidate.source)?state.sourceSet:state.sourceSet.concat(candidate.source);
+            const candidateSources=candidate.sources||Object.keys(candidate.sourceScores||{}).concat(candidate.source);\n            const sourceSet=[...new Set(state.sourceSet.concat(candidateSources))];
             const coverage=exposure.slice(1).filter(Boolean).length;
             const score=state.score+partialValue(candidate,state)+(requireCoverage?coverage*.0005:0)+(minExposure>0?exposure.slice(1).filter(x=>x>=minExposure).length*.0002:0);
             const signature=indices.slice().sort((a,b)=>a-b).join(",");
