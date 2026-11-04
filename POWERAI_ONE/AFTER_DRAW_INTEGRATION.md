@@ -35,3 +35,11 @@ This module is pure and returns `statePersisted: false`. The host application st
 ## Evidence path
 
 After the governor trigger, `adaptive-shadow-runner.js` replays the challenger from the following draw onward. The paired outcomes can be passed to `challenger-evidence-gate.js`. The gate requires 200 consecutive paired official/verified prospective draws and only recommends human review; it cannot auto-promote.
+
+## Single runtime facade
+
+`one-runtime.js` composes the unified portfolio pipeline, post-draw evaluator, shadow replay, and evidence gate behind one API. A/B/C/L/D remain providers; the pipeline still owns exactly one final selector.
+
+The host can initialize the facade with the canonical modules, register providers, call `buildPortfolio()`, then call `evaluateAfterDraw()` after a verified official result is ingested. `runShadowReplay()` and `evaluateChallengerEvidence()` use the same runtime boundary.
+
+This is the integration surface for the app layer. It does not yet enable automatic cloud persistence or change the current RC9 UI.
