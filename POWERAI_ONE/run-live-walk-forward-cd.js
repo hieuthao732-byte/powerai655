@@ -22,7 +22,7 @@ async function runC(draws,windowSize,bCount){
 async function runD(draws,windowSize,count,trials){
  const pools=new Map(),minHistory=100;
  return evaluator.evaluate(draws,{minHistory,startIndex:Math.max(minHistory,draws.length-windowSize),baselineTrials:trials,
-  generate:ctx=>{const out=AdapterD.generate(ctx.draws,ctx.targetDrawId,CoreD,{candidateCount:count,seed:(ctx.targetDrawId*2654435761)>>>0});if(out.cutoffDrawId!==ctx.cutoffDrawId||out.candidates.length!==count)throw Error("D_CANDIDATE_OR_CUTOFF_MISMATCH");pools.set(ctx.targetDrawId,out.candidates);return{cutoffDrawId:out.cutoffDrawId,tickets:selector.select(out.candidates,opts).tickets};},
+  generate:ctx=>{const out=AdapterD.generate(ctx.draws,ctx.targetDrawId,CoreD,{candidateCount:count,seed:(ctx.targetDrawId*2654435761)>>>0});if(out.cutoffDrawId!==ctx.cutoffDrawId||out.candidates.length<20)throw Error("D_CANDIDATE_POOL_TOO_SMALL_OR_CUTOFF_MISMATCH");pools.set(ctx.targetDrawId,out.candidates);return{cutoffDrawId:out.cutoffDrawId,tickets:selector.select(out.candidates,opts).tickets};},
   baselineGenerator:(ctx,trial)=>{const rnd=seeded((ctx.targetDrawId*2246822519+Math.imul(trial+1,3266489917)+0x6d2b79f5)>>>0);return selector.select(pools.get(ctx.targetDrawId).map(x=>({...x,score:rnd()})),opts).tickets;}});
 }
 (async()=>{
