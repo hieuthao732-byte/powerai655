@@ -13,7 +13,7 @@ function exactFeasible(tickets,count,opts){
     if(solution)return;
     if(chosen.length===count){
       visited++;
-      const audit=D.auditPortfolio(chosen);
+      const audit=D.auditPortfolio(chosen.map(main=>({main})));
       const maxExposure=c.maxExposure==null?Infinity:c.maxExposure;
       const ok=(!c.requireCoverage||audit.coverage===55) &&
         audit.minExposure>=(c.minExposure||0) &&
