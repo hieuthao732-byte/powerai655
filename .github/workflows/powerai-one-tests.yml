@@ -40,6 +40,8 @@ jobs:
         run: node POWERAI_ONE/selector-oracle.test.js
       - name: Run unified selector scaling benchmark
         run: node POWERAI_ONE/selector-benchmark.test.js
+      - name: Run unified selector reliability suite
+        run: node POWERAI_ONE/selector-reliability.test.js
       - name: Run unified pipeline tests
         run: node POWERAI_ONE/unified-portfolio-pipeline.test.js
       - name: Run Track A adapter tests
