@@ -60,6 +60,8 @@ jobs:
         run: node POWERAI_ONE/challenger-evidence-gate.test.js
       - name: Run post-draw evaluation tests
         run: node POWERAI_ONE/after-draw-evaluation.test.js
+      - name: Run unified ONE runtime tests
+        run: node POWERAI_ONE/one-runtime.test.js
       - name: Run Track A adapter tests
         run: node POWERAI_ONE/track-a-adapter.test.js
 
