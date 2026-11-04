@@ -24,7 +24,7 @@ function exactFeasible(tickets,count,opts){
       return;
     }
     for(let i=start;i<=tickets.length-(count-chosen.length);i++){
-      walk(i+1,chosen.concat(tickets[i]));
+      walk(i+1,chosen.concat([tickets[i]]));
       if(solution)return;
     }
   }
