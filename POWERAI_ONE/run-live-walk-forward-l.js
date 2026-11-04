@@ -38,7 +38,11 @@ const selectOptions={count:20,maxOverlap:4,candidateLimit:120,beamWidth:24,searc
   baselineGenerator:(ctx)=>{
    const pool=poolByTarget.get(ctx.targetDrawId);
    if(!pool)throw new Error("L_BASELINE_POOL_MISSING");
-   const selectedB=selector.select(pool,selectOptions).tickets;\n   const lKeys=lKeysByTarget.get(ctx.targetDrawId)||new Set(),bKeys=new Set(selectedB.map(t=>t.main.join("-")));\n   const common=[...lKeys].filter(k=>bKeys.has(k)).length;\n   overlapByTarget.set(ctx.targetDrawId,{commonTickets:common,unionTickets:new Set([...lKeys,...bKeys]).size,jaccard:new Set([...lKeys,...bKeys]).size?common/new Set([...lKeys,...bKeys]).size:1,identical:common===20});\n   return selectedB;
+   const selectedB=selector.select(pool,selectOptions).tickets;
+   const lKeys=lKeysByTarget.get(ctx.targetDrawId)||new Set(),bKeys=new Set(selectedB.map(t=>t.main.join("-")));
+   const common=[...lKeys].filter(k=>bKeys.has(k)).length;
+   overlapByTarget.set(ctx.targetDrawId,{commonTickets:common,unionTickets:new Set([...lKeys,...bKeys]).size,jaccard:new Set([...lKeys,...bKeys]).size?common/new Set([...lKeys,...bKeys]).size:1,identical:common===20});
+   return selectedB;
   }
  });
  const output={
