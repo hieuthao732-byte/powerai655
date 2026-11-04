@@ -66,4 +66,24 @@ assert.equal(constrained.audit.repeatedPairs,0);
 assert.equal(constrained.audit.maxOverlap,1);
 assert.equal(constrained.policy.id,"ONE_BOUNDED_FEASIBILITY_BEAM_V1");
 assert.throws(()=>selector.select(candidates,{count:20,constraints:{requireCoverage:true,maxExposure:1}}),/SELECTION_CONSTRAINTS_INFEASIBLE|HARD_CONSTRAINT/);
+// A score-greedy beam can discard every feasible branch when the top-ranked
+// candidates all conflict with one another. Future-compatibility pruning must
+// preserve at least one lower-ranked path to a valid two-ticket portfolio.
+const trapCandidates=[
+  ...Array.from({length:8},(_,i)=>({
+    ticket:[1,10+i*5,11+i*5,12+i*5,13+i*5,14+i*5],
+    source:"TRAP",score:100-i
+  })),
+  {ticket:[2,3,4,5,6,7],source:"TRAP",score:2},
+  {ticket:[8,9,50,51,52,53],source:"TRAP",score:1}
+];
+const trap=selector.select(trapCandidates,{
+  count:2,maxOverlap:0,candidateLimit:10,beamWidth:8,searchNodeBudget:10000
+});
+assert.equal(trap.tickets.length,2);
+assert.equal(trap.audit.maxOverlap,0);
+assert.ok(trap.tickets.some(t=>t.main.join("-")==="2-3-4-5-6-7") ||
+  trap.tickets.some(t=>t.main.join("-")==="8-9-50-51-52-53"),
+  "beam should retain a lower-ranked candidate that can complete a feasible portfolio");
+
 console.log("PowerAI ONE unified selector tests: PASS");
