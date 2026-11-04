@@ -6,7 +6,7 @@
  "use strict";
  function create(deps={}){
   const D=deps.domain||root.PowerAIDomain;
-  const S=deps.selectorModule||root.PowerAIOneUnifiedSelector;
+  const S=deps.selectorModule||root.PowerAIOneUnifiedSelector||root.PowerAIUnifiedSelector;
   const P=deps.pipelineModule||root.PowerAIOnePipeline;
   const G=deps.governor||root.PowerAIOneAdaptiveGovernor;
   const A=deps.afterDrawModule||root.PowerAIOneAfterDrawEvaluation;
