@@ -11,14 +11,14 @@ on:
   workflow_dispatch:
     inputs:
       c_window:
-        description: "C target draws (5-30)"
+        description: "C target draws (5-100)"
         required: false
-        default: "10"
+        default: "30"
         type: string
       d_window:
         description: "D target draws (5-200)"
         required: false
-        default: "50"
+        default: "200"
         type: string
       d_baseline_trials:
         description: "Random D rankings per target (1-20)"
