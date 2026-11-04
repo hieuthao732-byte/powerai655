@@ -44,6 +44,8 @@ jobs:
         run: node POWERAI_ONE/selector-reliability.test.js
       - name: Run walk-forward evaluator tests
         run: node POWERAI_ONE/walk-forward-evaluator.test.js
+      - name: Run Track B historical walk-forward integration tests
+        run: node POWERAI_ONE/walk-forward-track-b.test.js
       - name: Run historical reverse-analysis tests
         run: node POWERAI_ONE/historical-reverse-analysis.test.js
       - name: Run unified pipeline tests
