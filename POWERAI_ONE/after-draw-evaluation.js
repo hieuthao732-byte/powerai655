@@ -13,7 +13,7 @@
    const parsed=domain.normalizeDraw(rawDraw);
    if(!parsed.ok)throw new Error("INVALID_DRAW:"+parsed.errors.join(","));
    const draw=parsed.draw;
-   if(draw.source!=="official"||draw.verified!==true)throw new Error("UNVERIFIED_OFFICIAL_DRAW_REQUIRED");
+   if(draw.source!=="official"||draw.verified!==true||draw.special===null)throw new Error("UNVERIFIED_OR_INCOMPLETE_OFFICIAL_DRAW_REQUIRED");
    if(Number(portfolio.targetDrawId)!==draw.id)throw new Error("PORTFOLIO_TARGET_DRAW_MISMATCH");
    const lockedAt=portfolio.lockedAt??portfolio.generatedAt;
    const lockTime=Date.parse(lockedAt??"");
