@@ -8,45 +8,32 @@
  function status(message,bad=false){const el=$("oneStatus");if(el){el.textContent=message;el.className=bad?"notice bad":"notice";}}
  function init(){
   const btn=$("oneBuildBtn");if(!btn)return;
-  const required=["PowerAIDomain","PowerAIOneUnifiedSelector","PowerAIOnePipeline","PowerAIOneAdaptiveGovernor","PowerAIOneAfterDrawEvaluation","PowerAIOneAdaptiveShadowRunner","PowerAIOneChallengerGate","PowerAIOneRuntime","PowerAIOneA","PowerAIOneB","PowerAIOneAProvider","PowerAIOneBProvider"];
+  const required=["PowerAIDomain","PowerAIUnifiedSelector","PowerAIOnePipeline","PowerAIOneAdaptiveGovernor","PowerAIOneAfterDrawEvaluation","PowerAIOneAdaptiveShadowRunner","PowerAIOneChallengerGate","PowerAIOneRuntime","PowerAIOneA","PowerAIOneB","PowerAIOneAProvider","PowerAIOneBProvider"];
   const missing=required.filter(k=>!root[k]);
   if(missing.length){status("ONE chưa khởi tạo đủ thành phần: "+missing.join(", "),true);btn.disabled=true;return;}
   try{
-   runtime=root.PowerAIOneRuntime.create();
-   root.PowerAIOneAProvider.register(runtimePipeline(),root.PowerAIOneA);
-  }catch(e){
-   // Runtime facade intentionally exposes providers, not its internal pipeline.
-   // Build a second, explicit pipeline through the same core modules for provider registration.
-   try{
-    const selector=root.PowerAIOneUnifiedSelector.create(root.PowerAIDomain);
-    const pipeline=root.PowerAIOnePipeline.create(root.PowerAIDomain,selector);
-    root.PowerAIOneAProvider.register(pipeline,root.PowerAIOneA);
-    root.PowerAIOneBProvider.register(pipeline,root.PowerAIOneB,{candidateCount:6000});
-    runtime=Object.freeze({
-     buildPortfolio:request=>pipeline.build(request),
-     listProviders:()=>pipeline.listProviders()
-    });
-   }catch(err){status("Không thể khởi tạo ONE: "+err.message,true);btn.disabled=true;return;}
-  }
+   runtime=root.PowerAIOneRuntime.create({selectorModule:root.PowerAIUnifiedSelector});
+   root.PowerAIOneAProvider.register(runtime,root.PowerAIOneA);
+   root.PowerAIOneBProvider.register(runtime,root.PowerAIOneB,{candidateCount:6000});
+  }catch(e){status("Không thể khởi tạo ONE: "+e.message,true);btn.disabled=true;return;}
   status("ONE đã sẵn sàng • A7 + B1.3 • 1 bộ chọn cuối cùng.");
   btn.addEventListener("click",build);
  }
- function runtimePipeline(){throw new Error("Use explicit provider registration pipeline");}
  async function build(){
   if(busy)return;
-  if(!runtime||typeof root.draws==="undefined"||!Array.isArray(root.draws)||!root.draws.length){status("Chưa có dữ liệu lịch sử hợp lệ.",true);return;}
+  if(!runtime||typeof draws==="undefined"||!Array.isArray(draws)||!draws.length){status("Chưa có dữ liệu lịch sử hợp lệ.",true);return;}
   const auth=root.PowerAIAuth;
   if(!auth||!auth.getUser||!auth.getUser()){status("Cần đăng nhập để sử dụng chức năng tạo bộ vé.",true);return;}
-  const target=Number(root.targetId);
+  const target=Number(targetId);
   if(!Number.isInteger(target)||target<1){status("Chưa xác định được kỳ mục tiêu.",true);return;}
   busy=true;const btn=$("oneBuildBtn");btn.disabled=true;
   $("oneTickets").textContent="";
   status("ONE đang tạo ứng viên và tìm bộ 20 vé khả thi…");
   try{
-   const latest=Math.max(...root.draws.map(d=>Number(d.id)||0));
+   const latest=Math.max(...draws.map(d=>Number(d.id)||0));
    const mode=target<=latest?"retrospective":"prospective";
    const result=await runtime.buildPortfolio({
-    targetDrawId:target,draws:root.draws,providerIds:["A7","B1.3"],mode,count:20,
+    targetDrawId:target,draws:draws,providerIds:["A7","B1.3"],mode,count:20,
     maxOverlap:4,candidateLimit:120,beamWidth:24,searchNodeBudget:200000,
     seed:(target*104729+130013)>>>0,scoreWeight:.7,diversityWeight:.3
    });
