@@ -22,7 +22,8 @@ const success=E.evaluate({portfolio:portfolio(11,[[1,2,3,4,5,6]]),draw:draw(11),
 assert.equal(success.maxMainHits,6);
 assert.equal(success.governor.currentStreak,0);
 assert.equal(success.specialHitTickets,0);
-assert.throws(()=>E.evaluate({portfolio:portfolio(12,[[1,2,3,4,5,6]]),draw:{...draw(12),verified:false},priorRecords:[]}),/UNVERIFIED_OFFICIAL_DRAW_REQUIRED/);
+assert.throws(()=>E.evaluate({portfolio:portfolio(12,[[1,2,3,4,5,6]]),draw:{...draw(12),verified:false},priorRecords:[]}),/UNVERIFIED_OR_INCOMPLETE_OFFICIAL_DRAW_REQUIRED/);
 assert.throws(()=>E.evaluate({portfolio:portfolio(12,[[1,2,3,4,5,6]],"2026-02-01T00:00:00Z"),draw:draw(12),priorRecords:[]}),/PORTFOLIO_NOT_LOCKED_BEFORE_RESULT/);
 assert.throws(()=>E.evaluate({portfolio:portfolio(12,[[1,2,3,4,5,6]]),draw:draw(13),priorRecords:[]}),/PORTFOLIO_TARGET_DRAW_MISMATCH/);
+assert.throws(()=>E.evaluate({portfolio:portfolio(12,[[1,2,3,4,5,6]]),draw:{...draw(12),special:null},priorRecords:[]}),/UNVERIFIED_OR_INCOMPLETE_OFFICIAL_DRAW_REQUIRED/);
 console.log("PowerAI ONE after-draw evaluation tests: PASS");
