@@ -9,8 +9,7 @@ const asInt=x=>Number.isInteger(Number(x))?Number(x):null;
 (async()=>{
  const response=await fetch(SOURCE,{signal:AbortSignal.timeout(30000),headers:{"user-agent":"PowerAI-ONE-walk-forward-research"}});
  if(!response.ok)throw new Error("HISTORY_FEED_HTTP_"+response.status);
- const raw=await response.text(),rows=raw.split(/\r?
-/).filter(x=>x.trim()).map((line,i)=>{try{return JSON.parse(line);}catch(e){throw new Error("INVALID_JSONL_LINE_"+(i+1));}});
+ const raw=await response.text(),rows=raw.split(/\r?\n/).filter(x=>x.trim()).map((line,i)=>{try{return JSON.parse(line);}catch(e){throw new Error("INVALID_JSONL_LINE_"+(i+1));}});
  const valid=[],seen=new Set(),rejected=[];
  rows.forEach((row,index)=>{const p=D.normalizeDraw(row);if(!p.ok){rejected.push({index,id:row?.id??null,errors:p.errors});return;}if(seen.has(p.draw.id)){rejected.push({index,id:p.draw.id,errors:["DUPLICATE_DRAW_ID"]});return;}seen.add(p.draw.id);valid.push(p.draw);});
  valid.sort((a,b)=>a.id-b.id);
