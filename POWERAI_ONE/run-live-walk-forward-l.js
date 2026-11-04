@@ -20,7 +20,7 @@ const selectOptions={count:20,maxOverlap:4,candidateLimit:120,beamWidth:24,searc
  const calibrationCandidates=Math.min(2000,Math.max(100,Number(process.env.WF_L_CALIBRATION_CANDIDATES)||500));
  const startIndex=Math.max(minHistory,valid.length-windowSize);
  if(startIndex>=valid.length)throw new Error("INSUFFICIENT_HISTORY_FOR_REQUESTED_WINDOW");
- const selector=makeSelector(D),evaluator=makeEvaluator(D),poolByTarget=new Map(),learningByTarget=new Map();
+ const selector=makeSelector(D),evaluator=makeEvaluator(D),poolByTarget=new Map(),learningByTarget=new Map(),lKeysByTarget=new Map(),overlapByTarget=new Map();
  const report=await evaluator.evaluate(valid,{
   minHistory,startIndex,
   generate:ctx=>{
@@ -38,7 +38,7 @@ const selectOptions={count:20,maxOverlap:4,candidateLimit:120,beamWidth:24,searc
   baselineGenerator:(ctx)=>{
    const pool=poolByTarget.get(ctx.targetDrawId);
    if(!pool)throw new Error("L_BASELINE_POOL_MISSING");
-   return selector.select(pool,selectOptions).tickets;
+   const selectedB=selector.select(pool,selectOptions).tickets;\n   const lKeys=lKeysByTarget.get(ctx.targetDrawId)||new Set(),bKeys=new Set(selectedB.map(t=>t.main.join("-")));\n   const common=[...lKeys].filter(k=>bKeys.has(k)).length;\n   overlapByTarget.set(ctx.targetDrawId,{commonTickets:common,unionTickets:new Set([...lKeys,...bKeys]).size,jaccard:new Set([...lKeys,...bKeys]).size?common/new Set([...lKeys,...bKeys]).size:1,identical:common===20});\n   return selectedB;
   }
  });
  const output={
@@ -48,9 +48,9 @@ const selectOptions={count:20,maxOverlap:4,candidateLimit:120,beamWidth:24,searc
   datasetSha256:crypto.createHash("sha256").update(raw).digest("hex"),
   dataset:{validDraws:valid.length,firstDrawId:valid[0]?.id,lastDrawId:valid.at(-1)?.id,rejectedRows:rejected.length},
   config:{minHistory,requestedWindow:windowSize,actualWindow:report.summary.draws,targetCandidates,calibrationWindow,calibrationCandidates,selector:selectOptions,ticketsPerPortfolio:20},
-  comparison:{L:report.summary,B:report.baselineSummary,portfolioAtLeast3Difference:report.summary.portfolioHitRates.atLeast3-report.baselineSummary.portfolioHitRates.atLeast3,portfolioAtLeast4Difference:report.summary.portfolioHitRates.atLeast4-report.baselineSummary.portfolioHitRates.atLeast4,equalTicketCount:report.baselineSummary.ticketCountPerPortfolio===20&&report.summary.tickets===report.summary.draws*20},
+  comparison:{L:report.summary,B:report.baselineSummary,portfolioAtLeast3Difference:report.summary.portfolioHitRates.atLeast3-report.baselineSummary.portfolioHitRates.atLeast3,portfolioAtLeast4Difference:report.summary.portfolioHitRates.atLeast4-report.baselineSummary.portfolioHitRates.atLeast4,equalTicketCount:report.baselineSummary.ticketCountPerPortfolio===20&&report.summary.tickets===report.summary.draws*20,selectionOverlap:{draws:overlapByTarget.size,meanCommonTickets:overlapByTarget.size?[...overlapByTarget.values()].reduce((s,x)=>s+x.commonTickets,0)/overlapByTarget.size:0,meanJaccard:overlapByTarget.size?[...overlapByTarget.values()].reduce((s,x)=>s+x.jaccard,0)/overlapByTarget.size:0,identicalPortfolioDraws:[...overlapByTarget.values()].filter(x=>x.identical).length,distribution:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(n=>({commonTickets:n,draws:[...overlapByTarget.values()].filter(x=>x.commonTickets===n).length}))}},
   learning:Object.fromEntries([...learningByTarget.entries()].map(([id,v])=>[id,v])),
-  records:report.records.map(r=>({targetDrawId:r.targetDrawId,cutoffDrawId:r.cutoffDrawId,historyCount:r.historyCount,maxMainHits:r.maxMainHits,mainHitDistribution:r.tickets.reduce((a,t)=>{a[t.mainHits]++;return a},Array(7).fill(0)),specialHitTickets:r.specialHitTickets,baseline:r.baseline})),
+  records:report.records.map(r=>({targetDrawId:r.targetDrawId,cutoffDrawId:r.cutoffDrawId,historyCount:r.historyCount,maxMainHits:r.maxMainHits,mainHitDistribution:r.tickets.reduce((a,t)=>{a[t.mainHits]++;return a},Array(7).fill(0)),specialHitTickets:r.specialHitTickets,baseline:r.baseline,selectionOverlap:overlapByTarget.get(r.targetDrawId)??null})),
   rejectedRows:rejected
  };
  require("node:fs").mkdirSync("artifacts",{recursive:true});
