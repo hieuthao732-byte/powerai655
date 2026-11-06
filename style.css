@@ -978,3 +978,26 @@ body.guestMode main button,body.guestMode main input,body.guestMode main select{
 .rc97TrackIntro{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:10px}.rc97TrackIntro span{font-size:8px;font-weight:900;letter-spacing:.11em;color:#86caf8}.rc97TrackIntro h3{margin:3px 0 4px;font-size:16px}.rc97TrackIntro p{margin:0;color:var(--muted);font-size:9px;line-height:1.5;max-width:850px}.rc97TrackIntro em{font-style:normal;font-size:8px;font-weight:900;padding:6px 8px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}.rc97MetricGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.rc97MetricGrid b{display:block;margin-top:4px;font-size:15px}.rc97MetricGrid small{font-size:8px;color:var(--muted2)}.rc97PrizeBox{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:11px;background:rgba(6,20,32,.62)}.rc97PrizeBox>b{display:block;font-size:9px;margin-bottom:7px}.rc97TrackRows{margin-top:10px}.rc97TrackRow{display:grid;grid-template-columns:1fr .8fr .9fr .9fr 2fr;align-items:center;gap:8px;padding:8px 9px;border-top:1px solid var(--line);font-size:9px}.rc97TrackRow>span{color:var(--muted)}.rc97TrackRow>small{color:var(--muted2)}.rc97AValidation{margin-top:12px}.rc97LegacyInsights{margin-top:12px}
 @media(max-width:1100px){.rc97HighPrizeGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.rc97TrackGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.rc97MetricGrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.rc97HighPrizeHead{display:block}.rc97HighPrizeHead small{display:block;text-align:left;margin-top:5px}.rc97HighPrizeGrid{grid-template-columns:1fr}.rc97PerfTabs{grid-template-columns:repeat(5,1fr)}.rc97PerfTab{padding:8px 5px;font-size:9px}.rc97TrackGrid{grid-template-columns:1fr}.rc97MetricGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.rc97TrackRow{grid-template-columns:1fr 1fr}.rc97TrackRow>div{grid-column:1/-1}.rc97TR{grid-template-columns:1.2fr repeat(4,.8fr)}.rc97TR>*{padding:6px 4px;font-size:8px}}
+
+
+/* POWERAI ONE preview: unified red shell; legacy panels stay mounted but hidden */
+:root{
+ --bg:#10080c;--bg2:#180a10;--surface:#241017;--surface2:#32131d;--surface3:#421923;
+ --line:rgba(255,112,120,.18);--lineStrong:rgba(255,112,120,.30);
+ --text:#f8ecee;--muted:#c5a6ab;--muted2:#ad858c;
+ --blue:#ff6872;--cyan:#ff6872;--amber:#f2c46b;--violet:#ff6872;--green:#f2c46b;--red:#ff6872;
+}
+body{background:radial-gradient(circle at 50% -15%,rgba(190,24,43,.22),transparent 34rem),linear-gradient(180deg,#16090e 0%,#0d070a 100%)}
+body:before{opacity:.08;background-image:linear-gradient(rgba(255,160,160,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,160,160,.04) 1px,transparent 1px)}
+.topbar{background:rgba(16,7,11,.92);border-bottom-color:rgba(255,112,120,.18)}
+.logoMark{background:linear-gradient(145deg,#d92d3b,#741525);border-color:rgba(255,150,150,.28);box-shadow:none}
+.brand b{color:#ff6872}.brandSub{color:#c49ba1}
+.versionPill{color:#ffdfe2;border-color:rgba(255,112,120,.24);background:rgba(110,20,34,.22)}
+.badge{color:#f1dadd;border-color:rgba(255,112,120,.22);background:rgba(55,15,24,.75)}
+.statusDot{background:#f2c46b;box-shadow:0 0 0 4px rgba(242,196,107,.08)}
+.topbar button,.topbar .ghostBtn{color:#f8ecee;border-color:rgba(255,112,120,.26);background:rgba(73,19,29,.62)}
+.topbar button:hover:not(:disabled){border-color:rgba(255,140,148,.55);background:#5a1b28}
+/* Keep the ONE panel as the only visible product workspace. Other legacy sections remain in DOM for existing data/runtime hooks. */
+main > :not(#onePanel){display:none!important}
+main{max-width:1240px;padding:20px 18px 42px}
+#onePanel{display:block!important}
