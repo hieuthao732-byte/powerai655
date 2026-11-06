@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PowerAI 6/55 – Phân tích & thống kê Vietlott Power 6/55</title>
+<title>PowerAI ONE – Vietlott Power 6/55</title>
 <meta name="description" content="PowerAI 6/55 hỗ trợ phân tích và thống kê Vietlott Power 6/55 với dữ liệu lịch sử, mô phỏng A/B/C/L, đối chiếu kết quả và chấm Jackpot 1, Jackpot 2. Điểm số chỉ phục vụ nghiên cứu, không phải xác suất trúng thưởng.">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="https://powerai655.vercel.app/">
-<meta name="theme-color" content="#0b1220">
+<meta name="theme-color" content="#8f1024">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="vi_VN">
 <meta property="og:site_name" content="PowerAI 6/55">
@@ -34,7 +34,8 @@
 }
 </script>
 <link rel="stylesheet" href="style.css?v=9.7">
-<link rel="stylesheet" href="adaptive-d.css?v=0.2">\n<link rel="stylesheet" href="one-ui.css?v=1.0">
+<link rel="stylesheet" href="adaptive-d.css?v=0.2">
+<link rel="stylesheet" href="one-ui.css?v=2.0">
 <script type="application/ld+json">
 {
   "@context":"https://schema.org",
@@ -49,25 +50,15 @@
 </script>
 </head>
 <body class="guestMode">
-<header class="topbar">
-  <div class="brandWrap">
-    <div class="logoMark">⚡</div>
-    <div>
-      <div class="brand">PowerAI <b>6/55</b></div>
-      <div class="brandSub">RC9.7 • Admin Dashboard + Cloud Accounts</div>
-    </div>
-  </div>
-  <div class="topbarRight">
-    <div id="authMini" class="authMini">
+<header class="one-app-header">
+  <a class="one-app-brand" href="/" aria-label="PowerAI ONE"><span>⚡</span><b>POWERAI <i>ONE</i></b></a>
+  <div class="one-app-account"><div id="authMini" class="authMini">
       <span id="authUserLabel">Khách</span>
       <button id="authOpenBtn" type="button" class="ghostBtn tinyBtn" onclick="document.getElementById('authModal').hidden=false">Đăng nhập</button>
       <button id="accountBtn" type="button" class="ghostBtn tinyBtn" hidden>Tài khoản</button>
       <button id="adminPanelBtn" type="button" class="adminTinyBtn" hidden>Quản trị</button>
       <button id="authLogoutBtn" class="ghostBtn tinyBtn" hidden onclick="window.PowerAIAuth&&PowerAIAuth.logout()">Đăng xuất</button>
-    </div>
-    <span class="versionPill">SPECIAL BALL • RC9.7</span>
-    <div id="status" class="badge statusBadge"><i class="statusDot"></i>Đang tải dữ liệu...</div>
-  </div>
+    </div></div>
 </header>
 
 <div id="authModal" class="authModal" hidden>
@@ -171,8 +162,8 @@
     <div id="adminMessage" class="notice">Quyền quản trị được kiểm tra ở Supabase RPC, không chỉ dựa vào giao diện.</div>
   </div>
 </div>
-<div id="guestReadOnlyBar" class="guestReadOnlyBar">🔒 Chế độ khách • Chỉ xem. Đăng nhập để khóa bộ số, nhập kết quả, chạy Learning và lưu dữ liệu riêng trên cloud.</div>
-<main inert aria-disabled="true">
+
+<main>
 <section class="hero">
   <div class="heroMain">
     <div class="eyebrow">RC7.0 • A = TỐI ƯU CẤU TRÚC BẰNG MÔ PHỎNG</div>
