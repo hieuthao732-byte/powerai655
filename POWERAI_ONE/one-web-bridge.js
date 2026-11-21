@@ -10,7 +10,8 @@
   if(el){el.textContent=message;el.className=bad?"one-status-message bad":"one-status-message";}
  }
  function init(){
-  const btn=$("oneBuildBtn");if(!btn)return;\n  const targetLabel=$("targetIdOne");const currentTarget=$("targetId");if(targetLabel&&currentTarget)targetLabel.textContent=currentTarget.textContent||"—";
+  const btn=$("oneBuildBtn");if(!btn)return;
+  const targetLabel=$("targetIdOne");const currentTarget=$("targetId");if(targetLabel&&currentTarget)targetLabel.textContent=currentTarget.textContent||"—";
   const required=["PowerAIDomain","PowerAIUnifiedSelector","PowerAIOnePipeline","PowerAIOneAdaptiveGovernor","PowerAIOneAfterDrawEvaluation","PowerAIOneAdaptiveShadowRunner","PowerAIOneChallengerGate","PowerAIOneRuntime","PowerAIOneA","PowerAIOneB","PowerAIOneAProvider","PowerAIOneBProvider"];
   const missing=required.filter(k=>!root[k]);
   if(missing.length){status("ONE chưa khởi tạo đủ thành phần: "+missing.join(", "),true);btn.disabled=true;return;}
@@ -27,7 +28,8 @@
   if(!runtime||typeof draws==="undefined"||!Array.isArray(draws)||!draws.length){status("Chưa có dữ liệu lịch sử hợp lệ.",true);return;}
   const auth=root.PowerAIAuth;
   if(!auth||typeof auth.getUser!=="function"||!auth.getUser()){status("Cần đăng nhập để sử dụng chức năng tạo bộ vé.",true);return;}
-  const target=Number(targetId);\n  const targetLabel=$("targetIdOne");if(targetLabel)targetLabel.textContent=String(target||"—");
+  const target=Number(targetId);
+  const targetLabel=$("targetIdOne");if(targetLabel)targetLabel.textContent=String(target||"—");
   if(!Number.isInteger(target)||target<1){status("Chưa xác định được kỳ mục tiêu.",true);return;}
   const latestId=Math.max(...draws.map(d=>Number(d.id)||0));
   if(target<=latestId){status("ONE chỉ tạo bộ vé prospective trước kỳ quay. Kỳ đã có kết quả không được tạo vé mới.",true);return;}
@@ -46,7 +48,8 @@
    const portfolio=result?.portfolio;
    if(!portfolio||!Array.isArray(portfolio.tickets)||portfolio.tickets.length!==20)throw new Error("ONE không trả về đủ 20 vé.");
    if(Number(portfolio.targetDrawId)!==target||Number(portfolio.cutoffDrawId)>=target)throw new Error("Sai kỳ mục tiêu hoặc dữ liệu vượt thời điểm khóa.");
-   const grid=$("oneTickets");grid.replaceChildren();\n   const countLabel=$("oneTicketCount");if(countLabel)countLabel.textContent=String(portfolio.tickets.length);
+   const grid=$("oneTickets");grid.replaceChildren();
+   const countLabel=$("oneTicketCount");if(countLabel)countLabel.textContent=String(portfolio.tickets.length);
    portfolio.tickets.forEach((ticket,index)=>{
     const card=document.createElement("div");card.className="ticketCard";
     const head=document.createElement("div");head.className="ticketHead";
