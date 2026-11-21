@@ -536,7 +536,7 @@
 <script src="POWERAI_ONE/track-a-provider.js?v=one1"></script>
 <script src="POWERAI_ONE/track-b-provider.js?v=one1"></script>
 <script src="POWERAI_ONE/one-runtime.js?v=one1"></script>
-<script src="POWERAI_ONE/one-web-bridge.js?v=one2" onerror="document.getElementById('oneStatus').textContent='Không tải được mã ONE (lỗi tải script).';document.getElementById('oneStatus').classList.add('bad')"></script>
-<script>setTimeout(function(){if(!window.__POWERAI_ONE_BRIDGE_LOADED){var s=document.getElementById("oneStatus");if(s){s.textContent="Mã ONE chưa được trình duyệt nạp. Hãy tải lại trang; nếu vẫn lỗi, gửi ảnh màn hình để kiểm tra.";s.classList.add("bad");}}},1500);</script>
+<script src="/POWERAI_ONE/one-web-bridge.js?v=one3" onerror="var el=document.getElementById('oneStatus');if(el){el.textContent='Không tải được mã ONE: trình duyệt không lấy được tệp JavaScript.';el.classList.add('bad')}"></script>
+<script>setTimeout(function(){if(!window.__POWERAI_ONE_BRIDGE_LOADED){var s=document.getElementById("oneStatus");if(s&&!s.textContent.includes("Không tải được mã ONE")){s.textContent="Mã ONE chưa được trình duyệt nạp (đường dẫn script hoặc lỗi cú pháp).";s.classList.add("bad");}}},2500);</script>
 </body>
 </html>
