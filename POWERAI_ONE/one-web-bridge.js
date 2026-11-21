@@ -3,6 +3,7 @@
  */
 (function(root){
  "use strict";
+ root.__POWERAI_ONE_BRIDGE_LOADED=true;
  let runtime=null,busy=false;
  const $=id=>document.getElementById(id);
  function status(message,bad=false){
@@ -10,7 +11,7 @@
   if(el){el.textContent=message;el.className=bad?"one-status-message bad":"one-status-message";}
  }
  function init(){
-  const btn=$("oneBuildBtn");if(!btn)return;
+  const btn=$("oneBuildBtn");if(!btn){status("Không tìm thấy nút TẠO BỘ 20 VÉ ONE trong trang.",true);return;}
   const targetLabel=$("targetIdOne");const currentTarget=$("targetId");if(targetLabel&&currentTarget)targetLabel.textContent=currentTarget.textContent||"—";
   const required=["PowerAIDomain","PowerAIUnifiedSelector","PowerAIOnePipeline","PowerAIOneAdaptiveGovernor","PowerAIOneAfterDrawEvaluation","PowerAIOneAdaptiveShadowRunner","PowerAIOneChallengerGate","PowerAIOneRuntime","PowerAIOneA","PowerAIOneB","PowerAIOneAProvider","PowerAIOneBProvider"];
   const missing=required.filter(k=>!root[k]);
@@ -21,7 +22,7 @@
    root.PowerAIOneBProvider.register(runtime,root.PowerAIOneB,{candidateCount:6000});
   }catch(e){status("Không thể khởi tạo ONE: "+e.message,true);btn.disabled=true;return;}
   status("ONE đã sẵn sàng • A7 + B1.3 là nguồn ứng viên • ONE chọn 20 vé cuối.");
-  btn.addEventListener("click",build);
+  if(!btn.dataset.oneBound){btn.addEventListener("click",build);btn.dataset.oneBound="1";}
  }
  async function waitForHistory(timeoutMs=15000){
   const started=Date.now();
