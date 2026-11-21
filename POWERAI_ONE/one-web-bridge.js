@@ -54,6 +54,8 @@
   busy=true;const btn=$("oneBuildBtn");btn.disabled=true;
   $("oneTickets").replaceChildren();$("oneAudit").textContent="";
   status("ONE đang tạo ứng viên A7/B1.3 và tìm bộ 20 vé khả thi…");
+  // Yield one frame so the browser can paint the running state before CPU-heavy providers start.
+  await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,40)));
   try{
    const result=await runtime.buildPortfolio({
     targetDrawId:target,draws,providerIds:["A7","B1.3"],mode:"prospective",count:20,
