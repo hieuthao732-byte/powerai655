@@ -7,7 +7,7 @@
  function el(id){return document.getElementById(id);}
  function say(message,bad){var n=el("oneStatus");if(n){n.textContent=message;n.className=bad?"one-status-message bad":"one-status-message";}}
  function drawLabel(id){return "#"+String(Number(id)||0).padStart(5,"0");}
- function readStore(){try{var x=JSON.parse(localStorage.getItem(STORE_KEY)||"{}");return x&&typeof x==="object"?x:{portfolios:{},evaluations:[]};}catch(_){return {portfolios:{},evaluations:[]};}}
+ function readStore(){try{var x=JSON.parse(localStorage.getItem(STORE_KEY)||"{}");if(!x||typeof x!=="object"||Array.isArray(x))x={};if(!x.portfolios||typeof x.portfolios!=="object"||Array.isArray(x.portfolios))x.portfolios={};if(!Array.isArray(x.evaluations))x.evaluations=[];if(!Array.isArray(x.unlockLog))x.unlockLog=[];return x;}catch(_){return {portfolios:{},evaluations:[],unlockLog:[]};}}
  function writeStore(s){localStorage.setItem(STORE_KEY,JSON.stringify(s));try{if(typeof cloudSyncSoon==="function")cloudSyncSoon();}catch(e){console.warn("ONE cloud sync queue unavailable",e);}}
  function targetKey(id){return String(Number(id));}
  function getLocked(id){var s=readStore();return s.portfolios[targetKey(id)]||null;}
