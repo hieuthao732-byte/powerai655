@@ -35,3 +35,21 @@ main>*:not(#onePanel){display:none!important;visibility:hidden!important}
 #onePanel{display:block!important;visibility:visible!important}
 #toast{z-index:300}
 @media(max-width:600px){.one-app-header{min-height:60px;padding:0 12px}.one-app-brand{font-size:11px}.one-app-account .authMini{gap:5px}.one-app-account button{padding:6px 8px;font-size:9px}}
+
+
+/* ONE-only experience: keep legacy DOM mounted for its data engines, but hide its old panels. */
+.legacy-hidden{display:none!important}
+.one-history-panel{margin:18px 0 24px;padding:20px;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:linear-gradient(145deg,rgba(36,12,20,.96),rgba(17,19,27,.98));color:#f6edf0}
+.one-history-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
+.one-history-head h3{margin:5px 0;font-size:20px}.one-history-head p{margin:0;color:#b9aab0;font-size:13px}
+.one-history-stats{display:flex;gap:10px}.one-history-stats>div{min-width:110px;padding:10px 13px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.04)}
+.one-history-stats small,.one-history-analysis small{display:block;color:#bd9da8;font-size:10px;letter-spacing:.08em}.one-history-stats b{display:block;margin-top:5px;font-size:19px;color:#fff}
+.one-history-analysis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.one-history-analysis>div{padding:13px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07)}
+.one-history-analysis b{display:block;margin-top:8px;font-size:13px;line-height:1.6;color:#f8e8ed}
+.one-recent-title{margin:18px 0 8px;color:#cbaeb8;font-size:10px;letter-spacing:.1em;font-weight:800}
+.one-draw-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid rgba(255,255,255,.07)}
+.one-draw-row>b{width:66px;color:#e9b7c6;font-size:12px}.one-draw-row>span{display:flex;gap:6px;flex-wrap:wrap}
+.one-draw-row i{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#f4e8eb;color:#8e1830;font-style:normal;font-weight:800;font-size:11px}
+.one-draw-row small{margin-left:auto;color:#9e9298;font-size:11px}
+@media(max-width:700px){.one-history-analysis{grid-template-columns:1fr}.one-draw-row{gap:7px}.one-draw-row small{display:none}.one-history-stats{width:100%}.one-history-stats>div{flex:1}}
