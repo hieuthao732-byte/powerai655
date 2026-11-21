@@ -53,7 +53,7 @@ async function initCloudAuth(){
   if(current)await applyCloudUser(current,{reload:false});
 }
 
-const URL="https://raw.githubusercontent.com/vietvudanh/vietlott-data/master/data/power655.jsonl";
+const URL="https://raw.githubusercontent.com/vietvudanh/vietlott-data/main/data/power655.jsonl";
 const $=id=>document.getElementById(id);
 let draws=[],latest=null,targetId=null,geo=null,legacy=null,legacyModel=null,legacyBuilding=false,legacyRanked=null,hybrid=null,hybridBuilding=false,consensusNums=null,matrixModel=null,learningPortfolio=null,learningPortfolioBuilding=false,learningPortfolioMeta=null;
 
