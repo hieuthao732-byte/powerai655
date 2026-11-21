@@ -53,3 +53,6 @@ main>*:not(#onePanel){display:none!important;visibility:hidden!important}
 .one-draw-row i{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#f4e8eb;color:#8e1830;font-style:normal;font-weight:800;font-size:11px}
 .one-draw-row small{margin-left:auto;color:#9e9298;font-size:11px}
 @media(max-width:700px){.one-history-analysis{grid-template-columns:1fr}.one-draw-row{gap:7px}.one-draw-row small{display:none}.one-history-stats{width:100%}.one-history-stats>div{flex:1}}
+
+/* Keep the legacy DOM mounted for the data/runtime functions, but present only ONE. */
+main > section:not(#onePanel), main > nav, main > div.tabPane{display:none!important}
