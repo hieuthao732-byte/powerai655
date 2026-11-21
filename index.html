@@ -164,7 +164,7 @@
 </div>
 
 <main>
-<section class="hero">
+<section class="legacy-hidden hero">
   <div class="heroMain">
     <div class="eyebrow">RC7.0 • A = TỐI ƯU CẤU TRÚC BẰNG MÔ PHỎNG</div>
     <h1>PowerAI <span>6/55</span></h1>
@@ -200,21 +200,21 @@
       <div class="one-safe-note"><span>🔒</span> Chưa khóa vé · Chưa lưu cloud</div>
     </div>
   </div>
-  <div class="one-status-row"><div class="one-status-indicator"><i></i><span>TRẠNG THÁI HỆ THỐNG</span></div><div id="oneStatus" class="one-status-message" role="status" aria-live="polite">Sẵn sàng khi dữ liệu lịch sử đã tải và tài khoản được đăng nhập.</div></div>
+  <div class="one-status-row"><div class="one-status-indicator"><i></i><span>TRẠNG THÁI HỆ THỐNG</span></div><div id="oneStatus" class="one-status-message" role="status" aria-live="polite">Đang khởi tạo dữ liệu lịch sử…</div></div><section class="one-history-panel"><div class="one-history-head"><div><span class="one-kicker">HISTORY INTELLIGENCE</span><h3>Phân tích các kỳ trước</h3><p id="oneHistoryMeta">Đang nạp dữ liệu lịch sử…</p></div><div class="one-history-stats"><div><small>SỐ KỲ ĐÃ NẠP</small><b id="oneHistoryCount">—</b></div><div><small>KỲ CHỐT DỮ LIỆU</small><b id="oneHistoryCutoff">—</b></div></div></div><div id="oneHistoryAnalysis" class="one-history-analysis">Đang phân tích tần suất, tổng và phân bố số.</div><div id="oneRecentDraws" class="one-recent-draws"></div></section>
   <div class="one-result-head"><div><span class="one-kicker">FINAL PORTFOLIO</span><h3>Bộ 20 vé được chọn</h3><p>Một danh sách cuối cùng — không chia thành nhiều phương án.</p></div><div class="one-count"><b id="oneTicketCount">20</b><span>VÉ</span></div></div>
   <div id="oneTickets" class="one-ticket-grid" aria-live="polite"><div class="one-empty-state"><div class="one-empty-icon">✧</div><b>Chưa có bộ vé nào</b><span>Nhấn “Tạo bộ 20 vé ONE” để chạy hệ thống sau khi đăng nhập.</span></div></div>
   <div class="one-audit-panel"><div class="one-audit-title"><span>⌁</span><b>KIỂM TOÁN BỘ VÉ</b><small>MINH BẠCH NGUỒN & RÀNG BUỘC</small></div><div id="oneAudit" class="one-audit-content">Các chỉ số kiểm tra sẽ xuất hiện sau khi ONE hoàn tất lựa chọn.</div></div>
   <div class="one-disclaimer">POWERAI ONE là công cụ nghiên cứu và xếp hạng tổ hợp. Xổ số có tính ngẫu nhiên; điểm số và phân tích không phải xác suất trúng thưởng.</div>
 </section>
 
-<section class="grid4 kpiGrid">
+<section class="legacy-hidden grid4 kpiGrid">
   <div class="card kpiCard"><div class="kpiIcon">◷</div><div><span>Kỳ mới nhất</span><b id="latestId">—</b><small id="latestDate">—</small></div></div>
   <div class="card kpiCard focus"><div class="kpiIcon">◎</div><div><span>Kỳ đang chọn</span><b id="targetId">—</b><small>A, B và C cùng chạy kỳ này</small></div></div>
   <div class="card kpiCard"><div class="kpiIcon">⌁</div><div><span>B dùng dữ liệu đến</span><b id="cutoffId">—</b><small>không dùng dữ liệu của kỳ đang chọn</small></div></div>
   <div class="card kpiCard lockCard"><div class="kpiIcon">⌾</div><div><span>Trạng thái khóa</span><b id="lockState">CHƯA KHÓA</b><small id="lockTime">Phải khóa trước giờ quay</small></div></div>
 </section>
 
-<section class="panel comparePanel sectionGlow">
+<section class="legacy-hidden panel comparePanel sectionGlow">
   <div class="head">
     <div><div class="sectionKicker">ĐỐI CHIẾU KẾT QUẢ</div><h2>⚔️ So sánh A / B / C</h2><p>Khi có kết quả, hệ thống giữ màu số hit, phân loại từng giải và hiển thị bảng tổng kết giải thưởng của A/B/C/L.</p></div>
     <div class="actions">
@@ -241,7 +241,7 @@
   </div>
 </section>
 
-<nav class="tabs trackTabs">
+<nav class="legacy-hidden tabs trackTabs">
   <button class="tab tabA active" data-tab="geometryTab"><b>A</b><span>Toán + kiểm chứng</span><small id="tabSubA">Tạo bằng mô phỏng • kiểm chứng bằng lịch sử</small></button>
   <button class="tab tabB" data-tab="legacyTab"><b>B</b><span>Lịch sử</span><small id="tabSubB">Dùng dữ liệu trước kỳ đang chọn</small></button>
   <button class="tab tabC" data-tab="hybridTab"><b>C</b><span>Kết hợp</span><small id="tabSubC">20 vé cho kỳ đang chọn</small></button>
@@ -250,7 +250,7 @@
 </nav>
 
 
-<div id="numberIntelTab" class="tabPane">
+<div id="numberIntelTab" class="legacy-hidden tabPane">
 <section class="panel numberIntelPanel">
   <div class="head numberIntelHead">
     <div>
@@ -268,7 +268,7 @@
 </section>
 </div>
 
-<div id="geometryTab" class="tabPane active">
+<div id="geometryTab" class="legacy-hidden tabPane active">
 <section class="panel">
   <div class="head">
     <div>
@@ -302,7 +302,7 @@
 </section>
 </div>
 
-<div id="legacyTab" class="tabPane">
+<div id="legacyTab" class="legacy-hidden tabPane">
 <section class="panel">
   <div class="head">
     <div>
@@ -335,7 +335,7 @@
 </div>
 
 
-<div id="hybridTab" class="tabPane">
+<div id="hybridTab" class="legacy-hidden tabPane">
 
 <section class="panel rc6Arch compactInfo">
   <div class="head">
@@ -396,7 +396,7 @@
 </div>
 
 
-<div id="learningTab" class="tabPane">
+<div id="learningTab" class="legacy-hidden tabPane">
 <section class="panel learningHero">
   <div class="head">
     <div>
@@ -531,6 +531,8 @@
 <script src="POWERAI_ONE/after-draw-evaluation.js?v=one1"></script>
 <script src="POWERAI_ONE/adaptive-shadow-runner.js?v=one1"></script>
 <script src="POWERAI_ONE/challenger-evidence-gate.js?v=one1"></script>
+<script src="POWERAI_ONE/track-a-engine.js?v=one1"></script>
+<script src="POWERAI_ONE/track-b-engine.js?v=one1"></script>
 <script src="POWERAI_ONE/track-a-adapter.js?v=one1"></script>
 <script src="POWERAI_ONE/track-b-adapter.js?v=one1"></script>
 <script src="POWERAI_ONE/track-a-provider.js?v=one1"></script>
