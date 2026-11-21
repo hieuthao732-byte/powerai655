@@ -23,6 +23,8 @@ const files = [
   'POWERAI_ONE/after-draw-evaluation.js',
   'POWERAI_ONE/adaptive-shadow-runner.js',
   'POWERAI_ONE/challenger-evidence-gate.js',
+  'POWERAI_ONE/track-a-engine.js',
+  'POWERAI_ONE/track-b-engine.js',
   'POWERAI_ONE/track-a-adapter.js',
   'POWERAI_ONE/track-b-adapter.js',
   'POWERAI_ONE/track-a-provider.js',
