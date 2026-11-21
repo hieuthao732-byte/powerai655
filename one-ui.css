@@ -56,3 +56,27 @@ main>*:not(#onePanel){display:none!important;visibility:hidden!important}
 
 /* Keep the legacy DOM mounted for the data/runtime functions, but present only ONE. */
 main > section:not(#onePanel), main > nav, main > div.tabPane{display:none!important}
+
+
+/* ONE portfolio management, archive, reverse-analysis and learning dashboard */
+.one-workspace{margin-top:18px;padding:20px;border:1px solid rgba(255,105,113,.25);border-radius:18px;background:linear-gradient(145deg,rgba(45,14,23,.96),rgba(20,9,14,.98));color:#f8ecee}
+.one-workspace-head,.one-subhead{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.one-workspace-head h3{margin:5px 0;font-size:20px;color:#fff}.one-workspace-head p,.one-subhead p{margin:0;color:#c4aab0;font-size:11px;line-height:1.6}
+.one-lock-state{padding:8px 11px;border:1px solid rgba(255,190,110,.25);border-radius:9px;color:#ffd28d;background:rgba(115,65,15,.15);font-size:9px;font-weight:900;letter-spacing:.08em}
+.one-workspace-actions{display:flex;flex-wrap:wrap;gap:9px;margin:16px 0}
+.one-workspace-actions button{min-height:39px;padding:9px 13px;border:1px solid rgba(255,130,140,.28);border-radius:9px;background:#3d111d;color:#ffe9eb;font-size:10px;font-weight:850;cursor:pointer}
+.one-workspace-actions #oneLockBtn{background:linear-gradient(105deg,#f34b57,#b9152d);color:#fff;border-color:#ff8991}
+.one-workspace-actions button:disabled{opacity:.4;cursor:not-allowed}
+.one-workspace-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0 16px}
+.one-workspace-grid article{padding:13px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.035)}
+.one-workspace-grid small,.one-subpanel small{display:block;color:#c79da5;font-size:8px;font-weight:850;letter-spacing:.1em}
+.one-workspace-grid b{display:block;margin:7px 0 3px;color:#fff;font-size:23px}.one-workspace-grid span{color:#b99ea4;font-size:9px}
+.one-workspace-columns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.one-subpanel{margin-top:10px;padding:15px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.025)}
+.one-subpanel h4{margin:0 0 6px;color:#fff;font-size:13px}.one-subpanel>p{margin:0 0 10px;color:#bda6ac;font-size:10px;line-height:1.6}
+#oneReverseStats{display:grid;gap:7px}#oneReverseStats>div{padding:9px;border-radius:8px;background:rgba(255,255,255,.035)}
+#oneReverseStats b{display:block;margin-top:5px;color:#f6e8eb;font-size:10px;line-height:1.6}
+.one-archive{display:grid;gap:6px}.one-archive-row{display:grid;grid-template-columns:70px 1fr auto;align-items:center;gap:9px;padding:9px 10px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(255,255,255,.025);font-size:9px}
+.one-archive-row>b{color:#ffd0d4}.one-archive-row>span{color:#c6adb2}.one-archive-row>strong{color:#e8c17e;font-size:8px;letter-spacing:.06em}
+.one-integrity-note{margin-top:12px;padding:10px 12px;border-left:2px solid #c83a4b;background:rgba(170,30,50,.08);color:#cbb3b8;font-size:9px;line-height:1.7}
+@media(max-width:700px){.one-workspace{padding:14px}.one-workspace-head{display:block}.one-lock-state{display:inline-block;margin-top:10px}.one-workspace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.one-workspace-columns{grid-template-columns:1fr}.one-archive-row{grid-template-columns:58px 1fr}.one-archive-row>strong{grid-column:2}}
