@@ -81,7 +81,7 @@
  }
  function lockCurrent(){
   if(!currentPortfolio)return say("Hãy tạo đủ 20 vé trước khi khóa.",true);
-  var p=currentPortfolio,target=Number(p.targetDrawId),latestId=Number(latest&&latest.id)||0;
+  var p=currentPortfolio,target=Number(p.targetDrawId),latestId=Number(latest&&latest.id)||0;if(target!==Number(targetId))return say("Bộ vé đang hiển thị không thuộc kỳ mục tiêu hiện tại. Hãy tạo lại trước khi khóa.",true);
   if(!root.PowerAIAuth||!root.PowerAIAuth.getUser||!root.PowerAIAuth.getUser())return say("Cần đăng nhập để khóa và đồng bộ bộ vé.",true);
   if(!Number.isInteger(target)||target<=latestId)return say("Không thể khóa vé cho kỳ đã quay.",true);
   if(getLocked(target))return say("Kỳ này đã có bộ vé khóa. Không được ghi đè.",true);
@@ -118,7 +118,9 @@
  }
  function restoreActive(){
   var id=Number(targetId)||Number(latest&&latest.id)+1,p=getLocked(id);
-  if(p){currentPortfolio=p;renderTickets(p.tickets,p.selectionHash,id,true);if(el("oneAudit"))el("oneAudit").textContent="Bộ vé đã khóa · "+drawLabel(id)+" · mã "+p.selectionHash+" · dữ liệu đến "+drawLabel(p.cutoffDrawId)+".";if(el("oneSafeNote"))el("oneSafeNote").textContent="🔒 Bộ vé đã khóa · không thể ghi đè.";}
+  currentPortfolio=p||null;
+  if(p){renderTickets(p.tickets,p.selectionHash,id,true);if(el("oneAudit"))el("oneAudit").textContent="Bộ vé đã khóa · "+drawLabel(id)+" · mã "+p.selectionHash+" · dữ liệu đến "+drawLabel(p.cutoffDrawId)+".";if(el("oneSafeNote"))el("oneSafeNote").textContent="🔒 Bộ vé đã khóa · không thể ghi đè.";}
+  else if(el("oneTickets")){el("oneTickets").innerHTML='<div class="one-empty-state"><div class="one-empty-icon">✧</div><b>Chưa có bộ vé cho kỳ này</b><span>Tạo 20 vé mới rồi khóa để lưu cố định.</span></div>';if(el("oneSafeNote"))el("oneSafeNote").textContent="Chưa khóa vé · Chưa lưu cloud";}
   refreshWorkspace();
  }
  function initialize(){
