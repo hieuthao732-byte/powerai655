@@ -1694,7 +1694,7 @@ async function copySet(P,label){
 }
 async function load(){
   try{
-    $("status").textContent="Đang tải dữ liệu...";const r=await fetch(URL,{cache:"no-store"}),txt=await r.text();
+    if($("status"))$("status").textContent="Đang tải dữ liệu...";const r=await fetch(URL,{cache:"no-store"}),txt=await r.text();
     draws=txt.trim().split(/\r?\n/).map(JSON.parse).filter(d=>nums(d).length===6).sort((a,b)=>Number(a.id)-Number(b.id));latest=draws.at(-1);
     $("latestId").textContent="#"+String(latest.id).padStart(5,"0");$("latestDate").textContent=latest.date||"";
     const lockedLatest=getLock(Number(latest.id)),logLatest=getLog(Number(latest.id));
@@ -1710,10 +1710,10 @@ async function load(){
     const nextId=Number(latest.id)+1;
     const chosen=unresolvedLocked||((preferredTarget&&preferredTarget<=nextNavigableTarget()&&preferredTarget>=Number(draws[0]?.id||1))?preferredTarget:null)||(lockedLatest&&!logLatest?Number(latest.id):nextId);
     await setTarget(chosen);
-    $("status").textContent=`🟢 REAL DATA • ${draws.length} kỳ`;renderHistory();renderState();
+    if($("status"))$("status").textContent=`🟢 REAL DATA • ${draws.length} kỳ`;renderHistory();renderState();
   }catch(e){
     console.error(e);
-    $("status").textContent="🔴 Lỗi dữ liệu";
+    if($("status"))$("status").textContent="🔴 Lỗi dữ liệu";
     $("legacyProgress").textContent=e.message;
     if($("geoState"))$("geoState").innerHTML=`<span class="bad">Không tải được nguồn dữ liệu nên chưa xác định được kỳ mục tiêu: ${e.message}</span>`;
   }
