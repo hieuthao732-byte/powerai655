@@ -1,4 +1,4 @@
-/* PowerAI ONE browser bridge v1.5 — history-aware and guarded. */
+/* PowerAI ONE browser bridge v1.6 — auto-align prospective target. */
 (function(root){
  "use strict";
  root.__POWERAI_ONE_BRIDGE_LOADED=true;
@@ -65,8 +65,19 @@
    if(typeof draws==="undefined"||!Array.isArray(draws)||!draws.length||!latest)throw new Error("HISTORY_NOT_READY");
    readHistory();
    if(!root.PowerAIAuth||typeof root.PowerAIAuth.getUser!=="function"||!root.PowerAIAuth.getUser())throw new Error("Cần đăng nhập để tạo vé.");
-   var target=Number(targetId),latestId=Math.max.apply(null,draws.map(function(d){return Number(d.id)||0;}));
-   if(!Number.isInteger(target)||target<=latestId)throw new Error("Kỳ mục tiêu phải là kỳ tiếp theo chưa quay: "+drawLabel(latestId+1));
+   var latestId=Math.max.apply(null,draws.map(function(d){return Number(d.id)||0;}));
+   var target=typeof nextProspectiveTarget==="function"?Number(nextProspectiveTarget()):latestId+1;
+   if(!Number.isInteger(target)||target<=latestId)target=latestId+1;
+   // ONE is prospective-only: always move a stale/past selection to the next unplayed draw.
+   if(Number(targetId)!==target){
+    targetId=target;
+    try{localStorage.setItem("powerai_rc6_active_target",String(target));}catch(_){}
+    if(el("targetId"))el("targetId").textContent=drawLabel(target);
+    if(typeof renderTargetSelect==="function")renderTargetSelect();
+    if(typeof renderTargetContexts==="function")renderTargetContexts();
+    if(typeof renderState==="function")renderState();
+    readHistory();
+   }
    if(typeof historyReadyForTarget!=="function"||!historyReadyForTarget(target))throw new Error("Dữ liệu kỳ trước chưa được xác nhận.");
    el("oneTickets").replaceChildren();el("oneAudit").textContent="";
    say("A7 và B1.3 đang phân tích lịch sử, sinh ứng viên và chọn 20 vé…");
