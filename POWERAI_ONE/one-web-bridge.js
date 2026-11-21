@@ -73,7 +73,7 @@
   if(el("oneLearningStatus"))el("oneLearningStatus").textContent=evals.length+" kỳ đã đối chiếu · "+ids.length+" bộ vé khóa. Learning hiện ở chế độ quan sát/đề xuất; không tự thay trọng số hoặc mô hình chính.";
   if(el("oneLearningLog"))el("oneLearningLog").textContent=streak>=10?"Đã đạt ngưỡng 10 kỳ liên tiếp dưới 3 hit: cần chạy rà soát Challenger và kiểm định độc lập trước khi cân nhắc thay đổi.":"Ngưỡng rà soát: 10 kỳ liên tiếp không có vé đạt 3 số chính. Hiện tại: "+streak+"/10.";
   if(el("onePortfolioArchive"))el("onePortfolioArchive").innerHTML=ids.length?ids.map(function(id){var p=s.portfolios[id];return '<div class="one-archive-row"><b>'+drawLabel(id)+'</b><span>'+((p.tickets||[]).length)+' vé · '+String(p.selectionHash||"").slice(0,12)+'</span><strong>ĐÃ KHÓA</strong></div>';}).join(""):"Chưa có bộ vé nào được khóa.";
-  if(el("oneEvaluationList"))el("oneEvaluationList").innerHTML=evals.length?evals.slice().reverse().map(function(r){return '<div class="one-archive-row"><b>'+drawLabel(r.targetDrawId)+'</b><span>Max '+r.maxMainHits+'/6 · '+r.ticketsAt3+' vé đạt 3+</span><strong>'+ (r.sourceVerified?"ĐÃ XÁC MINH":"MIRROR")+'</strong></div>';}).join(""):"Chưa có kỳ nào được đối chiếu.";
+  if(el("oneEvaluationList"))el("oneEvaluationList").innerHTML=evals.length?evals.slice().reverse().map(function(r){return '<div class="one-archive-row"><b>'+drawLabel(r.targetDrawId)+'</b><span>Max '+r.maxMainHits+'/6 · '+r.ticketsAt3+' vé đạt 3+ · Power: '+(r.specialHits||0)+' · random kỳ vọng '+Number(r.randomExpectedTicketsAt3||0).toFixed(2)+' vé 3+</span><strong>'+ (r.sourceVerified?"ĐÃ XÁC MINH":"MIRROR")+'</strong></div>';}).join(""):"Chưa có kỳ nào được đối chiếu.";
   var active=Number(targetId)||0,locked=active?getLocked(active):null;
   if(el("oneLockState"))el("oneLockState").textContent=locked?"ĐÃ KHÓA "+drawLabel(active):"CHƯA KHÓA";
   if(el("oneLockBtn")){el("oneLockBtn").disabled=!currentPortfolio||!!locked;el("oneLockBtn").textContent=locked?"✓ BỘ VÉ ĐÃ KHÓA":"🔒 KHÓA 20 BỘ VÉ";}
@@ -104,8 +104,10 @@
    if(s.evaluations.some(function(e){return Number(e.targetDrawId)===Number(id);}))return;
    var d=getActual(Number(id));if(!d)return;
    var actual=getMain(d);if(actual.length!==6)return;
-   var p=s.portfolios[id],scores=(p.tickets||[]).map(function(t){var a=(t.main||[]),h=a.filter(function(n){return actual.indexOf(n)>=0;}).length;return h;});
-   s.evaluations.push({targetDrawId:Number(id),evaluatedAt:new Date().toISOString(),maxMainHits:Math.max.apply(null,scores),ticketsAt3:scores.filter(function(h){return h>=3;}).length,distribution:[0,1,2,3,4,5,6].map(function(h){return {hits:h,count:scores.filter(function(x){return x===h;}).length};}),sourceVerified:false,sourceLabel:"Third-party mirrored history; official verification pending"});
+   var p=s.portfolios[id],scores=(p.tickets||[]).map(function(t){var a=(t.main||[]),h=a.filter(function(n){return actual.indexOf(n)>=0;}).length;return h;}),draw=getActual(Number(id)),special=Number((draw.result||[])[6]||0),specialHits=special>0?(p.tickets||[]).filter(function(t){return (t.main||[]).indexOf(special)>=0;}).length:0;
+   function choose(n,k){var v=1;for(var z=1;z<=k;z++)v=v*(n-z+1)/z;return v;}
+   var randomAtLeast3=20*((choose(6,3)*choose(49,3)+choose(6,4)*choose(49,2)+choose(6,5)*choose(49,1)+choose(6,6))/choose(55,6));
+   s.evaluations.push({targetDrawId:Number(id),evaluatedAt:new Date().toISOString(),maxMainHits:Math.max.apply(null,scores),ticketsAt3:scores.filter(function(h){return h>=3;}).length,specialHits:specialHits,randomExpectedTicketsAt3:randomAtLeast3,distribution:[0,1,2,3,4,5,6].map(function(h){return {hits:h,count:scores.filter(function(x){return x===h;}).length};}),sourceVerified:false,sourceLabel:"Third-party mirrored history; official verification pending"});
    changed=true;
   });
   if(changed)writeStore(s);
