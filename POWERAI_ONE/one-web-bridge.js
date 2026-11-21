@@ -93,7 +93,7 @@
  }
  function unlockCurrent(){
   var target=Number(targetId),s=readStore(),p=s.portfolios&&s.portfolios[targetKey(target)];
-  if(!p||getActual(target))return say("Không thể mở khóa: không có bộ vé hoặc kỳ đã có kết quả.",true);
+  if(!p||getActual(target)||(Number(latest&&latest.id)||0)>=target)return say("Không thể mở khóa: không có bộ vé hoặc kỳ đã quay/đã có dữ liệu kết quả.",true);
   if(!confirm("Mở khóa bộ vé "+drawLabel(target)+"? Thao tác này sẽ ghi lại lịch sử mở khóa."))return;
   delete s.portfolios[targetKey(target)];s.unlockLog=s.unlockLog||[];s.unlockLog.push({targetDrawId:target,at:new Date().toISOString()});writeStore(s);currentPortfolio=null;
   say("Đã mở khóa bộ vé "+drawLabel(target)+".");refreshWorkspace();
