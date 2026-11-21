@@ -197,7 +197,7 @@
       <div class="one-target"><span>#</span><b id="targetIdOne">—</b></div>
       <div class="one-action-meta">Dữ liệu chỉ lấy từ các kỳ trước mục tiêu</div>
       <button id="oneBuildBtn" class="one-generate-btn" type="button"><span>✦</span> TẠO BỘ 20 VÉ ONE <b>→</b></button>
-      <div class="one-safe-note"><span>🔒</span> Chưa khóa vé · Chưa lưu cloud</div>
+      <div class="one-safe-note" id="oneSafeNote"><span>🔒</span> Chưa khóa vé · Chưa lưu cloud</div>
     </div>
   </div>
   <div class="one-status-row"><div class="one-status-indicator"><i></i><span>TRẠNG THÁI HỆ THỐNG</span></div><div id="oneStatus" class="one-status-message" role="status" aria-live="polite">Đang khởi tạo dữ liệu lịch sử…</div></div><section class="one-history-panel"><div class="one-history-head"><div><span class="one-kicker">HISTORY INTELLIGENCE</span><h3>Phân tích các kỳ trước</h3><p id="oneHistoryMeta">Đang nạp dữ liệu lịch sử…</p></div><div class="one-history-stats"><div><small>SỐ KỲ ĐÃ NẠP</small><b id="oneHistoryCount">—</b></div><div><small>KỲ CHỐT DỮ LIỆU</small><b id="oneHistoryCutoff">—</b></div></div></div><div id="oneHistoryAnalysis" class="one-history-analysis">Đang phân tích tần suất, tổng và phân bố số.</div><div id="oneRecentDraws" class="one-recent-draws"></div></section>
@@ -538,7 +538,7 @@
 <script src="POWERAI_ONE/track-a-provider.js?v=one1"></script>
 <script src="POWERAI_ONE/track-b-provider.js?v=one1"></script>
 <script src="POWERAI_ONE/one-runtime.js?v=one1"></script>
-<script src="/POWERAI_ONE/one-web-bridge.js?v=one6" onload="var el=document.getElementById('oneStatus');if(!window.__POWERAI_ONE_BRIDGE_LOADED&&el){el.textContent='Tệp ONE đã tải nhưng mã không thực thi được. Cần kiểm tra lỗi JavaScript của trình duyệt.';el.classList.add('bad')}" onerror="var el=document.getElementById('oneStatus');if(el){el.textContent='Trình duyệt không tải được tệp ONE (lỗi mạng hoặc đường dẫn).';el.classList.add('bad')}"></script>
+<script src="/POWERAI_ONE/one-web-bridge.js?v=one7" onload="var el=document.getElementById('oneStatus');if(!window.__POWERAI_ONE_BRIDGE_LOADED&&el){el.textContent='Tệp ONE đã tải nhưng mã không thực thi được. Cần kiểm tra lỗi JavaScript của trình duyệt.';el.classList.add('bad')}" onerror="var el=document.getElementById('oneStatus');if(el){el.textContent='Trình duyệt không tải được tệp ONE (lỗi mạng hoặc đường dẫn).';el.classList.add('bad')}"></script>
 <script>setTimeout(function(){if(!window.__POWERAI_ONE_BRIDGE_LOADED){var s=document.getElementById("oneStatus");if(s&&!s.textContent.includes("Tệp ONE")&&!s.textContent.includes("không tải được tệp ONE")){s.textContent="ONE chưa chạy: trình duyệt chưa thực thi được tệp bridge.";s.classList.add("bad");}}},3000);</script>
 </body>
 </html>
