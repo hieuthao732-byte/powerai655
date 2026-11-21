@@ -23,9 +23,24 @@
   status("ONE đã sẵn sàng • A7 + B1.3 là nguồn ứng viên • ONE chọn 20 vé cuối.");
   btn.addEventListener("click",build);
  }
+ async function waitForHistory(timeoutMs=15000){
+  const started=Date.now();
+  while(Date.now()-started<timeoutMs){
+   if(Array.isArray(draws)&&draws.length&&typeof latest!=="undefined"&&latest)return true;
+   await new Promise(resolve=>setTimeout(resolve,150));
+  }
+  return Array.isArray(draws)&&draws.length>0;
+ }
  async function build(){
   if(busy)return;
-  if(!runtime||typeof draws==="undefined"||!Array.isArray(draws)||!draws.length){status("Chưa có dữ liệu lịch sử hợp lệ.",true);return;}
+  if(!runtime){status("ONE chưa khởi tạo xong. Hãy tải lại trang.",true);return;}
+  const btn=$("oneBuildBtn");busy=true;if(btn)btn.disabled=true;
+  status("Đang chờ dữ liệu lịch sử tải hoàn tất…");
+  try{
+   const historyReady=await waitForHistory();
+   if(!historyReady){status("Chưa tải được dữ liệu lịch sử. Hãy tải lại trang; nếu vẫn lỗi, cần kiểm tra kết nối nguồn dữ liệu.",true);return;}
+  }finally{busy=false;if(btn)btn.disabled=false;}
+  if(!Array.isArray(draws)||!draws.length){status("Chưa có dữ liệu lịch sử hợp lệ.",true);return;}
   const auth=root.PowerAIAuth;
   if(!auth||typeof auth.getUser!=="function"||!auth.getUser()){status("Cần đăng nhập để sử dụng chức năng tạo bộ vé.",true);return;}
   const target=Number(targetId);
