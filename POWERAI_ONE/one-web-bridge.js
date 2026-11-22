@@ -33,7 +33,21 @@
    var source=document.createElement("small");source.textContent=locked?"ĐÃ KHÓA · "+drawLabel(target):"BẢN XEM TRƯỚC";
    head.append(label,source);var balls=document.createElement("div");balls.className="balls";
    main.forEach(function(n){var b=document.createElement("span");b.className="ball";b.textContent=String(n).padStart(2,"0");balls.append(b);});
-   card.append(head,balls);grid.append(card);
+   var info=document.createElement("button");info.type="button";info.className="one-ticket-info";info.textContent="!";info.setAttribute("aria-label","Xem lý do AI chọn vé "+(i+1));
+   var detail=document.createElement("div");detail.className="one-ticket-reason";detail.hidden=true;
+   var targetHistory=(typeof draws!=="undefined"&&Array.isArray(draws))?draws.filter(function(d){return Number(d.id)<Number(target);}).sort(function(a,b){return Number(a.id)-Number(b.id);}):[];
+   var recentHistory=targetHistory.slice(-30),freq=Array(56).fill(0),pairCounts={};
+   recentHistory.forEach(function(d){getMain(d).forEach(function(n){freq[n]++;});});
+   targetHistory.forEach(function(d){var a=getMain(d);for(var x=0;x<a.length;x++)for(var y=x+1;y<a.length;y++){var k=[a[x],a[y]].sort(function(m,n){return m-n;}).join("-");pairCounts[k]=(pairCounts[k]||0)+1;}});
+   var nums=main.map(Number),sum=nums.reduce(function(a,b){return a+b;},0),odd=nums.filter(function(n){return n%2;}).length,low=nums.filter(function(n){return n<=27;}).length;
+   var overlaps=(tickets||[]).filter(function(other,j){return j!==i;}).map(function(other){var om=Array.isArray(other.main)?other.main:other;return nums.filter(function(n){return om.map(Number).indexOf(n)>=0;}).length;});
+   var maxOverlap=overlaps.length?Math.max.apply(null,overlaps):0;
+   var ranked=nums.map(function(n){return {n:n,f:freq[n]};}).sort(function(a,b){return b.f-a.f;});
+   var pairs=[];for(var pi=0;pi<nums.length;pi++)for(var pj=pi+1;pj<nums.length;pj++){var pk=[nums[pi],nums[pj]].sort(function(a,b){return a-b;}).join("-");if(pairCounts[pk])pairs.push({key:pk,count:pairCounts[pk]});}
+   pairs.sort(function(a,b){return b.count-a.count;});
+   detail.innerHTML='<div class="one-reason-title">Vì sao ONE chọn vé này?</div><div><b>Cấu trúc vé:</b> Tổng '+sum+' · '+odd+' lẻ / '+(6-odd)+' chẵn · '+low+' số từ 01–27 / '+(6-low)+' số từ 28–55.</div><div><b>Tần suất 30 kỳ gần nhất:</b> '+ranked.map(function(x){return String(x.n).padStart(2,"0")+" ("+x.f+" lần)";}).join(" · ")+'.</div><div><b>Liên kết lịch sử:</b> '+(pairs.length?pairs.slice(0,4).map(function(x){return x.key+" ("+x.count+" lần)";}).join(" · "):"Không có cặp nào trong vé xuất hiện cùng nhau ở dữ liệu đã nạp.")+'</div><div><b>Độ đa dạng:</b> Trùng tối đa '+maxOverlap+' số với một vé khác trong bộ 20 vé.</div><small>Các số liệu trên mô tả dữ liệu trước kỳ mục tiêu và cấu trúc danh mục; không chứng minh các số có xác suất trúng cao hơn.</small>';
+   info.addEventListener("click",function(){detail.hidden=!detail.hidden;info.setAttribute("aria-expanded",String(!detail.hidden));});
+   card.append(head,balls,info,detail);grid.append(card);
   });
   if(el("oneTicketCount"))el("oneTicketCount").textContent=String((tickets||[]).length);
  }
