@@ -33,7 +33,7 @@
    var source=document.createElement("small");source.textContent=locked?"ĐÃ KHÓA · "+drawLabel(target):"BẢN XEM TRƯỚC";
    head.append(label,source);var balls=document.createElement("div");balls.className="balls";
    main.forEach(function(n){var b=document.createElement("span");b.className="ball";b.textContent=String(n).padStart(2,"0");balls.append(b);});
-   var info=document.createElement("button");info.type="button";info.className="one-ticket-info";info.textContent="!";info.setAttribute("aria-label","Xem lý do AI chọn vé "+(i+1));
+   var info=document.createElement("button");info.type="button";info.className="one-ticket-info";info.textContent="i";info.setAttribute("aria-expanded","false");info.setAttribute("aria-label","Xem lý do AI chọn vé "+(i+1));
    var detail=document.createElement("div");detail.className="one-ticket-reason";detail.hidden=true;
    var targetHistory=(typeof draws!=="undefined"&&Array.isArray(draws))?draws.filter(function(d){return Number(d.id)<Number(target);}).sort(function(a,b){return Number(a.id)-Number(b.id);}):[];
    var recentHistory=targetHistory.slice(-30),freq=Array(56).fill(0),pairCounts={};
@@ -47,7 +47,7 @@
    pairs.sort(function(a,b){return b.count-a.count;});
    detail.innerHTML='<div class="one-reason-title">Vì sao ONE chọn vé này?</div><div><b>Cấu trúc vé:</b> Tổng '+sum+' · '+odd+' lẻ / '+(6-odd)+' chẵn · '+low+' số từ 01–27 / '+(6-low)+' số từ 28–55.</div><div><b>Tần suất 30 kỳ gần nhất:</b> '+ranked.map(function(x){return String(x.n).padStart(2,"0")+" ("+x.f+" lần)";}).join(" · ")+'.</div><div><b>Liên kết lịch sử:</b> '+(pairs.length?pairs.slice(0,4).map(function(x){return x.key+" ("+x.count+" lần)";}).join(" · "):"Không có cặp nào trong vé xuất hiện cùng nhau ở dữ liệu đã nạp.")+'</div><div><b>Độ đa dạng:</b> Trùng tối đa '+maxOverlap+' số với một vé khác trong bộ 20 vé.</div><small>Các số liệu trên mô tả dữ liệu trước kỳ mục tiêu và cấu trúc danh mục; không chứng minh các số có xác suất trúng cao hơn.</small>';
    info.addEventListener("click",function(){detail.hidden=!detail.hidden;info.setAttribute("aria-expanded",String(!detail.hidden));});
-   card.append(head,balls,info,detail);grid.append(card);
+   head.append(info);card.append(head,balls,detail);grid.append(card);
   });
   if(el("oneTicketCount"))el("oneTicketCount").textContent=String((tickets||[]).length);
  }
