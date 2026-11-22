@@ -82,8 +82,8 @@ main > section:not(#onePanel), main > nav, main > div.tabPane{display:none!impor
 @media(max-width:700px){.one-workspace{padding:14px}.one-workspace-head{display:block}.one-lock-state{display:inline-block;margin-top:10px}.one-workspace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.one-workspace-columns{grid-template-columns:1fr}.one-archive-row{grid-template-columns:58px 1fr}.one-archive-row>strong{grid-column:2}}
 
 /* Per-ticket explanation toggle */
-.one-ticket-info{display:inline-grid;place-items:center;width:23px;height:23px;margin-top:10px;border:1px solid rgba(255,142,150,.55);border-radius:50%;background:rgba(205,36,56,.22);color:#ff9aa2;font-size:14px;font-weight:950;cursor:pointer}
-.one-ticket-info:hover{background:#a91c31;color:#fff}
+.one-ticket-info{display:inline-grid;place-items:center;width:28px;height:28px;margin-top:9px;border:1px solid rgba(255,142,150,.42);border-radius:50%;background:linear-gradient(145deg,rgba(119,28,43,.72),rgba(48,13,22,.9));color:#ffd0d4;font-family:Georgia,serif;font-size:17px;font-style:italic;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.one-ticket-info:hover,.one-ticket-info:focus-visible{background:#a91c31;color:#fff;outline:none;box-shadow:0 0 0 3px rgba(255,115,125,.12),0 0 12px rgba(255,80,95,.2)}
 .one-ticket-reason{margin-top:10px;padding:11px 12px;border:1px solid rgba(255,125,135,.22);border-radius:10px;background:rgba(13,6,10,.55);color:#e9d5d8;font-size:10px;line-height:1.7}
 .one-ticket-reason[hidden]{display:none!important}
 .one-ticket-reason>div{margin:4px 0}
