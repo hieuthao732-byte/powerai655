@@ -22,11 +22,15 @@ Files: `supabase/migrations/20261123000000_one_portfolio_locks.sql`, `supabase/m
   and computes `tickets_sha256` from the stored JSON. Client-sent values for those two columns are ignored.
 - `client_locked_at` / `client_generated_at` are kept for debugging only and must never be used as evidence.
 
-### 2.2 Unlocking
+### 2.2 Unlocking (decided 2026-11-23: limited correction window)
 - The only way to remove a lock is `powerai_unlock_one_portfolio(target)`, which deletes the caller's own row and appends it to
   `one_portfolio_unlock_log` (append-only, select-own).
-- The database cannot know when a draw happens, so it does not try to block late unlocks. Integrity comes from the evaluator
-  rule in 2.4: a lock re-created after the draw gets a later server `locked_at` and is rejected.
+- **Window:** allowed only within 10 minutes of the server `locked_at`; later calls raise `unlock_window_expired`.
+- **Limit:** at most 1 unlock per user and draw (counted in the log); another attempt raises `unlock_limit_reached`.
+  Without the limit, lock/unlock/lock could be repeated until the draw and the window would mean nothing.
+- Both numbers are constants at the top of the function. The window protects against mistakes (wrong draw, misclick), not against
+  a change of mind after looking at the tickets, which is why it is short.
+- The database does not know when a draw happens. Integrity against late changes still comes from the evaluator rule in 2.4.
 
 ### 2.3 Optimistic concurrency for `user_app_state`
 - New column `version bigint`, incremented by the existing `touch_user_app_state_updated_at` trigger on every UPDATE.
@@ -48,7 +52,9 @@ Files: `supabase/migrations/20261123000000_one_portfolio_locks.sql`, `supabase/m
 3. `lockCurrent` (one-web-bridge.js): INSERT into `one_portfolio_locks` first with `Prefer: return=representation`; write the
    local copy only after success and take `locked_at` / `tickets_sha256` from the response. On a duplicate-key error (HTTP 409)
    fetch the existing lock and adopt it instead of showing an error.
-4. `unlockCurrent`: call the RPC, then remove the local copy.
+4. `unlockCurrent`: call the RPC, then remove the local copy. Show the remaining window computed from the server `locked_at`,
+   hide the button once it has passed, and map `unlock_window_expired` / `unlock_limit_reached` to clear messages.
+   The current rule in `unlockCurrent` ("any time before the draw") must be replaced, not kept as a second path.
 5. After `hydrateLocalState` (which wipes every `powerai_rc6_` key and restores the blob), re-read `one_portfolio_locks` and treat it as
    authoritative for `portfolios`. The table wins over the blob.
 6. Refresh on `visibilitychange` / window focus so a long-open tab picks up locks made elsewhere.
@@ -68,6 +74,7 @@ These extend the list in `STORAGE_AND_AUTH_CONTRACT.md` section 8.
 - Two devices lock the same target at once: exactly one row; the other device adopts it.
 - User A, logout, guest, user B: no state from A remains.
 - Cloud read failure during hydration does not delete local state.
+- Unlock inside the window works once; a second unlock for the same draw is refused; unlock after the window is refused.
 - Unlock, re-lock after the draw: evaluator rejects it (`locked_at` later than draw time).
 
 ## 5. Limits

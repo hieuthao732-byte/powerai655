@@ -128,6 +128,11 @@ create policy one_unlock_log_select_own on public.one_portfolio_unlock_log
 revoke all on public.one_portfolio_unlock_log from public, anon, authenticated;
 grant select on public.one_portfolio_unlock_log to authenticated;
 
+-- Unlock policy (decision 2026-11-23): a lock is final except for a short correction window.
+--   * unlock_window  : measured from the SERVER locked_at, so the client clock is irrelevant.
+--   * max_unlocks    : per user and draw, counted in the append-only log. Without it, lock/unlock/lock
+--                      could be repeated up to the draw time, which would defeat the window.
+-- To change the policy, edit the two constants below and re-run this file.
 create or replace function public.powerai_unlock_one_portfolio(p_target_draw_id integer)
 returns boolean
 language plpgsql
@@ -135,6 +140,8 @@ security definer
 set search_path to ''
 as $$
 declare
+  unlock_window constant interval := interval '10 minutes';
+  max_unlocks   constant integer  := 1;
   uid uuid := auth.uid();
   r   public.one_portfolio_locks%rowtype;
 begin
@@ -142,13 +149,27 @@ begin
     raise exception 'not_authenticated';
   end if;
 
-  delete from public.one_portfolio_locks
+  -- FOR UPDATE serialises concurrent unlock calls: the loser finds no row and gets false.
+  select * into r
+  from public.one_portfolio_locks
   where user_id = uid and target_draw_id = p_target_draw_id
-  returning * into r;
+  for update;
 
   if not found then
     return false;
   end if;
+
+  if now() - r.locked_at > unlock_window then
+    raise exception 'unlock_window_expired';
+  end if;
+
+  if (select count(*) from public.one_portfolio_unlock_log
+      where user_id = uid and target_draw_id = p_target_draw_id) >= max_unlocks then
+    raise exception 'unlock_limit_reached';
+  end if;
+
+  delete from public.one_portfolio_locks
+  where user_id = uid and target_draw_id = p_target_draw_id;
 
   insert into public.one_portfolio_unlock_log
     (user_id, target_draw_id, selection_hash, tickets_sha256, locked_at)
