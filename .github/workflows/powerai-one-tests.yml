@@ -10,6 +10,8 @@ on:
       - feature/powerai-one
     paths:
       - "POWERAI_ONE/**"
+      - "supabase/**"
+      - "app.js"
       - "package.json"
       - "build.mjs"
       - "index.html"
@@ -68,6 +70,8 @@ jobs:
         run: node POWERAI_ONE/one-runtime.test.js
       - name: Run ONE website bridge integration tests
         run: node POWERAI_ONE/one-web-bridge.test.js
+      - name: Run ONE lock/unlock client tests
+        run: node POWERAI_ONE/one-web-bridge-unlock.test.js
       - name: Run Track A adapter tests
         run: node POWERAI_ONE/track-a-adapter.test.js
 
@@ -85,3 +89,17 @@ jobs:
         run: node POWERAI_ONE/track-d-adapter.test.js
       - name: Run Track D unified provider tests
         run: node POWERAI_ONE/track-d-provider.test.js
+
+  server-lock-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install PostgreSQL
+        run: sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
+      - name: Lock/unlock migration tests and bridge end-to-end (throwaway local Postgres, no Supabase access)
+        run: bash supabase/tests/run_server_tests.sh

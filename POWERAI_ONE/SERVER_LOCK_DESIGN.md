@@ -44,21 +44,30 @@ Files: `supabase/migrations/20261123000000_one_portfolio_locks.sql`, `supabase/m
   after its first `locked_at` followed by a re-lock. Report such draws separately instead of dropping them silently.
 - Verify `tickets_sha256` against the tickets used for scoring.
 
-## 3. Client changes still to make (not implemented)
+## 3. Client changes
 
+### 3.0 Implemented in `one-web-bridge.js` / `app.js` (covered by `one-web-bridge-unlock.test.js`)
+- `lockCurrent` inserts into `one_portfolio_locks` first (`Prefer: return=representation`, no `locked_at` / `tickets_sha256` sent) and writes the
+  local copy only from the server row. Duplicate key: the existing server lock is adopted. Not logged in, server error or migration missing: **no lock**
+  (fail closed), with an explicit message.
+- `unlockCurrent` calls `powerai_unlock_one_portfolio(p_target_draw_id)` and sends nothing else. The old "any time before the draw" rule is gone;
+  there is no client-only unlock path. The client never compares times: the button state comes only from server facts (lock is `serverVerified`,
+  no unlock-log row, draw not yet played), and the server decides the 10-minute window and the one-unlock limit.
+  `unlock_window_expired` and `unlock_limit_reached` are shown in the status line, toast and the hint under the button; the lock is left untouched.
+- A lock created before this change (no `serverVerified`) is final and cannot be unlocked from the app.
+- Unknown outcome (timeout, response lost): the client re-reads the server and reports what the server says; it never guesses.
+- `syncFromServer` reconciles on start, on `powerai-cloud-hydrated` (dispatched by `app.js` after cloud state is applied or cleared) and on
+  `visibilitychange` (throttled to once per 15 s). The server table wins over the local/blob copy; differences are kept in `conflicts`.
+- Unlock log entries from the server are merged into `unlockLog` (`source: "server"`); evaluations record `lockedAt` (server time),
+  `lockSource` and `ticketsSha256`.
+- The texts "10 phút" / "1 lần" in the UI are display only; changing the policy means editing the SQL constants and those two strings.
+
+### 3.0.1 Still to do
 1. `cloudLoadState`: also select `version`; keep it in memory (`cloudVersion`).
 2. `cloudSaveState`: if a row exists, send the conditional PATCH above and update `cloudVersion` from the response; if the array is
    empty, **do not overwrite**: reload remote state, merge (3.1), then retry once. Use POST only when no row exists yet.
-3. `lockCurrent` (one-web-bridge.js): INSERT into `one_portfolio_locks` first with `Prefer: return=representation`; write the
-   local copy only after success and take `locked_at` / `tickets_sha256` from the response. On a duplicate-key error (HTTP 409)
-   fetch the existing lock and adopt it instead of showing an error.
-4. `unlockCurrent`: call the RPC, then remove the local copy. Show the remaining window computed from the server `locked_at`,
-   hide the button once it has passed, and map `unlock_window_expired` / `unlock_limit_reached` to clear messages.
-   The current rule in `unlockCurrent` ("any time before the draw") must be replaced, not kept as a second path.
-5. After `hydrateLocalState` (which wipes every `powerai_rc6_` key and restores the blob), re-read `one_portfolio_locks` and treat it as
-   authoritative for `portfolios`. The table wins over the blob.
-6. Refresh on `visibilitychange` / window focus so a long-open tab picks up locks made elsewhere.
-7. Encode filter values (`encodeURIComponent`); a bare `+` in a timestamp becomes a space in a query string. The `version` filter avoids this.
+3. Merge policy 3.1 as a pure function with unit tests.
+4. Encode filter values (`encodeURIComponent`); a bare `+` in a timestamp becomes a space in a query string. The `version` filter avoids this.
 
 ### 3.1 Merge policy on conflict (proposal, needs a pure function with unit tests)
 | Data | Rule |

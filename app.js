@@ -28,6 +28,9 @@ async function cloudSaveState(){
   await auth.request('/rest/v1/user_app_state?on_conflict=user_id',{method:'POST',auth:true,headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:payload});
 }
 function cloudSyncSoon(){if(!cloudUser||cloudHydrating)return;clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(()=>cloudSaveState().catch(e=>{console.error("Cloud save failed",e);showToast?.("Không lưu được cloud: "+e.message,"bad")}),350)}
+/* The local snapshot above is only a cache. ONE ticket locks live in the server table one_portfolio_locks, which wins over the snapshot.
+   Tell the ONE bridge whenever the snapshot has just been replaced so it can re-read the server state (see POWERAI_ONE/one-web-bridge.js). */
+function announceCloudState(user){try{window.dispatchEvent(new CustomEvent("powerai-cloud-hydrated",{detail:{userId:user?user.id:null}}))}catch(e){console.warn("cloud state event failed",e)}}
 async function applyCloudUser(next,{reload=true}={}){
   if(next&&(!cloudUser||cloudUser.id!==next.id)){
     cloudUser=next;
@@ -37,11 +40,13 @@ async function applyCloudUser(next,{reload=true}={}){
       if(reload&&typeof load==="function")await load();
       showToast?.("Đã đồng bộ dữ liệu tài khoản từ cloud.","good");
     }catch(e){console.error(e);showToast?.("Đăng nhập được nhưng đồng bộ cloud lỗi: "+e.message,"bad")}
+    finally{announceCloudState(next)}
   }else if(!next&&cloudUser){
     cloudUser=null;
     clearPowerAILocal();
     if(reload&&typeof load==="function")await load();
     showToast?.("Đã đăng xuất. Trang chuyển về chế độ chỉ xem.","good");
+    announceCloudState(null);
   }
 }
 async function initCloudAuth(){
