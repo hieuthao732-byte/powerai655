@@ -2,10 +2,10 @@
 # Server-side tests for the ONE lock/unlock migration against a throwaway local Postgres.
 # Never touches a real Supabase project. Needs PostgreSQL binaries (PGBIN) and, when run as root, the `postgres` user.
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"; MIG="$HERE/../migrations"
+SRC="$(cd "$(dirname "$0")" && pwd)"; HERE="$SRC"; MIG="$SRC/../migrations"
 PGBIN="${PGBIN:-$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1)}"
 PORT="${PGPORT_TEST:-54329}"; DATA="$(mktemp -d)"; SOCK="$DATA/sock"; mkdir -p "$SOCK"
-RUN=""; if [ "$(id -u)" = 0 ]; then chown -R postgres "$DATA"; RUN="runuser -u postgres --"; fi
+RUN=""; if [ "$(id -u)" = 0 ]; then chmod 755 "$DATA"; chown -R postgres "$DATA"; RUN="runuser -u postgres --"; mkdir "$DATA/in"; cp -r "$SRC" "$DATA/in/tests"; cp -r "$SRC/../migrations" "$DATA/in/migrations"; chmod -R a+rX "$DATA/in"; HERE="$DATA/in/tests"; MIG="$DATA/in/migrations"; fi
 A=aaaaaaaa-0000-0000-0000-000000000001; B=bbbbbbbb-0000-0000-0000-000000000002
 FAILS=0; PASSES=0
 cleanup(){ $RUN "$PGBIN/pg_ctl" -D "$DATA/db" -m immediate stop >/dev/null 2>&1; rm -rf "$DATA"; }
@@ -97,6 +97,6 @@ echo; echo "server tests: $PASSES passed, $FAILS failed"
 # --- end-to-end: real bridge against this database ---------------------
 if command -v node >/dev/null; then
   psql_ -c "delete from public.one_portfolio_locks; delete from public.one_portfolio_unlock_log" >/dev/null
-  PGBIN="$PGBIN" PGSOCK="$SOCK" PGPORT_TEST="$PORT" PG_RUN="${RUN:+runuser}" node "$HERE/e2e_bridge_vs_postgres.js" || FAILS=$((FAILS+1))
+  PGBIN="$PGBIN" PGSOCK="$SOCK" PGPORT_TEST="$PORT" PG_RUN="${RUN:+runuser}" node "$SRC/e2e_bridge_vs_postgres.js" || FAILS=$((FAILS+1))
 fi
 [ "$FAILS" = 0 ]
