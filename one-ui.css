@@ -121,3 +121,15 @@ main > section:not(#onePanel), main > nav, main > div.tabPane{display:none!impor
 .authModal .authFieldHint.good{color:#8fe0b2}
 .authModal .authFieldHint.bad{color:#ff929b}
 @media(max-width:520px){.authModal{padding:12px!important}.authModal .authCard{padding:20px!important;border-radius:17px!important}}
+.one-past{border:1px solid rgba(255,255,255,.07);border-radius:8px;background:rgba(255,255,255,.025);margin-bottom:6px}
+.one-past>summary{display:grid;grid-template-columns:70px 1fr auto;gap:9px;align-items:center;padding:9px 10px;cursor:pointer;font-size:9px;list-style:none}
+.one-past>summary::-webkit-details-marker{display:none}
+.one-past>summary>b{color:#ffd0d4}.one-past>summary>span{color:#c6adb2}.one-past>summary>strong{color:#e8c17e;font-size:8px;letter-spacing:.06em}
+.one-past-meta{margin:0;padding:0 10px 6px;font-size:9px;color:#9f868b}
+.one-past-tickets{display:grid;gap:4px;padding:0 10px 10px}
+.one-past-ticket{display:flex;align-items:center;gap:5px;font-size:10px}
+.one-past-ticket>i{width:18px;font-style:normal;color:#9f868b}
+.one-past-ticket>em{font-style:normal;min-width:22px;text-align:center;padding:3px 0;border-radius:50%;background:rgba(255,255,255,.06);color:#e9d6d9}
+.one-past-ticket>em.hit{background:#c8102e;color:#fff;font-weight:700}
+.one-past-ticket>small{margin-left:6px;color:#c6adb2;font-size:9px}
+@media(max-width:700px){.one-past>summary{grid-template-columns:58px 1fr}.one-past>summary>strong{grid-column:2}}

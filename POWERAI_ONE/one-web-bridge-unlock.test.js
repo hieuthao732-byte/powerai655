@@ -220,6 +220,17 @@ const unlockCalls = (s) => s.callsTo(/POST \/rest\/v1\/rpc\/powerai_unlock_one_p
     assert.ok(ev, "evaluation was created"); { assert.equal(ev.lockSource, "server"); assert.equal(ev.ticketsSha256, row.tickets_sha256); assert.equal(ev.lockedAt, row.locked_at); }
   });
 
+  await test("past-draw history lists locked tickets against the real result, with audit info", async () => {
+    const s = createFakeServer(); const d = await lockedDevice(s);
+    let h = d.els.oneHistoryPast.innerHTML;
+    assert.match(h, /#00002/); assert.match(h, /Chờ kết quả/); assert.match(h, /SERVER/);
+    d.addResult(TARGET); await d.emit("powerai-cloud-hydrated"); await d.settle(100);
+    h = d.els.oneHistoryPast.innerHTML;
+    assert.match(h, /KQ 01 02 03 04 05 06/); assert.match(h, /cao nhất 6\/6/); assert.match(h, /class="hit"/);
+    assert.equal((h.match(/class="one-past-ticket"/g) || []).length, 20);
+    assert.match(h, new RegExp(s.lockRow(UID_A, TARGET).tickets_sha256.slice(0, 12)));
+  });
+
   console.log("\n" + passed + " passed, " + failed + " failed");
   process.exit(failed ? 1 : 0);
 })();
