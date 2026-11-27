@@ -231,6 +231,23 @@ const unlockCalls = (s) => s.callsTo(/POST \/rest\/v1\/rpc\/powerai_unlock_one_p
     assert.match(h, new RegExp(s.lockRow(UID_A, TARGET).tickets_sha256.slice(0, 12)));
   });
 
+  await test("random comparison: one evaluated draw is 'not enough data'; legacy locks are excluded; 40 draws near random say 'not different'", async () => {
+    const s = createFakeServer(); const d = await lockedDevice(s);
+    d.addResult(TARGET); await d.emit("powerai-cloud-hydrated"); await d.settle(100);
+    let h = d.els.oneRandomCompare.innerHTML;
+    assert.match(h, /Chưa đủ dữ liệu \(1 kỳ\)/); assert.match(h, /1\.000 kỳ/);
+    const mk = (id, three, src) => ({ targetDrawId: id, maxMainHits: three ? 3 : 2, lockSource: src, distribution: [0, 1, 2, 3, 4, 5, 6].map((x) => ({ hits: x, count: x === 0 ? (three ? 9 : 10) : x === 1 ? 8 : x === 2 ? 2 : x === 3 ? (three ? 1 : 0) : 0 })) });
+    const evals = []; for (let i = 0; i < 40; i++) evals.push(mk(100 + i, i < 10, "server")); evals.push(mk(500, true, "client-legacy")); evals.push(mk(501, true, undefined));
+    const d2 = createDevice({ server: createFakeServer(), storage: { powerai_rc6_one_portfolios: JSON.stringify({ portfolios: {}, unlockLog: [], evaluations: evals }) } });
+    await d2.ready();
+    h = d2.els.oneRandomCompare.innerHTML;
+    assert.match(h, /40 kỳ · 800 vé/); assert.match(h, /bỏ 2 kỳ khóa kiểu cũ/); assert.match(h, /10 vé, kỳ vọng 10,7/); assert.match(h, /Chưa khác ngẫu nhiên\./);
+    const strong = []; for (let i = 0; i < 40; i++) strong.push(mk(100 + i, true, "server")); strong.forEach((e) => { e.distribution[3].count = 4; e.distribution[0].count = 6; });
+    const d3 = createDevice({ server: createFakeServer(), storage: { powerai_rc6_one_portfolios: JSON.stringify({ portfolios: {}, unlockLog: [], evaluations: strong }) } });
+    await d3.ready();
+    assert.match(d3.els.oneRandomCompare.innerHTML, /Cao hơn ngẫu nhiên/);
+  });
+
   console.log("\n" + passed + " passed, " + failed + " failed");
   process.exit(failed ? 1 : 0);
 })();
